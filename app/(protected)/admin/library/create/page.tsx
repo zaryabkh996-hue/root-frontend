@@ -16,6 +16,11 @@ interface FormData {
   file_url: string;
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+}
+
 const CreateLibraryPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -49,7 +54,7 @@ const CreateLibraryPage = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
 
-      const response = await axios.post(
+      const response = await axios.post<ApiResponse<FormData>>(
         `${process.env.NEXT_PUBLIC_API_URL}/libraries`,
         formData,
         {
@@ -59,7 +64,8 @@ const CreateLibraryPage = () => {
         }
       );
 
-      if (response.data.success) {
+      const data = response.data as ApiResponse<FormData>;
+      if (data.success) {
         router.push('/admin/library');
       }
     } catch (err: any) {

@@ -16,6 +16,11 @@ interface FormData {
   file_url?: string;
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+}
+
 const EditLibraryPage = () => {
   const params = useParams();
   const router = useRouter();
@@ -45,7 +50,7 @@ const EditLibraryPage = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(
+      const response = await axios.get<ApiResponse<FormData>>(
         `${process.env.NEXT_PUBLIC_API_URL}/libraries/${id}`,
         {
           headers: {
@@ -54,8 +59,9 @@ const EditLibraryPage = () => {
         }
       );
 
-      if (response.data.success) {
-        setFormData(response.data.data);
+      const data = response.data as ApiResponse<FormData>;
+      if (data.success) {
+        setFormData(data.data);
       }
     } catch (err) {
       setError('Failed to load library item');
@@ -83,7 +89,7 @@ const EditLibraryPage = () => {
       setSubmitting(true);
       const token = localStorage.getItem('token');
 
-      const response = await axios.put(
+      const response = await axios.put<ApiResponse<FormData>>(
         `${process.env.NEXT_PUBLIC_API_URL}/libraries/${id}`,
         formData,
         {

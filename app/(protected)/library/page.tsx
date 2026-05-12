@@ -51,11 +51,12 @@ const LibraryPage = () => {
   const fetchLibraries = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
+      const response = await axios.get<{ success: boolean; data: Library[] }>(
         `${process.env.NEXT_PUBLIC_API_URL}/libraries`
       );
-      if (response.data.success) {
-        setLibraries(response.data.data);
+      const data = response.data as { success: boolean; data: Library[] };
+      if (data.success) {
+        setLibraries(data.data);
       }
     } catch (err) {
       setError('Failed to load library items');
