@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
+import { ProgressProvider } from '../lib/progressContext';
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
@@ -10,36 +11,69 @@ interface ProtectedLayoutProps {
 
 const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children }) => {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check if user is authenticated
-    const token = localStorage.getItem('authToken');
-    if (!token) {
+    const checkAuthentication = async () => {
+      // First check localStorage (magic link users) - instant, no loading
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        setIsAuthenticated(true);
+        return;
+      }
+
+      // Check Auth0 session via API (OAuth users)
+      try {
+        const response = await fetch('/api/auth/user');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.user) {
+            // Populate localStorage with the backend token
+            if (data.backendToken) {
+              localStorage.setItem('authToken', data.backendToken);
+              localStorage.setItem(
+                'user',
+                JSON.stringify(data.backendUser ?? data.user)
+              );
+              localStorage.setItem('oauth_user', 'true');
+            }
+            setIsAuthenticated(true);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+      }
+
+      // No authentication found - redirect immediately (no loading state)
       router.push('/login');
-      return;
-    }
-    setIsLoading(false);
+    };
+
+    checkAuthentication();
   }, [router]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-[#0e2218]">
-        <div className="text-center">
-          <div className="animate-spin inline-block w-12 h-12 border-4 border-[#dfbe6c] border-t-transparent rounded-full mb-4"></div>
-          <p className="text-[#dfbe6c] font-semibold">Loading...</p>
-        </div>
-      </div>
-    );
+  if (!isAuthenticated) {
+    // Redirect is in progress - render nothing (no loading spinner)
+    return null;
   }
 
   return (
-    <div className="app-shell">
-      <Sidebar />
-      <main className="app-main">
-        {children}
-      </main>
-    </div>
+    <ProgressProvider>
+      <div className="app-shell">
+        <Sidebar />
+        <main className="app-main">
+          <button className="crisis-btn">SOS · Talk to a human</button>
+          {children}
+          <button className="amen-bubble">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="12" r="10"></circle>
+            </svg>
+            Ask Amen AI
+          </button>
+        </main>
+      </div>
+    </ProgressProvider>
   );
 };
 

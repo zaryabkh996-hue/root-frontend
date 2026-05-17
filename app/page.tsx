@@ -1,4 +1,4 @@
-export default function Home() {
+export default async function Home() {
   return (
     <div>
       {/* Top header */}
@@ -20,6 +20,7 @@ export default function Home() {
           </nav>
           <div className="flex items-center gap-2" style={{flexShrink:0}}>
           
+            <a href="/login" className="btn-secondary inline-flex" style={{padding:'8px 14px',fontSize:'13px',whiteSpace:'nowrap'}}>Login →</a>
             <a href="/quiz" className="btn-primary inline-flex" style={{padding:'8px 14px',fontSize:'13px',whiteSpace:'nowrap'}}>Begin →</a>
           </div>
         </div>
@@ -86,36 +87,46 @@ export default function Home() {
               <p className="text-sm text-ink-dim leading-relaxed mb-4">Mindset, expectations, and emotional readiness. Learn that "returning home" is a journey, not a destination — and that Ghana is not Wakanda.</p>
               <div className="text-xs mono text-ink-dim">5 modules · 50 min · audio + video</div>
             </div>
-            <div className="scard p-7">
-              <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">2</div><span className="tag tag-brass">Community+</span></div>
-              <h3 className="display text-2xl mb-2">Cultural Intelligence</h3>
-              <p className="text-sm text-ink-dim leading-relaxed mb-4">Greetings, protocols, elder etiquette, market language, sacred space behaviour. Beyond "learn medaase" — the depth Western travel guides skip.</p>
-              <div className="text-xs mono text-ink-dim">8 modules · 2h 30min</div>
-            </div>
-            <div className="scard p-7">
-              <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">3</div><span className="tag tag-brass">Preparation+</span></div>
-              <h3 className="display text-2xl mb-2">Practical Preparation</h3>
-              <p className="text-sm text-ink-dim leading-relaxed mb-4">Visa paperwork, health, packing, money, transport, accommodation. The DIY budget travel guide and the "Ghana reality check" briefing.</p>
-              <div className="text-xs mono text-ink-dim">6 modules · 2h · checklists + PDFs</div>
-            </div>
-            <div className="scard p-7">
-              <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">4</div><span className="tag tag-brass">Preparation+</span></div>
-              <h3 className="display text-2xl mb-2">Arrival Orientation</h3>
-              <p className="text-sm text-ink-dim leading-relaxed mb-4">First 72 hours. Airport handover, host family meeting, jet-lag protocol, the chief's blessing if a Day Name awaits you.</p>
-              <div className="text-xs mono text-ink-dim">4 modules · 1h 20min</div>
-            </div>
-            <div className="scard p-7">
-              <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">5</div><span className="tag tag-brass">Preparation+</span></div>
-              <h3 className="display text-2xl mb-2">Heritage Journey</h3>
-              <p className="text-sm text-ink-dim leading-relaxed mb-4">The deepest part. Cape Coast Castle. The Door of No Return. Real-time emotional support via Amen AI on WhatsApp throughout your in-country experience.</p>
-              <div className="text-xs mono text-ink-dim">7 modules · live support</div>
-            </div>
-            <div className="scard p-7">
-              <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">6</div><span className="tag tag-brass">Preparation+</span></div>
-              <h3 className="display text-2xl mb-2">Post-Journey Integration</h3>
-              <p className="text-sm text-ink-dim leading-relaxed mb-4">Re-entry is its own journey. The Love Hub community, debrief sessions, the question of whether — and how — you carry Africa home with you.</p>
-              <div className="text-xs mono text-ink-dim">5 modules · ongoing community</div>
-            </div>
+            <a href="#modal-stage2" className="block">
+              <div className="scard p-7">
+                <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">2</div><span className="tag tag-brass">Community+</span></div>
+                <h3 className="display text-2xl mb-2">Cultural Intelligence</h3>
+                <p className="text-sm text-ink-dim leading-relaxed mb-4">Greetings, protocols, elder etiquette, market language, sacred space behaviour. Beyond "learn medaase" — the depth Western travel guides skip.</p>
+                <div className="text-xs mono text-ink-dim">8 modules · 2h 30min</div>
+              </div>
+            </a>
+            <a href="#modal-stage3" className="block">
+              <div className="scard p-7">
+                <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">3</div><span className="tag tag-brass">Preparation+</span></div>
+                <h3 className="display text-2xl mb-2">Practical Preparation</h3>
+                <p className="text-sm text-ink-dim leading-relaxed mb-4">Visa paperwork, health, packing, money, transport, accommodation. The DIY budget travel guide and the "Ghana reality check" briefing.</p>
+                <div className="text-xs mono text-ink-dim">6 modules · 2h · checklists + PDFs</div>
+              </div>
+            </a>
+            <a href="#modal-stage4" className="block">
+              <div className="scard p-7">
+                <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">4</div><span className="tag tag-brass">Preparation+</span></div>
+                <h3 className="display text-2xl mb-2">Arrival Orientation</h3>
+                <p className="text-sm text-ink-dim leading-relaxed mb-4">First 72 hours. Airport handover, host family meeting, jet-lag protocol, the chief's blessing if a Day Name awaits you.</p>
+                <div className="text-xs mono text-ink-dim">4 modules · 1h 20min</div>
+              </div>
+            </a>
+            <a href="#modal-stage5" className="block">
+              <div className="scard p-7">
+                <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">5</div><span className="tag tag-brass">Preparation+</span></div>
+                <h3 className="display text-2xl mb-2">Heritage Journey</h3>
+                <p className="text-sm text-ink-dim leading-relaxed mb-4">The deepest part. Cape Coast Castle. The Door of No Return. Real-time emotional support via Amen AI on WhatsApp throughout your in-country experience.</p>
+                <div className="text-xs mono text-ink-dim">7 modules · live support</div>
+              </div>
+            </a>
+            <a href="#modal-stage6" className="block">
+              <div className="scard p-7">
+                <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">6</div><span className="tag tag-brass">Preparation+</span></div>
+                <h3 className="display text-2xl mb-2">Post-Journey Integration</h3>
+                <p className="text-sm text-ink-dim leading-relaxed mb-4">Re-entry is its own journey. The Love Hub community, debrief sessions, the question of whether — and how — you carry Africa home with you.</p>
+                <div className="text-xs mono text-ink-dim">5 modules · ongoing community</div>
+              </div>
+            </a>
           </div>
         </div>
       </section>
@@ -162,7 +173,7 @@ export default function Home() {
             </div>
             <div className="mt-5 pt-5 border-t border-brass/15 flex gap-2">
               <input className="field-dark flex-1" placeholder="Type a message…"></input>
-              <button className="btn-primary !px-4">Send</button>
+              <button className="btn-primary !px-4 " disabled>Send</button>
             </div>
           </div>
         </div>
@@ -235,7 +246,7 @@ export default function Home() {
                 <li className="flex gap-2"><span className="text-brass">✓</span> Browse Custodians</li>
                 <li className="flex gap-2 text-ink-faint"><span>—</span> Stages 2–6 locked</li>
               </ul>
-              <button className="btn-ghost w-full justify-center">Begin free</button>
+              <a href="/quiz" className="btn-ghost w-full justify-center">Begin free</a>
             </div>
             {/* Community */}
             <div className="scard p-7 flex flex-col">
@@ -252,7 +263,7 @@ export default function Home() {
                 <li className="flex gap-2"><span className="text-brass">✓</span> Library · 5 audio guides</li>
                 <li className="flex gap-2"><span className="text-brass">✓</span> Custodian profiles · view</li>
               </ul>
-              <button className="btn-ghost w-full justify-center">Choose Community</button>
+              <a href="#modal-community" className="btn-ghost w-full justify-center">Choose Community</a>
             </div>
             {/* Preparation */}
             <div className="scard-dark p-7 flex flex-col relative" style={{background:'var(--forest-deepest)'}}>
@@ -272,7 +283,7 @@ export default function Home() {
                 <li className="flex gap-2"><span className="text-brass">✓</span> Day Name &amp; Stage certificates</li>
                 <li className="flex gap-2"><span className="text-brass">✓</span> Post-journey integration</li>
               </ul>
-              <button className="btn-primary w-full justify-center">Choose Preparation</button>
+              <a href="#modal-preparation" className="btn-primary w-full justify-center">Choose Preparation</a>
             </div>
           </div>
           <p className="text-center text-sm text-ink-faint mt-10">For the rare Experiential Execution tier (score 85–100): trauma-informed 1-on-1 coaching coming Q3 2026. For now, Preparation tier delivers the full self-guided journey.</p>
@@ -339,7 +350,13 @@ export default function Home() {
           </div>
           <div>
             <div className="eyebrow eyebrow-cream mb-4">Platform</div>
-            <ul className="space-y-2 text-xs"><li>Travel DNA Quiz</li><li>The 6 stages</li><li>Amen AI</li><li>Custodians</li><li>Community</li></ul>
+            <ul className="space-y-2 text-xs">
+              <li>Travel DNA Quiz</li>
+              <li><a href="#the-6-stages">The 6 stages</a></li>
+              <li>Amen AI</li>
+              <li>Custodians</li>
+              <li>Community</li>
+            </ul>
           </div>
           <div>
             <div className="eyebrow eyebrow-cream mb-4">Company</div>
@@ -351,10 +368,135 @@ export default function Home() {
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-8 mt-10 pt-6 border-t border-brass/10 flex flex-col md:flex-row justify-between gap-3 text-xs text-cream/50">
-          <div>© 2026 3Men Pty Ltd · All rights reserved</div>
+          <div>© 2026 AnomozSoftwares · All rights reserved</div>
           <div className="mono">hello@ourroots.africa · WhatsApp +61 433 960 900</div>
         </div>
       </footer>
+
+
+      {/* Stage 2 Modal */}
+      <div id="modal-community" className="modal-overlay">
+        <div className="modal-card scard-dark p-9" style={{maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)'}}>
+          <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 2 · Cultural Intelligence</div>
+          <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
+          <p className="text-sm text-cream/70 leading-relaxed mb-6">Greetings, protocols, elder etiquette, market language, sacred space behaviour.</p>
+          <div className="scard-warm p-5 mb-5" style={{background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)'}}>
+            <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Community tier</div><div className="display text-3xl text-brass-light">$27<span className="text-sm text-cream/60">/mo</span></div></div>
+            <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+          </div>
+          <div className="space-y-2 mb-6 text-sm text-cream/85">
+            <div className="flex gap-2"><span className="text-brass">✓</span> Stage 2 (8 modules)</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Stage 1 + 2</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI 75 messages / 30 days</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
+          </div>
+          <div className="flex gap-3">
+            <button className="btn-primary flex-1">Pay $27 / month</button>
+            <a href="#" className="btn-ghost-dark">Maybe later</a>
+          </div>
+          <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
+        </div>
+      </div>
+
+      {/* Stage 3 Modal */}
+      <div id="modal-stage3" className="modal-overlay">
+        <div className="modal-card scard-dark p-9" style={{maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)'}}>
+          <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 3 · Practical Preparation</div>
+          <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
+          <p className="text-sm text-cream/70 leading-relaxed mb-6">Visa paperwork, health, packing, money, transport, accommodation.</p>
+          <div className="scard-warm p-5 mb-5" style={{background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)'}}>
+            <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
+            <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+          </div>
+          <div className="space-y-2 mb-6 text-sm text-cream/85">
+            <div className="flex gap-2"><span className="text-brass">✓</span> Stage 3 (6 modules)</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> All Stages 1–6 unlocked</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI unlimited</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Custodian Marketplace · book + pay</div>
+          </div>
+          <div className="flex gap-3">
+            <button className="btn-primary flex-1">Pay $67 / month</button>
+            <a href="#" className="btn-ghost-dark">Maybe later</a>
+          </div>
+          <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
+        </div>
+      </div>
+
+      {/* Stage 4 Modal */}
+      <div id="modal-preparation" className="modal-overlay">
+        <div className="modal-card scard-dark p-9" style={{maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)'}}>
+          <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 4 · Arrival Orientation</div>
+          <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
+          <p className="text-sm text-cream/70 leading-relaxed mb-6">First 72 hours. Airport handover, host family meeting, jet-lag protocol, the chief's blessing if a Day Name awaits you.</p>
+          <div className="scard-warm p-5 mb-5" style={{background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)'}}>
+            <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
+            <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+          </div>
+          <div className="space-y-2 mb-6 text-sm text-cream/85">
+            <div className="flex gap-2"><span className="text-brass">✓</span> Stage 4 (4 modules)</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> All Stages 1–6 unlocked</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI unlimited</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Custodian Marketplace · book + pay</div>
+          </div>
+          <div className="flex gap-3">
+            <button className="btn-primary flex-1">Pay $67 / month</button>
+            <a href="#" className="btn-ghost-dark">Maybe later</a>
+          </div>
+          <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
+        </div>
+      </div>
+
+      {/* Stage 5 Modal */}
+      <div id="modal-stage5" className="modal-overlay">
+        <div className="modal-card scard-dark p-9" style={{maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)'}}>
+          <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 5 · Heritage Journey</div>
+          <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
+          <p className="text-sm text-cream/70 leading-relaxed mb-6">The deepest part. Cape Coast Castle. The Door of No Return. Real-time emotional support via Amen AI on WhatsApp throughout your in-country experience.</p>
+          <div className="scard-warm p-5 mb-5" style={{background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)'}}>
+            <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
+            <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+          </div>
+          <div className="space-y-2 mb-6 text-sm text-cream/85">
+            <div className="flex gap-2"><span className="text-brass">✓</span> Stage 5 (7 modules)</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> All Stages 1–6 unlocked</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI unlimited</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Custodian Marketplace · book + pay</div>
+          </div>
+          <div className="flex gap-3">
+            <button className="btn-primary flex-1">Pay $67 / month</button>
+            <a href="#" className="btn-ghost-dark">Maybe later</a>
+          </div>
+          <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
+        </div>
+      </div>
+
+      {/* Stage 6 Modal */}
+      <div id="modal-stage6" className="modal-overlay">
+        <div className="modal-card scard-dark p-9" style={{maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)'}}>
+          <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 6 · Post-Journey Integration</div>
+          <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
+          <p className="text-sm text-cream/70 leading-relaxed mb-6">Re-entry is its own journey. The Love Hub community, debrief sessions, the question of whether — and how — you carry Africa home with you.</p>
+          <div className="scard-warm p-5 mb-5" style={{background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)'}}>
+            <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
+            <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+          </div>
+          <div className="space-y-2 mb-6 text-sm text-cream/85">
+            <div className="flex gap-2"><span className="text-brass">✓</span> Stage 6 (5 modules)</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> All Stages 1–6 unlocked</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI unlimited</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
+            <div className="flex gap-2"><span className="text-brass">✓</span> Custodian Marketplace · book + pay</div>
+          </div>
+          <div className="flex gap-3">
+            <button className="btn-primary flex-1">Pay $67 / month</button>
+            <a href="#" className="btn-ghost-dark">Maybe later</a>
+          </div>
+          <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
+        </div>
+      </div>
     </div>
   );
 }

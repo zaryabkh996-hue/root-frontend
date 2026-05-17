@@ -3,12 +3,22 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface QuizAnswer {
+type DimensionKey = 'identity' | 'emotional' | 'authenticity' | 'protocol' | 'community';
+
+interface Question {
+  id: number;
   dimension: string;
-  value: number;
+  diff: number;
+  question: string;
+  options: { key: string; label: string; value: number }[];
 }
 
-type DimensionKey = 'identity' | 'emotional' | 'authenticity' | 'protocol' | 'community';
+interface QuizState {
+  responses: { id: number; dim: string; value: number }[];
+  thetaByDim: { [key: string]: number };
+  asked: number[];
+  current: Question | null;
+}
 
 const DIMENSIONS: Record<DimensionKey, string> = {
   identity: 'Identity & Belonging',
@@ -26,10 +36,11 @@ const DIMENSION_TAGS: Record<DimensionKey, string> = {
   community: 'tag-emerald'
 };
 
-const QUESTIONS = [
+const QUESTION_BANK: Question[] = [
   {
     id: 1,
     dimension: 'identity',
+    diff: 0.0,
     question: 'How strong is your sense of African heritage?',
     options: [
       { key: 'A', label: 'Profound — I feel it daily', value: 4 },
@@ -41,17 +52,19 @@ const QUESTIONS = [
   {
     id: 2,
     dimension: 'emotional',
-    question: 'How prepared do you feel to visit a slave castle?',
+    diff: 0.0,
+    question: 'Do you have a way to process difficult emotions?',
     options: [
-      { key: 'A', label: 'Prepared — I have done inner work', value: 4 },
-      { key: 'B', label: 'Mostly — some worry remains', value: 3 },
-      { key: 'C', label: 'Uncertain — open but unprepared', value: 2 },
-      { key: 'D', label: 'Not at all — I avoid thinking about it', value: 1 }
+      { key: 'A', label: 'Yes — therapy, journaling, ritual', value: 4 },
+      { key: 'B', label: 'Yes — informal but consistent', value: 3 },
+      { key: 'C', label: 'Some — could be stronger', value: 2 },
+      { key: 'D', label: 'Not really', value: 1 }
     ]
   },
   {
     id: 3,
     dimension: 'authenticity',
+    diff: 0.5,
     question: 'How would you feel if you were not invited to a ceremony?',
     options: [
       { key: 'A', label: 'I would respect their judgement', value: 4 },
@@ -63,6 +76,7 @@ const QUESTIONS = [
   {
     id: 4,
     dimension: 'protocol',
+    diff: 0.0,
     question: 'How well do you know how to greet an African elder?',
     options: [
       { key: 'A', label: 'Very well — I practise it', value: 4 },
@@ -74,6 +88,7 @@ const QUESTIONS = [
   {
     id: 5,
     dimension: 'community',
+    diff: 0.0,
     question: 'How important is it to meet other diaspora travellers?',
     options: [
       { key: 'A', label: 'Essential — community is the work', value: 4 },
@@ -85,6 +100,7 @@ const QUESTIONS = [
   {
     id: 6,
     dimension: 'identity',
+    diff: 0.5,
     question: 'Have you visited an African country before?',
     options: [
       { key: 'A', label: 'Yes — multiple times', value: 4 },
@@ -96,6 +112,7 @@ const QUESTIONS = [
   {
     id: 7,
     dimension: 'emotional',
+    diff: 1.0,
     question: 'Can you sit with joy and grief at the same time?',
     options: [
       { key: 'A', label: 'Yes — both can be true', value: 4 },
@@ -107,6 +124,7 @@ const QUESTIONS = [
   {
     id: 8,
     dimension: 'authenticity',
+    diff: 1.0,
     question: 'Do tip jars at sacred sites bother you?',
     options: [
       { key: 'A', label: 'I understand — locals must live', value: 4 },
@@ -117,18 +135,53 @@ const QUESTIONS = [
   }
 ];
 
+const pickNext = (currentQuiz: QuizState): Question | null => {
+  const dimCounts: { [key: string]: number } = {
+    identity: 0,
+    emotional: 0,
+    authenticity: 0,
+    protocol: 0,
+    community: 0
+  };
+  currentQuiz.responses.forEach(r => dimCounts[r.dim]++);
+  const sorted = Object.entries(dimCounts).sort((a, b) => a[1] - b[1]);
+  for (const [dim] of sorted) {
+    const cands = QUESTION_BANK.filter(q => q.dimension === dim && !currentQuiz.asked.includes(q.id));
+    if (!cands.length) continue;
+    const target = currentQuiz.thetaByDim[dim];
+    cands.sort((a, b) => Math.abs(a.diff - target) - Math.abs(b.diff - target));
+    return cands[0];
+  }
+  return null;
+};
+
+const shouldTerminate = (currentQuiz: QuizState) => {
+  const dims = new Set(currentQuiz.responses.map(r => r.dim));
+  return currentQuiz.responses.length >= 8 && dims.size === 5;
+};
+
+interface QuizState {
+  responses: { id: number; dim: string; value: number }[];
+  thetaByDim: { [key: string]: number };
+  asked: number[];
+  current: typeof QUESTION_BANK[0] | null;
+}
+
 export default function Quiz() {
   const router = useRouter();
   const [quizState, setQuizState] = useState<'intro' | 'active' | 'completing'>('intro');
   const [name, setName] = useState('');
-  const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
-  const [answers, setAnswers] = useState<QuizAnswer[]>([]);
+  const [quiz, setQuiz] = useState<QuizState>({
+    responses: [],
+    thetaByDim: { identity: 0, emotional: 0, authenticity: 0, protocol: 0, community: 0 },
+    asked: [],
+    current: null
+  });
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const currentQuestion = QUESTIONS[currentQuestionIdx];
-  const currentAnswer = answers.find(a => a.dimension === currentQuestion.dimension);
-  const answeredCount = answers.length;
-  const totalQuestions = QUESTIONS.length;
+  const currentQuestion = quiz.current;
+  const answeredCount = quiz.responses.length;
+  const totalQuestions = 8;
   const progress = (answeredCount / totalQuestions) * 100;
 
   const getConfidenceText = () => {
@@ -139,35 +192,66 @@ export default function Quiz() {
   const handleSelectOption = async (value: number) => {
     setIsTransitioning(true);
 
-    const newAnswers = answers.filter(a => a.dimension !== currentQuestion.dimension);
-    newAnswers.push({ dimension: currentQuestion.dimension, value });
-    setAnswers(newAnswers);
+    const cur = quiz.current;
+    if (!cur) return;
+
+    // Normalise selection (1-4) to roughly -1..+1 for theta update
+    const norm = (value - 2.5) / 1.5;
+    const newThetaByDim = { ...quiz.thetaByDim };
+    newThetaByDim[cur.dimension] = (newThetaByDim[cur.dimension] + norm) / 2;
+
+    const newResponses = [...quiz.responses, { id: cur.id, dim: cur.dimension, value }];
+    const newAsked = [...quiz.asked];
+
+    const newQuiz = {
+      responses: newResponses,
+      thetaByDim: newThetaByDim,
+      asked: newAsked,
+      current: null
+    };
 
     setTimeout(() => {
-      if (currentQuestionIdx < QUESTIONS.length - 1) {
-        setCurrentQuestionIdx(currentQuestionIdx + 1);
-      } else {
+      if (shouldTerminate(newQuiz) || newQuiz.asked.length >= 15) {
         setQuizState('completing');
-        handleSubmit(newAnswers);
+        handleSubmit(newResponses);
+      } else {
+        const next = pickNext(newQuiz);
+        const updatedQuiz = {
+          ...newQuiz,
+          current: next,
+          asked: next ? [...newQuiz.asked, next.id] : newQuiz.asked
+        };
+        setQuiz(updatedQuiz);
       }
       setIsTransitioning(false);
     }, 400);
   };
 
   const handleBack = () => {
-    if (currentQuestionIdx > 0) {
-      setCurrentQuestionIdx(currentQuestionIdx - 1);
-    }
+    // Disabled for adaptive quiz
   };
 
   const handleStartQuiz = () => {
     if (name.trim()) {
       setQuizState('active');
-      setCurrentQuestionIdx(0);
+      const first = pickNext({
+        responses: [],
+        thetaByDim: { identity: 0, emotional: 0, authenticity: 0, protocol: 0, community: 0 },
+        asked: [],
+        current: null
+      });
+      if (first) {
+        setQuiz({
+          responses: [],
+          thetaByDim: { identity: 0, emotional: 0, authenticity: 0, protocol: 0, community: 0 },
+          asked: [first.id],
+          current: first
+        });
+      }
     }
   };
 
-  const calculateScores = (finalAnswers: QuizAnswer[]) => {
+  const calculateScores = (finalResponses: { id: number; dim: string; value: number }[]) => {
     const dimensions: { [key: string]: number[] } = {
       identity: [],
       emotional: [],
@@ -176,8 +260,8 @@ export default function Quiz() {
       community: []
     };
 
-    finalAnswers.forEach(answer => {
-      dimensions[answer.dimension].push(answer.value);
+    finalResponses.forEach(response => {
+      dimensions[response.dim].push(response.value);
     });
 
     const avgScores: { [key: string]: number } = {};
@@ -200,8 +284,8 @@ export default function Quiz() {
     }
   };
 
-  const handleSubmit = (finalAnswers: QuizAnswer[]) => {
-    const scores = calculateScores(finalAnswers);
+  const handleSubmit = (finalResponses: { id: number; dim: string; value: number }[]) => {
+    const scores = calculateScores(finalResponses);
     const totalScore = Math.round(
       (scores.identity + scores.emotional + scores.authenticity + scores.protocol + scores.community) / 5
     );
@@ -283,11 +367,11 @@ export default function Quiz() {
         )}
 
         {/* Active Quiz State */}
-        {quizState === 'active' && (
+        {quizState === 'active' && currentQuestion && (
           <div className={`transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
             {/* Progress */}
             <div className="flex items-center justify-between mb-3 text-xs mono text-ink-dim">
-              <span id="quiz-progress-text">Question {currentQuestionIdx + 1} of ~{totalQuestions}</span>
+              <span id="quiz-progress-text">Question {answeredCount + 1} of ~8</span>
               <span className={`tag ${DIMENSION_TAGS[currentQuestion.dimension as DimensionKey]}`}>
                 {DIMENSIONS[currentQuestion.dimension as DimensionKey]}
               </span>
@@ -304,9 +388,9 @@ export default function Quiz() {
             {/* Question */}
             <div className="mb-10">
               <div className="eyebrow mb-3" id="quiz-q-num">
-                Question {String(currentQuestionIdx + 1).padStart(2, '0')}
+                Question {String(answeredCount + 1).padStart(2, '0')}
               </div>
-              <h2 id="quiz-question" className="display text-3xl md:text-4xl font-light leading-tight">
+              <h2 id="quiz-question" className="display text-4xl md:text-4xl font-light leading-tight">
                 {currentQuestion.question}
               </h2>
             </div>
@@ -317,11 +401,7 @@ export default function Quiz() {
                 <button
                   key={idx}
                   onClick={() => handleSelectOption(option.value)}
-                  className={`quiz-option w-full p-4 text-left rounded-md border-2 transition-all ${
-                    currentAnswer?.value === option.value
-                      ? 'border-brass bg-brass/5'
-                      : 'border-line hover:border-brass/30'
-                  }`}
+                  className={`quiz-option w-full p-4 text-left rounded-md border-2 transition-all border-line hover:border-brass/30`}
                   data-v={option.value}
                 >
                   <div className="flex items-center gap-3">
@@ -338,7 +418,7 @@ export default function Quiz() {
                 onClick={handleBack}
                 id="quiz-back-btn"
                 className="btn-ghost"
-                disabled={currentQuestionIdx === 0}
+                disabled={true}
               >
                 ← Back
               </button>

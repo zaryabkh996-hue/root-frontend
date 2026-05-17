@@ -7,11 +7,9 @@ const Sidebar: React.FC = () => {
   const pathname = usePathname();
 
   const goto = (page: string) => {
-    if (page === 'dashboard') {
-      router.push('/');
-    } else {
+  
       router.push(`/${page}`);
-    }
+    
     setIsOpen(false); // Close mobile menu after navigation
   };
 
@@ -75,20 +73,20 @@ const Sidebar: React.FC = () => {
               </svg>
               Dashboard
             </div>
-            {/* <div className={`nav-item ${isActive('journey') ? 'active' : ''}`} onClick={() => goto('journey')}>
+            <div className={`nav-item ${isActive('journey') ? 'active' : ''}`} onClick={() => goto('journey')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M3 12c0-5 4-9 9-9s9 4 9 9-4 9-9 9-9-4-9-9z"></path>
                 <path d="M9 12l2 2 4-4"></path>
               </svg>
               Six-Stage Journey
-            </div> */}
+            </div>
             <div className={`nav-item ${isActive('library') ? 'active' : ''}`} onClick={() => goto('library')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M4 19.5A2.5 2.5 0 016.5 17H20V2H6.5A2.5 2.5 0 004 4.5z"></path>
               </svg>
               Library
             </div>
-            {/* <div className={`nav-item ${isActive('custodians') ? 'active' : ''}`} onClick={() => goto('custodians')}>
+            <div className={`nav-item ${isActive('custodians') ? 'active' : ''}`} onClick={() => goto('custodians')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path>
                 <circle cx="9" cy="7" r="4"></circle>
@@ -115,7 +113,7 @@ const Sidebar: React.FC = () => {
                 <path d="M4 21v-1a8 8 0 0116 0v1"></path>
               </svg>
               Profile
-            </div> */}
+            </div>
           </nav>
 
           {/* Footer */}
