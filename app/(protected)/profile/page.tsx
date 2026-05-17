@@ -1,19 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProgress } from '../../lib/progressContext';
+
+interface UserProfile {
+  id?: number;
+  name?: string;
+  email?: string;
+  whatsapp?: string;
+  picture?: string;
+  bio?: string;
+  bioPrivacy?: string;
+  travelDate?: string;
+  travelLocation?: string;
+  diasporaGroup?: string;
+  learningPreference?: string;
+  memberSince?: string;
+}
+
+const DEFAULT_PROFILE: UserProfile = {
+  name: 'Amara Johnson',
+  email: 'amara.johnson@gmail.com',
+  whatsapp: '+1 404 555 0123',
+  bio: 'Third-generation Igbo diaspora from Atlanta, GA. Making my first return home to Ghana in September 2026. I am a Heritage Seeker — learning what was never taught, remembering what was never forgotten.',
+  bioPrivacy: 'public',
+  travelDate: 'Sept 14 — Sept 28, 2026',
+  travelLocation: 'Accra',
+  diasporaGroup: 'United States & Canada',
+  learningPreference: 'Listening · audio-first',
+  memberSince: '12 March 2026',
+};
 
 export default function ProfilePage() {
   const router = useRouter();
   const { progress } = useProgress();
 
-  // Profile state
-  const [bio, setBio] = useState(
-    'Third-generation Igbo diaspora from Atlanta, GA. Making my first return home to Ghana in September 2026. I am a Heritage Seeker — learning what was never taught, remembering what was never forgotten.'
-  );
+  // User profile state
+  const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_PROFILE);
+  const [bio, setBio] = useState(DEFAULT_PROFILE.bio || '');
   const [bioEdit, setBioEdit] = useState(false);
-  const [bioPrivacy, setBioPrivacy] = useState('public');
+  const [loading, setLoading] = useState(true);
 
   // Visibility state
   const [profileVisibility, setProfileVisibility] = useState('public');
@@ -27,6 +54,76 @@ export default function ProfilePage() {
     newCustodians: false,
   });
 
+  // ── Load user profile from localStorage and API on mount ──
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        setLoading(true);
+
+        // Step 1: Get user data from localStorage (already logged in)
+        const storedUser = localStorage.getItem('user');
+        const token = localStorage.getItem('authToken');
+
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          setUserProfile(prev => ({
+            ...prev,
+            name: parsedUser.name || prev.name,
+            email: parsedUser.email || prev.email,
+            picture: parsedUser.picture || prev.picture,
+          }));
+        }
+
+        // Step 2: Fetch full profile from API if authenticated
+        if (token) {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+          const response = await fetch(`${apiUrl}/user/profile`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            const profileData = await response.json();
+            if (profileData.data) {
+              const data = profileData.data;
+              setUserProfile(prev => ({
+                ...prev,
+                id: data.id || prev.id,
+                name: data.name || prev.name,
+                email: data.email || prev.email,
+                whatsapp: data.whatsapp || prev.whatsapp,
+                picture: data.picture || prev.picture,
+                bio: data.bio || prev.bio,
+                bioPrivacy: data.bioPrivacy || prev.bioPrivacy,
+                travelDate: data.travelDate || prev.travelDate,
+                travelLocation: data.travelLocation || prev.travelLocation,
+                diasporaGroup: data.diasporaGroup || prev.diasporaGroup,
+                learningPreference: data.learningPreference || prev.learningPreference,
+                memberSince: data.memberSince || prev.memberSince,
+              }));
+              setBio(data.bio || DEFAULT_PROFILE.bio || '');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load user profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserProfile();
+  }, []);
+
+  // ── Sync bio state when userProfile.bio changes ──
+  useEffect(() => {
+    if (!bioEdit && userProfile.bio) {
+      setBio(userProfile.bio);
+    }
+  }, [userProfile.bio, bioEdit]);
+
   const toggleNotification = (key: keyof typeof notifications) => {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
   };
@@ -39,24 +136,50 @@ export default function ProfilePage() {
     }
   };
 
-  const saveBio = () => {
-    setBioEdit(false);
-    // Save bio to localStorage or backend
+  const saveBio = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const response = await fetch(`${apiUrl}/user/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ bio, bioPrivacy: userProfile.bioPrivacy }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setUserProfile(prev => ({
+          ...prev,
+          bio: bio,
+          bioPrivacy: userProfile.bioPrivacy,
+        }));
+        setBioEdit(false);
+        console.log('Bio saved successfully');
+      } else {
+        console.error('Failed to save bio:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error saving bio:', error);
+    }
   };
 
   const cycleBioPrivacy = () => {
     const cycle = ['public', 'community', 'private'];
-    const currentIndex = cycle.indexOf(bioPrivacy);
-    setBioPrivacy(cycle[(currentIndex + 1) % cycle.length]);
+    const currentIndex = cycle.indexOf(userProfile.bioPrivacy || 'public');
+    const nextPrivacy = cycle[(currentIndex + 1) % cycle.length];
+    setUserProfile(prev => ({ ...prev, bioPrivacy: nextPrivacy }));
   };
 
   const getUserName = () => {
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      return user?.name || 'Amara Johnson';
-    } catch {
-      return 'Amara Johnson';
-    }
+    return userProfile.name || 'Amara Johnson';
   };
 
   const getAfroScore = () => {
@@ -91,13 +214,13 @@ export default function ProfilePage() {
                 </svg>
               </div>
             </div>
-            <h2 className="display text-3xl mb-1">{progress?.userName || getUserName()}</h2>
-            <div className="eyebrow eyebrow-cream mb-3">{progress?.userPersona || 'Heritage Seeker'} · Atlanta, GA</div>
+            <h2 className="display text-3xl mb-1">{getUserName()}</h2>
+            <div className="eyebrow eyebrow-cream mb-3">{progress?.userPersona || 'Heritage Seeker'} · {userProfile.travelLocation || 'Atlanta, GA'}</div>
             <div className="flex items-center justify-center gap-2">
               <span className="tag tag-brass">Preparation tier</span>
               <span className="tag tag-emerald">Active</span>
             </div>
-            <div className="text-xs text-cream/50 mono mt-3">Member since 12 March 2026</div>
+            <div className="text-xs text-cream/50 mono mt-3">Member since {userProfile.memberSince || '12 March 2026'}</div>
           </div>
 
           {/* Bio */}
@@ -111,9 +234,9 @@ export default function ProfilePage() {
                   style={{ cursor: 'pointer' }}
                   onClick={cycleBioPrivacy}
                 >
-                  {bioPrivacy === 'public' && '🌐 Public'}
-                  {bioPrivacy === 'community' && '🤝 Members'}
-                  {bioPrivacy === 'private' && '🔒 Private'}
+                  {userProfile.bioPrivacy === 'public' && '🌐 Public'}
+                  {userProfile.bioPrivacy === 'community' && '🤝 Members'}
+                  {userProfile.bioPrivacy === 'private' && '🔒 Private'}
                 </div>
                 <button
                   id="bio-edit-btn"
@@ -126,7 +249,7 @@ export default function ProfilePage() {
             </div>
             {!bioEdit ? (
               <p id="bio-display" className="text-sm text-cream/80 leading-relaxed">
-                {bio}
+                {userProfile.bio || bio}
               </p>
             ) : (
               <>
@@ -184,13 +307,13 @@ export default function ProfilePage() {
               </div>
               <div className="border-t border-brass/10 pt-4">
                 <div className="text-xs text-cream/50 mono mb-1">Diaspora group</div>
-                <div className="text-cream font-medium">United States & Canada</div>
+                <div className="text-cream font-medium">{userProfile.diasporaGroup || 'United States & Canada'}</div>
                 <div className="text-xs text-cream/55 leading-relaxed mt-0.5">Shapes the framing of Stage 1, 5, and 6 modules</div>
                 <button className="text-xs text-brass-light/80 hover:text-brass-light underline mt-2">Change</button>
               </div>
               <div className="border-t border-brass/10 pt-4">
                 <div className="text-xs text-cream/50 mono mb-1">Learning preference</div>
-                <div className="text-cream font-medium">Listening · audio-first</div>
+                <div className="text-cream font-medium">{userProfile.learningPreference || 'Listening · audio-first'}</div>
                 <div className="text-xs text-cream/55 leading-relaxed mt-0.5">Audio modules surface first; transcripts always available</div>
                 <button className="text-xs text-brass-light/80 hover:text-brass-light underline mt-2">Change</button>
               </div>
@@ -285,21 +408,21 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm text-cream font-medium">Email</div>
-                  <div className="text-xs text-cream/50 mt-1">amara.johnson@gmail.com</div>
+                  <div className="text-xs text-cream/50 mt-1">{userProfile.email || 'amara.johnson@gmail.com'}</div>
                 </div>
                 <button className="btn-ghost-dark text-xs">Change</button>
               </div>
               <div className="border-t border-brass/10 pt-4 flex items-center justify-between">
                 <div>
                   <div className="text-sm text-cream font-medium">WhatsApp</div>
-                  <div className="text-xs text-cream/50 mt-1">+1 404 555 0123 · verified</div>
+                  <div className="text-xs text-cream/50 mt-1">{userProfile.whatsapp || '+1 404 555 0123'} · verified</div>
                 </div>
                 <button className="btn-ghost-dark text-xs">Change</button>
               </div>
               <div className="border-t border-brass/10 pt-4 flex items-center justify-between">
                 <div>
                   <div className="text-sm text-cream font-medium">Travel date</div>
-                  <div className="text-xs text-cream/50 mt-1">Sept 14 — Sept 28, 2026 · Accra</div>
+                  <div className="text-xs text-cream/50 mt-1">{userProfile.travelDate || 'Sept 14 — Sept 28, 2026'} · {userProfile.travelLocation || 'Accra'}</div>
                 </div>
                 <button className="btn-ghost-dark text-xs">Edit</button>
               </div>

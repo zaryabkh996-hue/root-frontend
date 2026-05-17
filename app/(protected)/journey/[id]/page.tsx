@@ -80,7 +80,7 @@ export default function ViewJourneyPage() {
               <div className="font-medium text-cream mb-1">{module.title}</div>
               <div className="flex items-center gap-3 text-xs text-cream/50 flex-wrap">
                 <span className="mono">{module.duration}</span>
-                <span>Â·</span>
+                <span>·</span>
                 <span className="tag tag-dark">{module.type}</span>
                 {module.warning && <span className="tag tag-rose">{module.warning}</span>}
                 {module.status === 'completed' && <span className="tag tag-emerald">Completed</span>}
@@ -89,7 +89,7 @@ export default function ViewJourneyPage() {
               </div>
             </div>
             <div>{renderStatusBadge(module.status)}</div>
-            <div className="text-cream/40">{module.status !== 'locked' && <span>â†’</span>}</div>
+            <div className="text-cream/40">{module.status !== 'locked' && <span>→</span>}</div>
           </div>
         ))}
       </div>
