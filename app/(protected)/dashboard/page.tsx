@@ -148,8 +148,6 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-
-          {/* Stage flow dots */}
           <div style={{ flex: '1 1 300px', minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '4px', paddingBottom: '8px', overflowX: 'auto', overflowY: 'hidden', scrollBehavior: 'smooth' }}>
               {stageStatuses.map((stage, idx) => (

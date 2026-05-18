@@ -92,10 +92,10 @@ export default function SettingsPage() {
           </div>
 
           <Button variant="outline" fullWidth>
-            🗑️ Download Your Data
+            Download Your Data
           </Button>
           <Button variant="outline" fullWidth>
-            🚫 Request Account Deletion
+            Request Account Deletion
           </Button>
         </div>
       </Card>
@@ -107,10 +107,10 @@ export default function SettingsPage() {
             <p className="text-[#ffffff] font-semibold mb-2">Theme</p>
             <div className="flex gap-4">
               <button className="flex-1 p-3 bg-[#0a1810] border-2 border-[#dfbe6c] text-[#dfbe6c] rounded-lg font-semibold">
-                🌙 Dark
+                Dark
               </button>
               <button className="flex-1 p-3 bg-[#0a1810] border border-[#dfbe6c] border-opacity-30 text-[#ffffff] rounded-lg font-semibold hover:border-opacity-60 transition-all">
-                ☀️ Light
+                Light
               </button>
             </div>
           </div>
@@ -120,10 +120,10 @@ export default function SettingsPage() {
       {/* Save Changes */}
       <div className="flex gap-4">
         <Button variant="primary" size="lg">
-          💾 Save All Settings
+          Save All Settings
         </Button>
         <Button variant="outline" size="lg">
-          ↩️ Reset to Default
+          Reset to Default
         </Button>
       </div>
     </div>
