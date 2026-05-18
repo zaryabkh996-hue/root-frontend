@@ -228,7 +228,41 @@ export default function Quiz() {
   };
 
   const handleBack = () => {
-    // Disabled for adaptive quiz
+    // if (quiz.responses.length === 0) return;
+
+    // If only 1 response, go back to name entry
+    if (quiz.responses.length === 0) {
+      setQuizState('intro');
+      setName('');
+      setQuiz({
+        responses: [],
+        thetaByDim: { identity: 0, emotional: 0, authenticity: 0, protocol: 0, community: 0 },
+        asked: [],
+        current: null
+      });
+      return;
+    }
+
+    // Remove the last response
+    const newResponses = quiz.responses.slice(0, -1);
+    const lastQuestion = QUESTION_BANK.find(q => q.id === quiz.asked[quiz.asked.length - 2]);
+    
+    // Recalculate theta values
+    const newThetaByDim = { identity: 0, emotional: 0, authenticity: 0, protocol: 0, community: 0 };
+    newResponses.forEach(response => {
+      const norm = (response.value - 2.5) / 1.5;
+      newThetaByDim[response.dim as DimensionKey] = 
+        (newThetaByDim[response.dim as DimensionKey] + norm) / 2;
+    });
+
+    const newAsked = quiz.asked.slice(0, -1);
+    
+    setQuiz({
+      responses: newResponses,
+      thetaByDim: newThetaByDim,
+      asked: newAsked,
+      current: lastQuestion || null
+    });
   };
 
   const handleStartQuiz = () => {
@@ -418,7 +452,6 @@ export default function Quiz() {
                 onClick={handleBack}
                 id="quiz-back-btn"
                 className="btn-ghost"
-                disabled={true}
               >
                 ← Back
               </button>

@@ -65,7 +65,7 @@ const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children }) => {
         <main className="app-main">
           <button className="crisis-btn">SOS · Talk to a human</button>
           {children}
-          <button className="amen-bubble">
+          <button onClick={() => router.push('/amen')} className="amen-bubble">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="12" cy="12" r="10"></circle>
             </svg>

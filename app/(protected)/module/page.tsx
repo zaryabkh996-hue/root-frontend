@@ -208,7 +208,7 @@ function ModuleContent() {
             </div>
             <div className="mt-5 pt-5 border-t border-brass/10">
               <div className="eyebrow eyebrow-cream mb-2">Need support?</div>
-              <button className="btn-ghost-dark w-full justify-center text-xs">Talk to Amen AI</button>
+              <button onClick={() => router.push('/amen')} className="btn-ghost-dark w-full justify-center text-xs">Talk to Amen AI</button>
             </div>
           </div>
         </div>
