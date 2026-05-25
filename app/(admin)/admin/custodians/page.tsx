@@ -10,6 +10,10 @@ interface Custodian {
   initials: string;
   name: string;
   location: string;
+  specialty: string;
+  status: string;
+  availability: string;
+  price_from: number;
   certification: string;
   cocStatus: string;
   reviewAvg: string;
@@ -93,7 +97,7 @@ export default function AdminCustodians() {
         headers: AuthService.getAuthHeaders(),
       });
 
-      console.log('Response status:', response.status);
+      console.log('Response status:', response);
       if (!response.ok) {
         throw new Error(`Failed to fetch custodians: ${response.statusText}`);
       }
@@ -135,34 +139,81 @@ export default function AdminCustodians() {
   };
 
   // Handle edit custodian
-  const handleEditCustodian = (custodian: Custodian) => {
+  const handleEditCustodian = async (custodian: Custodian) => {
     setEditingCustodian(custodian);
-    setFormData({
-      name: custodian.name,
-      email: '',
-      location: custodian.location,
-      country: '',
-      years_experience: 0,
-      specialty: '',
-      description: '',
-      price_from: 80,
-      availability: 'Available',
-      status: 'active',
-      certification: custodian.certification,
-      coc_status: custodian.cocStatus,
-      review_avg: parseFloat(custodian.reviewAvg),
-      sessions_count: parseInt(custodian.sessions),
-      about: '',
-      short_bio: '',
-      languages: [],
-      language_input: '',
-      services: [
-        { name: 'Free 15-min introduction', price: 0, description: 'Video call · meet, ask anything, no commitment' },
-        { name: 'Pre-trip preparation call', price: 80, description: '60 min · video · personalised plan for your visit' },
-        { name: 'Cape Coast accompaniment', price: 280, description: 'Full day in-person · castle visit + integration walk' },
-        { name: 'Post-trip integration', price: 60, description: '45 min · video · once you\'re home in the diaspora' },
-      ],
-    });
+    
+    // Fetch full custodian data from backend
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/admin/custodians/${custodian.id}`, {
+        method: 'GET',
+        headers: AuthService.getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const fullData = result.data || result; // Handle both wrapped and unwrapped responses
+        
+        setFormData({
+          name: fullData.name || '',
+          email: fullData.email || '',
+          location: fullData.location || '',
+          country: fullData.country || '',
+          years_experience: fullData.years_experience || 0,
+          specialty: fullData.specialty || '',
+          description: fullData.description || '',
+          price_from: fullData.price_from || 80,
+          availability: fullData.availability || 'Available',
+          status: fullData.status || 'active',
+          certification: fullData.certification || '',
+          coc_status: fullData.coc_status || '',
+          review_avg: fullData.review_avg || 5.0,
+          sessions_count: fullData.sessions_count || 0,
+          about: fullData.about || '',
+          short_bio: fullData.short_bio || '',
+          languages: fullData.languages && Array.isArray(fullData.languages) ? fullData.languages : [],
+          language_input: '',
+          services: (fullData.services && Array.isArray(fullData.services) && fullData.services.length > 0) ? fullData.services : [
+            { name: 'Free 15-min introduction', price: 0, description: 'Video call · meet, ask anything, no commitment' },
+            { name: 'Pre-trip preparation call', price: 80, description: '60 min · video · personalised plan for your visit' },
+            { name: 'Cape Coast accompaniment', price: 280, description: 'Full day in-person · castle visit + integration walk' },
+            { name: 'Post-trip integration', price: 60, description: '45 min · video · once you\'re home in the diaspora' },
+          ],
+        });
+      } else {
+        throw new Error(`Failed to fetch custodian details: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error fetching custodian details:', error);
+      // Fallback: populate with available data from list
+      setFormData({
+        name: custodian.name || '',
+        email: '',
+        location: custodian.location || '',
+        country: '',
+        years_experience: 0,
+        specialty: '',
+        description: '',
+        price_from: 80,
+        availability: 'Available',
+        status: 'active',
+        certification: custodian.certification || '',
+        coc_status: custodian.cocStatus || '',
+        review_avg: parseFloat(custodian.reviewAvg) || 5.0,
+        sessions_count: parseInt(custodian.sessions) || 0,
+        about: '',
+        short_bio: '',
+        languages: [],
+        language_input: '',
+        services: [
+          { name: 'Free 15-min introduction', price: 0, description: 'Video call · meet, ask anything, no commitment' },
+          { name: 'Pre-trip preparation call', price: 80, description: '60 min · video · personalised plan for your visit' },
+          { name: 'Cape Coast accompaniment', price: 280, description: 'Full day in-person · castle visit + integration walk' },
+          { name: 'Post-trip integration', price: 60, description: '45 min · video · once you\'re home in the diaspora' },
+        ],
+      });
+    }
+    
     setShowModal(true);
   };
 
@@ -176,17 +227,6 @@ export default function AdminCustodians() {
   const handleAddCustodian = async () => {
     setSubmitting(true);
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-
-      if (!token) {
-        console.error('No auth token found');
-        alert('No authentication token found. Please log in again.');
-        return;
-      }
-
-      console.log('Token exists:', !!token);
-      console.log('Token preview:', token.substring(0, 20) + '...');
-
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
       const url = editingCustodian
         ? `${backendUrl}/api/admin/custodians/${editingCustodian.id}`
@@ -194,27 +234,46 @@ export default function AdminCustodians() {
       
       const method = editingCustodian ? 'PUT' : 'POST';
 
+      // Clean form data - remove temporary fields like language_input
+      const cleanFormData = {
+        name: formData.name,
+        email: formData.email,
+        location: formData.location,
+        country: formData.country,
+        years_experience: formData.years_experience,
+        specialty: formData.specialty,
+        description: formData.description,
+        price_from: formData.price_from,
+        availability: formData.availability,
+        status: formData.status,
+        certification: formData.certification,
+        coc_status: formData.coc_status,
+        review_avg: formData.review_avg,
+        sessions_count: formData.sessions_count,
+        about: formData.about,
+        short_bio: formData.short_bio,
+        languages: formData.languages,
+        services: formData.services,
+      };
+
+      console.log('Sending to backend:', cleanFormData);
+
       const response = await fetch(url, {
         method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
+        headers: AuthService.getAuthHeaders(),
+        body: JSON.stringify(cleanFormData),
       });
 
-      console.log(`${editingCustodian ? 'Update' : 'Add'} custodian response status:`, response.status);
-      console.log('Response headers:', response.headers);
+      console.log(`${method} ${url} - Status:`, response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Backend error response:', errorData);
-        throw new Error(errorData.message || `Failed to ${editingCustodian ? 'update' : 'create'} custodian: ${response.statusText}`);
+        console.error('Backend error:', errorData);
+        throw new Error(errorData.details || errorData.error || errorData.message || `Failed to ${editingCustodian ? 'update' : 'create'} custodian: ${response.statusText}`);
       }
 
       const result = await response.json();
-      console.log(`Custodian ${editingCustodian ? 'updated' : 'created'}:`, result);
+      console.log('Success response:', result);
 
       // Reset form and close modal
       setFormData({
@@ -246,6 +305,9 @@ export default function AdminCustodians() {
       setShowModal(false);
       setEditingCustodian(null);
 
+      // Show success message
+      alert(`Custodian ${editingCustodian ? 'updated' : 'created'} successfully`);
+
       // Refresh custodians list
       fetchCustodians(1);
     } catch (error) {
@@ -265,7 +327,36 @@ export default function AdminCustodians() {
         </div>
         <button
           className="a-btn-primary"
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setEditingCustodian(null);
+            setFormData({
+              name: '',
+              email: '',
+              location: '',
+              country: '',
+              years_experience: 0,
+              specialty: '',
+              description: '',
+              price_from: 80,
+              availability: 'Available',
+              status: 'active',
+              certification: '',
+              coc_status: '',
+              review_avg: 5.0,
+              sessions_count: 0,
+              about: '',
+              short_bio: '',
+              languages: [],
+              language_input: '',
+              services: [
+                { name: 'Free 15-min introduction', price: 0, description: 'Video call · meet, ask anything, no commitment' },
+                { name: 'Pre-trip preparation call', price: 80, description: '60 min · video · personalised plan for your visit' },
+                { name: 'Cape Coast accompaniment', price: 280, description: 'Full day in-person · castle visit + integration walk' },
+                { name: 'Post-trip integration', price: 60, description: '45 min · video · once you\'re home in the diaspora' },
+              ],
+            });
+            setShowModal(true);
+          }}
           style={{ padding: '10px 16px', fontSize: '13px' }}
         >
           + Add Custodian
@@ -286,12 +377,12 @@ export default function AdminCustodians() {
       {/* Table with Loader */}
       <div className="a-table">
         {/* Table Header */}
-        <div className="a-table-head" style={{ gridTemplateColumns: '2fr 1.2fr 1.2fr 1fr 80px 100px' }}>
+        <div className="a-table-head" style={{ gridTemplateColumns: '2fr 1.3fr 1fr 1.2fr 1fr 100px' }}>
           <span>Custodian</span>
-          <span>Certification</span>
-          <span>CoC status</span>
-          <span>Review avg</span>
-          <span>Sessions</span>
+          <span>Specialty</span>
+          <span>Status</span>
+          <span>Availability</span>
+          <span>Price From</span>
           <span>Actions</span>
         </div>
 
@@ -344,7 +435,7 @@ export default function AdminCustodians() {
             <div
               key={custodian.id}
               className={`a-table-row ${custodian.highlight ? 'a-table-row-highlight' : ''} ${custodian.disabled ? 'a-table-row-disabled' : ''}`}
-              style={{ gridTemplateColumns: '2fr 1.2fr 1.2fr 1fr 80px 100px' }}
+              style={{ gridTemplateColumns: '2fr 1.3fr 1fr 1.2fr 1fr 100px' }}
             >
               {/* Custodian Cell */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -355,53 +446,66 @@ export default function AdminCustodians() {
                 </div>
               </div>
 
-              {/* Certification Cell */}
+              {/* Specialty Cell */}
               <div>
-                <span
-                  className={
-                    custodian.certBadgeType === 'ok'
-                      ? 'a-badge-ok'
-                      : custodian.certBadgeType === 'blue'
-                        ? 'a-badge-blue'
-                        : 'a-badge-gray'
-                  }
-                  style={{ fontSize: '9px' }}
-                >
-                  {custodian.certification}
+                <span style={{ fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+                  {custodian.specialty || '—'}
                 </span>
               </div>
 
-              {/* CoC Status Cell */}
+              {/* Status Cell */}
               <div>
                 <span
-                  className={
-                    custodian.cocBadgeType === 'ok'
-                      ? 'a-badge-ok'
-                      : custodian.cocBadgeType === 'warn'
-                        ? 'a-badge-warn'
-                        : 'a-badge-gray'
-                  }
-                  style={{ fontSize: '9px' }}
+                  style={{
+                    display: 'inline-block',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    textTransform: 'capitalize',
+                    background: 
+                      custodian.status === 'active' ? '#dcfce7' :
+                      custodian.status === 'inactive' ? '#fee2e2' :
+                      custodian.status === 'suspended' ? '#fef3c7' :
+                      custodian.status === 'pending' ? '#dbeafe' : '#f3f4f6',
+                    color:
+                      custodian.status === 'active' ? '#166534' :
+                      custodian.status === 'inactive' ? '#991b1b' :
+                      custodian.status === 'suspended' ? '#92400e' :
+                      custodian.status === 'pending' ? '#1e40af' : '#374151',
+                  }}
                 >
-                  {custodian.cocStatus}
+                  {custodian.status || 'active'}
                 </span>
               </div>
 
-              {/* Review Avg Cell */}
-              <div className="a-table-cell-review">{custodian.reviewAvg}</div>
+              {/* Availability Cell */}
+              <div>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    background: custodian.availability === 'Available' ? '#dcfce7' : '#fee2e2',
+                    color: custodian.availability === 'Available' ? '#166534' : '#991b1b',
+                  }}
+                >
+                  {custodian.availability || 'Available'}
+                </span>
+              </div>
 
-              {/* Sessions Cell */}
-              <div className="a-table-cell-sessions">{custodian.sessions}</div>
+              {/* Price From Cell */}
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+                  ${custodian.price_from || 0}
+                </span>
+              </div>
 
               {/* Actions Cell */}
               <div style={{ display: 'flex', gap: '4px' }}>
-                <button 
-                  onClick={() => handleViewCustodian(custodian)}
-                  className="a-btn-ghost" 
-                  style={{ padding: '4px 8px', fontSize: '11px' }}
-                >
-                  View
-                </button>
+                
                 <button
                   onClick={() => handleEditCustodian(custodian)}
                   className="a-btn-ghost"
@@ -492,7 +596,10 @@ export default function AdminCustodians() {
             justifyContent: 'center',
             zIndex: 1000,
           }}
-          onClick={() => setShowModal(false)}
+          onClick={() => {
+            setShowModal(false);
+            setEditingCustodian(null);
+          }}
         >
           <div
             style={{
@@ -958,7 +1065,10 @@ export default function AdminCustodians() {
               {/* Buttons */}
               <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
                 <button
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    setShowModal(false);
+                    setEditingCustodian(null);
+                  }}
                   className="a-btn-ghost"
                   style={{
                     flex: 1,
