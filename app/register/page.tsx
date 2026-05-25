@@ -33,7 +33,7 @@ export default function Register() {
     setIsSubmitting(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
       
       const response = await fetch(`${apiUrl}/auth/magic-link/send`, {
         method: 'POST',

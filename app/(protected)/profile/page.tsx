@@ -90,7 +90,7 @@ export default function ProfilePage() {
         setLoading(true);
         setError(null);
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
         console.log('[Profile Load] Fetching from:', `${apiUrl}/user/profile`);
         
         const response = await fetch(`${apiUrl}/user/profile`, {
@@ -143,7 +143,7 @@ export default function ProfilePage() {
   const loadJourneyPhotos = async () => {
     try {
       setPhotosLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
       console.log('[Journey Photos Load] Fetching from:', `${apiUrl}/user/journey-photos`);
       
       const response = await fetch(`${apiUrl}/user/journey-photos`, {
@@ -174,7 +174,7 @@ export default function ProfilePage() {
   const loadCertificateInfo = async () => {
     try {
       setCertificateLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
       const response = await fetch(`${apiUrl}/certificates/info`, {
         headers: AuthService.getAuthHeaders(),
       });
@@ -206,7 +206,7 @@ export default function ProfilePage() {
         [apiFieldName]: formValues[fieldName],
       };
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
       const response = await fetch(`${apiUrl}/user/profile`, {
         method: 'PUT',
         headers: AuthService.getAuthHeaders(),
@@ -240,7 +240,7 @@ export default function ProfilePage() {
       setSaving(true);
       setError(null);
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
       const response = await fetch(`${apiUrl}/user/profile`, {
         method: 'PUT',
         headers: AuthService.getAuthHeaders(),
@@ -277,7 +277,7 @@ export default function ProfilePage() {
       const currentIndex = cycle.indexOf(userProfile.bioPrivacy || 'public');
       const nextPrivacy = cycle[(currentIndex + 1) % cycle.length];
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
       const response = await fetch(`${apiUrl}/user/profile`, {
         method: 'PUT',
         headers: AuthService.getAuthHeaders(),
@@ -298,7 +298,7 @@ export default function ProfilePage() {
   const updateVisibility = async (newVisibility: string) => {
     try {
       setProfileVisibility(newVisibility);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
       await fetch(`${apiUrl}/user/profile`, {
         method: 'PUT',
         headers: AuthService.getAuthHeaders(),
@@ -315,7 +315,7 @@ export default function ProfilePage() {
   const updatePhotosDefault = async (newDefault: string) => {
     try {
       setPhotosDefault(newDefault);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
       await fetch(`${apiUrl}/user/profile`, {
         method: 'PUT',
         headers: AuthService.getAuthHeaders(),
@@ -354,7 +354,7 @@ export default function ProfilePage() {
       }
 
       console.log('[Profile Picture] 2. Headers:', headers);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
       console.log('[Profile Picture] 3. API URL:', apiUrl);
 
       const response = await fetch(`${apiUrl}/user/profile/picture`, {
@@ -400,7 +400,7 @@ export default function ProfilePage() {
     try {
       setError(null);
       // Refresh certificate info to get latest data
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
       const infoResponse = await fetch(`${apiUrl}/certificates/info`, {
         headers: AuthService.getAuthHeaders(),
       });
@@ -880,7 +880,7 @@ export default function ProfilePage() {
                       headers['Authorization'] = `Bearer ${token}`;
                     }
 
-                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
                     console.log('[Journey Photo Upload] 2. API URL:', apiUrl);
                     console.log('[Journey Photo Upload] 3. Headers:', headers);
                     console.log('[Journey Photo Upload] 4. FormData entries:', {

@@ -35,7 +35,7 @@ export default function CustodianBookingsPage() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
       const response = await fetch(`${backendUrl}/api/bookings/custodian-calendar`, {
         headers: AuthService.getAuthHeaders() as HeadersInit,
       });
@@ -62,7 +62,7 @@ export default function CustodianBookingsPage() {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
       const response = await fetch(`${backendUrl}/api/bookings/${bookingId}/cancel`, {
         method: 'POST',
         headers: AuthService.getAuthHeaders() as HeadersInit,

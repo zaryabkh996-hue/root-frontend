@@ -117,7 +117,7 @@ export default function CustodianProfilePage() {
     if (!id) return;
     const fetchCustodian = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
         const response = await fetch(`${backendUrl}/api/custodians/${id}`, {
           method: 'GET',
           headers: AuthService.getAuthHeaders(),

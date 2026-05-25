@@ -91,7 +91,7 @@ export default function AdminCustodians() {
         search: search,
       });
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
       const response = await fetch(`${backendUrl}/api/admin/custodians?${queryParams}`, {
         method: 'GET',
         headers: AuthService.getAuthHeaders(),
@@ -144,7 +144,7 @@ export default function AdminCustodians() {
     
     // Fetch full custodian data from backend
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
       const response = await fetch(`${backendUrl}/api/admin/custodians/${custodian.id}`, {
         method: 'GET',
         headers: AuthService.getAuthHeaders(),
@@ -227,7 +227,7 @@ export default function AdminCustodians() {
   const handleAddCustodian = async () => {
     setSubmitting(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
       const url = editingCustodian
         ? `${backendUrl}/api/admin/custodians/${editingCustodian.id}`
         : `${backendUrl}/api/admin/custodians`;

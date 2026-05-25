@@ -115,7 +115,7 @@ export default function HubDetailPage() {
   useEffect(() => {
     const fetchHubData = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
         
         // Fetch hub details
         const hubResponse = await fetch(
@@ -163,7 +163,7 @@ export default function HubDetailPage() {
     
     setJoiningHub(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
       
       const response = await fetch(
         `${backendUrl}/api/community/hubs/${hub.id}/join`,
@@ -206,7 +206,7 @@ export default function HubDetailPage() {
 
     setCreatingThread(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
       
       const response = await fetch(
         `${backendUrl}/api/community/threads`,
@@ -272,7 +272,7 @@ export default function HubDetailPage() {
     
     setJoiningForThread(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
       
       const response = await fetch(
         `${backendUrl}/api/community/hubs/${hub.id}/join`,

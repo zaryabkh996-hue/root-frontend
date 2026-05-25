@@ -41,7 +41,7 @@ export default function CustodiansPage() {
   useEffect(() => {
     const fetchCustodians = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
         const response = await fetch(
           `${backendUrl}/api/custodians?page=1&limit=100&country=${selectedCountry === 'All countries' ? '' : selectedCountry}&specialty=${selectedSpecialty === 'All specialties' ? '' : selectedSpecialty}&search=${searchTerm}`,
           {

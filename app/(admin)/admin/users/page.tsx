@@ -55,7 +55,7 @@ export default function AdminUsers() {
         search: search,
       });
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
       const headers = AuthService.getAuthHeaders();
 
       const response = await fetch(`${backendUrl}/api/admin/users?${queryParams}`, {

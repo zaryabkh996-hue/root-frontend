@@ -43,7 +43,7 @@ export default function ThreadDetailPage() {
   useEffect(() => {
     const fetchThreadData = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
         
         // Fetch thread details
         const threadResponse = await fetch(
@@ -115,7 +115,7 @@ export default function ThreadDetailPage() {
     
     setIsSubmitting(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
       
       const response = await fetch(
         `${backendUrl}/api/community/replies`,

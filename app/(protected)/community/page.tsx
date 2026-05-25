@@ -47,7 +47,7 @@ export default function CommunityPage() {
   useEffect(() => {
     const fetchCommunityData = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
         
         // Fetch hubs
         const hubsResponse = await fetch(
@@ -113,7 +113,7 @@ export default function CommunityPage() {
     
     setJoiningHub(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
       
       const response = await fetch(
         `${backendUrl}/api/community/hubs/${selectedHub.id}/join`,

@@ -47,7 +47,7 @@ export default function CustodianClients() {
       try {
         setLoading(true);
         const headers = AuthService.getAuthHeaders();
-        const response = await fetch('http://localhost:8000/api/bookings/custodian-calendar', { headers });
+        const response = await fetch('https://spectacular-wisdom-production-dfac.up.railway.app/api/bookings/custodian-calendar', { headers });
         
         if (!response.ok) throw new Error('Failed to fetch bookings');
         
@@ -116,7 +116,7 @@ export default function CustodianClients() {
     try {
       setConfirmingId(bookingId);
       const headers = AuthService.getAuthHeaders();
-      const response = await fetch(`http://localhost:8000/api/bookings/${bookingId}`, {
+      const response = await fetch(`https://spectacular-wisdom-production-dfac.up.railway.app/api/bookings/${bookingId}`, {
         method: 'PUT',
         headers: {
           ...headers,

@@ -56,7 +56,7 @@ export default function OAuthSuccess() {
         // Save quiz data if it exists
         if (quizData && backendUser && typeof backendUser === 'object' && 'id' in backendUser) {
           try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
             await fetch(`${apiUrl}/auth/save-quiz-data`, {
               method: 'POST',
               headers: AuthService.getAuthHeaders(),
@@ -102,7 +102,7 @@ export default function OAuthSuccess() {
           // Save quiz data if it exists
           if (quizData && data.backendUser?.id) {
             try {
-              const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+              const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
               await fetch(`${apiUrl}/auth/save-quiz-data`, {
                 method: 'POST',
                 headers: AuthService.getAuthHeaders(),

@@ -18,7 +18,7 @@ export async function GET() {
     if (!backendToken && session.user?.sub && session.user?.email) {
       try {
         const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+          process.env.NEXT_PUBLIC_API_URL ?? "https://spectacular-wisdom-production-dfac.up.railway.app/api";
 
         const res = await fetch(`${apiUrl}/auth/register-oauth`, {
           method: "POST",
