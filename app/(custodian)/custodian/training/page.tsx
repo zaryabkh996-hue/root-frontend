@@ -311,7 +311,7 @@ export default function CustodianTraining() {
               <CertificationScenario
                 key={scenario.num}
                 scenario={scenario}
-                onAnswer={(isCorrect, feedback) => handleScenarioAnswer(`s${scenario.num}`, isCorrect, feedback)}
+                onAnswer={(isCorrect: boolean, feedback: string) => handleScenarioAnswer(`s${scenario.num}`, isCorrect, feedback)}
               />
             ))}
 

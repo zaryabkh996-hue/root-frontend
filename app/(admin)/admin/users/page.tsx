@@ -137,7 +137,7 @@ export default function AdminUsers() {
           <span>Phase</span>
           <span>Stage</span>
           <span>Score</span>
-          <span>Actions</span>
+          {/* <span>Actions</span> */}
         </div>
 
         {/* Loader or Table Rows */}
@@ -217,7 +217,7 @@ export default function AdminUsers() {
               <div className="a-table-cell-score">{user.score}</div>
 
               {/* Actions Cell */}
-              <div style={{ display: 'flex', gap: '4px' }}>
+              {/* <div style={{ display: 'flex', gap: '4px' }}>
                 <button className="a-btn-ghost" style={{ padding: '4px 8px', fontSize: '11px' }}>
                   View
                 </button>
@@ -232,7 +232,7 @@ export default function AdminUsers() {
                 >
                   Flag
                 </button>
-              </div>
+              </div> */}
             </div>
           ))
         )}

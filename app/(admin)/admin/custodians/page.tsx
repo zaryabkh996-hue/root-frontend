@@ -36,6 +36,7 @@ export default function AdminCustodians() {
   const [total, setTotal] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [editingCustodian, setEditingCustodian] = useState<Custodian | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -46,11 +47,11 @@ export default function AdminCustodians() {
     description: '',
     price_from: 80,
     availability: 'Available',
+    status: 'active',
     certification: '',
     coc_status: '',
     review_avg: 5.0,
     sessions_count: 0,
-    // New fields for profile
     about: '',
     short_bio: '',
     languages: [] as string[],
@@ -60,10 +61,6 @@ export default function AdminCustodians() {
       { name: 'Pre-trip preparation call', price: 80, description: '60 min · video · personalised plan for your visit' },
       { name: 'Cape Coast accompaniment', price: 280, description: 'Full day in-person · castle visit + integration walk' },
       { name: 'Post-trip integration', price: 60, description: '45 min · video · once you\'re home in the diaspora' },
-    ],
-    testimonials: [
-      { quote: '', author: '', location: '', date: '' },
-      { quote: '', author: '', location: '', date: '' },
     ],
   });
   const [submitting, setSubmitting] = useState(false);
@@ -137,6 +134,44 @@ export default function AdminCustodians() {
     }
   };
 
+  // Handle edit custodian
+  const handleEditCustodian = (custodian: Custodian) => {
+    setEditingCustodian(custodian);
+    setFormData({
+      name: custodian.name,
+      email: '',
+      location: custodian.location,
+      country: '',
+      years_experience: 0,
+      specialty: '',
+      description: '',
+      price_from: 80,
+      availability: 'Available',
+      status: 'active',
+      certification: custodian.certification,
+      coc_status: custodian.cocStatus,
+      review_avg: parseFloat(custodian.reviewAvg),
+      sessions_count: parseInt(custodian.sessions),
+      about: '',
+      short_bio: '',
+      languages: [],
+      language_input: '',
+      services: [
+        { name: 'Free 15-min introduction', price: 0, description: 'Video call · meet, ask anything, no commitment' },
+        { name: 'Pre-trip preparation call', price: 80, description: '60 min · video · personalised plan for your visit' },
+        { name: 'Cape Coast accompaniment', price: 280, description: 'Full day in-person · castle visit + integration walk' },
+        { name: 'Post-trip integration', price: 60, description: '45 min · video · once you\'re home in the diaspora' },
+      ],
+    });
+    setShowModal(true);
+  };
+
+  // Handle view custodian
+  const handleViewCustodian = (custodian: Custodian) => {
+    // Redirect to custodian detail page or open read-only modal
+    router.push(`/admin/custodians/${custodian.id}`);
+  };
+
   // Handle add custodian
   const handleAddCustodian = async () => {
     setSubmitting(true);
@@ -153,8 +188,14 @@ export default function AdminCustodians() {
       console.log('Token preview:', token.substring(0, 20) + '...');
 
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-      const response = await fetch(`${backendUrl}/api/admin/custodians`, {
-        method: 'POST',
+      const url = editingCustodian
+        ? `${backendUrl}/api/admin/custodians/${editingCustodian.id}`
+        : `${backendUrl}/api/admin/custodians`;
+      
+      const method = editingCustodian ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -163,17 +204,17 @@ export default function AdminCustodians() {
         body: JSON.stringify(formData),
       });
 
-      console.log('Add custodian response status:', response.status);
+      console.log(`${editingCustodian ? 'Update' : 'Add'} custodian response status:`, response.status);
       console.log('Response headers:', response.headers);
 
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Backend error response:', errorData);
-        throw new Error(errorData.message || `Failed to create custodian: ${response.statusText}`);
+        throw new Error(errorData.message || `Failed to ${editingCustodian ? 'update' : 'create'} custodian: ${response.statusText}`);
       }
 
       const result = await response.json();
-      console.log('Custodian created:', result);
+      console.log(`Custodian ${editingCustodian ? 'updated' : 'created'}:`, result);
 
       // Reset form and close modal
       setFormData({
@@ -186,6 +227,7 @@ export default function AdminCustodians() {
         description: '',
         price_from: 80,
         availability: 'Available',
+        status: 'active',
         certification: '',
         coc_status: '',
         review_avg: 5.0,
@@ -200,18 +242,15 @@ export default function AdminCustodians() {
           { name: 'Cape Coast accompaniment', price: 280, description: 'Full day in-person · castle visit + integration walk' },
           { name: 'Post-trip integration', price: 60, description: '45 min · video · once you\'re home in the diaspora' },
         ],
-        testimonials: [
-          { quote: '', author: '', location: '', date: '' },
-          { quote: '', author: '', location: '', date: '' },
-        ],
       });
       setShowModal(false);
+      setEditingCustodian(null);
 
       // Refresh custodians list
       fetchCustodians(1);
     } catch (error) {
-      console.error('Error adding custodian:', error);
-      alert(`Failed to add custodian: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(`Error ${editingCustodian ? 'updating' : 'adding'} custodian:`, error);
+      alert(`Failed to ${editingCustodian ? 'update' : 'add'} custodian: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setSubmitting(false);
     }
@@ -356,10 +395,15 @@ export default function AdminCustodians() {
 
               {/* Actions Cell */}
               <div style={{ display: 'flex', gap: '4px' }}>
-                <button className="a-btn-ghost" style={{ padding: '4px 8px', fontSize: '11px' }}>
+                <button 
+                  onClick={() => handleViewCustodian(custodian)}
+                  className="a-btn-ghost" 
+                  style={{ padding: '4px 8px', fontSize: '11px' }}
+                >
                   View
                 </button>
                 <button
+                  onClick={() => handleEditCustodian(custodian)}
                   className="a-btn-ghost"
                   style={{ padding: '4px 8px', fontSize: '11px', color: '#d97706', borderColor: '#fcd34d' }}
                 >
@@ -464,7 +508,7 @@ export default function AdminCustodians() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '20px', color: '#111' }}>
-              Add New Custodian
+              {editingCustodian ? 'Edit Custodian' : 'Add New Custodian'}
             </h2>
 
             {/* Form */}
@@ -642,6 +686,30 @@ export default function AdminCustodians() {
                     <option value="Booked">Booked</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                  Status *
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="suspended">Suspended</option>
+                  <option value="pending">Pending</option>
+                </select>
               </div>
 
               {/* Description */}
@@ -887,113 +955,6 @@ export default function AdminCustodians() {
                 ))}
               </div>
 
-              {/* ─── TESTIMONIALS ─── */}
-              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px', marginTop: '16px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: '#9ca3af', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Testimonials
-                </div>
-
-                {formData.testimonials.map((testimonial, idx) => (
-                  <div key={idx} style={{ marginBottom: '16px', padding: '12px', background: '#f9fafb', borderRadius: '6px' }}>
-                    <div style={{ marginBottom: '8px' }}>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: '#6b7280' }}>
-                        Quote {idx + 1}
-                      </label>
-                      <textarea
-                        value={testimonial.quote}
-                        onChange={(e) => {
-                          const updated = [...formData.testimonials];
-                          updated[idx].quote = e.target.value;
-                          setFormData({ ...formData, testimonials: updated });
-                        }}
-                        placeholder="Testimonial quote..."
-                        rows={2}
-                        style={{
-                          width: '100%',
-                          padding: '8px 10px',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '4px',
-                          fontSize: '12px',
-                          fontFamily: 'inherit',
-                          resize: 'none',
-                        }}
-                      />
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: '#6b7280' }}>
-                          Author
-                        </label>
-                        <input
-                          type="text"
-                          value={testimonial.author}
-                          onChange={(e) => {
-                            const updated = [...formData.testimonials];
-                            updated[idx].author = e.target.value;
-                            setFormData({ ...formData, testimonials: updated });
-                          }}
-                          placeholder="Initials (J.M.)"
-                          style={{
-                            width: '100%',
-                            padding: '8px 10px',
-                            border: '1px solid #e5e7eb',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            fontFamily: 'inherit',
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: '#6b7280' }}>
-                          Location
-                        </label>
-                        <input
-                          type="text"
-                          value={testimonial.location}
-                          onChange={(e) => {
-                            const updated = [...formData.testimonials];
-                            updated[idx].location = e.target.value;
-                            setFormData({ ...formData, testimonials: updated });
-                          }}
-                          placeholder="City"
-                          style={{
-                            width: '100%',
-                            padding: '8px 10px',
-                            border: '1px solid #e5e7eb',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            fontFamily: 'inherit',
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: '#6b7280' }}>
-                          Date
-                        </label>
-                        <input
-                          type="text"
-                          value={testimonial.date}
-                          onChange={(e) => {
-                            const updated = [...formData.testimonials];
-                            updated[idx].date = e.target.value;
-                            setFormData({ ...formData, testimonials: updated });
-                          }}
-                          placeholder="Apr 2026"
-                          style={{
-                            width: '100%',
-                            padding: '8px 10px',
-                            border: '1px solid #e5e7eb',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            fontFamily: 'inherit',
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
               {/* Buttons */}
               <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
                 <button
@@ -1019,7 +980,7 @@ export default function AdminCustodians() {
                     cursor: submitting ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  {submitting ? 'Adding...' : 'Add Custodian'}
+                  {submitting ? (editingCustodian ? 'Updating...' : 'Adding...') : (editingCustodian ? 'Update Custodian' : 'Add Custodian')}
                 </button>
               </div>
             </div>
