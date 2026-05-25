@@ -45,6 +45,7 @@ export default function VerifyClient() {
         if (typeof window !== 'undefined') {
           localStorage.setItem('authToken', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.setItem('userRole', data.user.role);
         }
 
         setState('success');

@@ -39,6 +39,7 @@ export default function Register() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           email,
@@ -48,6 +49,7 @@ export default function Register() {
         })
       });
 
+      console.log('Magic link response:', response);
       const data = await response.json();
 
       if (!response.ok) {

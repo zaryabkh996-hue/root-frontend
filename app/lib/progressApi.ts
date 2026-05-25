@@ -2,19 +2,12 @@
 // All calls go to the Laravel backend with the Sanctum Bearer token.
 // Failures are silent (returns null / false) so the UI is never blocked.
 
+import { AuthService } from './authService';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('authToken');
-}
-
 function authHeaders(): HeadersInit {
-  const token = getToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+  return AuthService.getAuthHeaders();
 }
 
 // ── Shape returned from the backend ────────────────────────────────────────
@@ -34,9 +27,6 @@ export interface RemoteProgress {
 
 // ── Fetch progress from DB ──────────────────────────────────────────────────
 export async function fetchRemoteProgress(): Promise<RemoteProgress | null> {
-  const token = getToken();
-  if (!token) return null;
-
   try {
     const res = await fetch(`${API_BASE_URL}/progress`, {
       headers: authHeaders(),
@@ -51,9 +41,6 @@ export async function fetchRemoteProgress(): Promise<RemoteProgress | null> {
 
 // ── Full progress sync (used on initial save and periodically) ──────────────
 export async function syncProgressToServer(payload: Partial<RemoteProgress>): Promise<void> {
-  const token = getToken();
-  if (!token) return;
-
   try {
     await fetch(`${API_BASE_URL}/progress`, {
       method: 'PUT',
@@ -73,9 +60,6 @@ export async function remoteCompleteModule(payload: {
   completed_stages: number[];
   afro_score: number;
 }): Promise<void> {
-  const token = getToken();
-  if (!token) return;
-
   try {
     await fetch(`${API_BASE_URL}/progress/complete-module`, {
       method: 'POST',
@@ -89,9 +73,6 @@ export async function remoteCompleteModule(payload: {
 
 // ── Save journal entry ─────────────────────────────────────────────────────
 export async function remoteSetJournal(moduleId: string, text: string): Promise<void> {
-  const token = getToken();
-  if (!token) return;
-
   try {
     await fetch(`${API_BASE_URL}/progress/journal/${encodeURIComponent(moduleId)}`, {
       method: 'PUT',
@@ -105,9 +86,6 @@ export async function remoteSetJournal(moduleId: string, text: string): Promise<
 
 // ── Save feedback (reaction) ───────────────────────────────────────────────
 export async function remoteSetFeedback(moduleId: string, key: string): Promise<void> {
-  const token = getToken();
-  if (!token) return;
-
   try {
     await fetch(`${API_BASE_URL}/progress/feedback/${encodeURIComponent(moduleId)}`, {
       method: 'PUT',

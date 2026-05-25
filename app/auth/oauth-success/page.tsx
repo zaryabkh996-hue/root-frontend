@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AuthService } from '@/app/lib/authService';
 
 function readCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
@@ -58,9 +59,7 @@ export default function OAuthSuccess() {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
             await fetch(`${apiUrl}/auth/save-quiz-data`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+              headers: AuthService.getAuthHeaders(),
               body: JSON.stringify({
                 user_id: (backendUser as Record<string, any>).id,
                 quiz_data: quizData
@@ -98,6 +97,7 @@ export default function OAuthSuccess() {
           localStorage.setItem('authToken', data.backendToken);
           localStorage.setItem('user', JSON.stringify(data.backendUser ?? data.user));
           localStorage.setItem('oauth_user', 'true');
+          localStorage.setItem('userRole', data.user.role);
 
           // Save quiz data if it exists
           if (quizData && data.backendUser?.id) {
@@ -105,9 +105,7 @@ export default function OAuthSuccess() {
               const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
               await fetch(`${apiUrl}/auth/save-quiz-data`, {
                 method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
+                headers: AuthService.getAuthHeaders(),
                 body: JSON.stringify({
                   user_id: data.backendUser.id,
                   quiz_data: quizData

@@ -18,7 +18,20 @@ const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children }) => {
     const checkAuthentication = async () => {
       // First check localStorage (magic link users) - instant, no loading
       const token = localStorage.getItem('authToken');
-      if (token) {
+      const role = localStorage.getItem('userRole');
+
+      // Role-based routing - redirect admin and custodian users
+      if (token && role === 'admin') {
+        router.push('/admin/dashboard');
+        return;
+      }
+
+      if (token && role === 'custodian') {
+        router.push('/custodian/dashboard');
+        return;
+      }
+
+      if (token && role === 'customer') {
         setIsAuthenticated(true);
         return;
       }
@@ -38,6 +51,22 @@ const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children }) => {
               );
               localStorage.setItem('oauth_user', 'true');
             }
+
+            // Check backend role and redirect if needed
+            const backendRole = data.backendUser?.role;
+            if (backendRole === 'admin') {
+              localStorage.setItem('userRole', 'admin');
+              router.push('/admin/dashboard');
+              return;
+            }
+
+            if (backendRole === 'custodian') {
+              localStorage.setItem('userRole', 'custodian');
+              router.push('/custodian/dashboard');
+              return;
+            }
+
+            // For customer or no role - allow access to protected layout
             setIsAuthenticated(true);
             return;
           }

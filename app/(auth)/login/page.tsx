@@ -2,17 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { log } from 'console';
 
 export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [stage, setStage] = useState<'form' | 'sent'>('form');
+  const [stage, setStage] = useState<'form' | 'sent' | 'not-found'>('form');
   const [error, setError] = useState('');
+  const [errorCode, setErrorCode] = useState('');
+  const [guidance, setGuidance] = useState<any>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setErrorCode('');
+    setGuidance(null);
     setIsSubmitting(true);
 
     try {
@@ -25,11 +30,20 @@ export default function Login() {
         },
         body: JSON.stringify({ email })
       });
+      console.log(response);
+      
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || 'Failed to send magic link');
+        // Check if it's a user not found error
+        if (data.code === 'USER_NOT_FOUND') {
+          setErrorCode('USER_NOT_FOUND');
+          setGuidance(data.guidance);
+          setStage('not-found');
+        } else {
+          setError(data.message || 'Failed to send magic link');
+        }
         setIsSubmitting(false);
         return;
       }
@@ -49,6 +63,8 @@ export default function Login() {
     // Reset and allow resubmit
     setStage('form');
     setError('');
+    setErrorCode('');
+    setGuidance(null);
   };
 
   return (
@@ -128,6 +144,54 @@ export default function Login() {
             <p className="text-xs text-cream/50 text-center">
               Don't have an account? <button onClick={() => router.push('/quiz')} className="text-brass-light hover:text-brass underline">Create one</button>
             </p>
+          </>
+        ) : stage === 'not-found' ? (
+          <>
+            {/* Account Not Found Stage */}
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-rose/20 flex items-center justify-center mx-auto mb-6">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--rose)" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              </div>
+
+              <h2 className="display text-3xl font-light mb-3">Account not found</h2>
+              
+              <p className="text-cream/70 mb-8 leading-relaxed">
+                No account registered with <strong className="text-brass-light">{email}</strong>
+              </p>
+
+              {/* Guidance Container */}
+              <div className="space-y-4 mb-8">
+                {/* For Customers */}
+                <div className="scard-dark p-6 text-left border-l-2 border-brass">
+                  <h3 className="text-brass-light font-semibold text-sm mb-2">👥 If you're a Customer</h3>
+                  <p className="text-cream/80 text-sm mb-4">{guidance?.customer}</p>
+                  <button
+                    onClick={() => router.push('/quiz')}
+                    className="btn-primary-small"
+                  >
+                    Start the Quiz
+                  </button>
+                </div>
+
+                {/* For Custodians/Admin */}
+                <div className="scard-dark p-6 text-left border-l-2 border-brass">
+                  <h3 className="text-brass-light font-semibold text-sm mb-2">🔑 If you're a Custodian/Admin</h3>
+                  <p className="text-cream/80 text-sm mb-4">{guidance?.custodian}</p>
+                 
+                </div>
+              </div>
+
+              <button
+                onClick={handleResendEmail}
+                className="btn-ghost-dark w-full"
+              >
+                Try a Different Email
+              </button>
+            </div>
           </>
         ) : (
           <>
@@ -226,6 +290,28 @@ export default function Login() {
         .btn-secondary:hover {
           border-color: var(--brass);
           color: var(--brass-light);
+        }
+
+        .btn-primary-small {
+          background: var(--brass);
+          color: var(--forest-deepest);
+          border: none;
+          padding: 8px 16px;
+          border-radius: 3px;
+          font-family: inherit;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          transition: all 0.2s;
+          text-decoration: none;
+        }
+
+        .btn-primary-small:hover {
+          background: var(--brass-light);
         }
 
         .btn-ghost-dark {

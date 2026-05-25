@@ -1,0 +1,1031 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { AuthService } from '@/app/lib/authService';
+import { log } from 'console';
+
+interface Custodian {
+  id: number;
+  initials: string;
+  name: string;
+  location: string;
+  certification: string;
+  cocStatus: string;
+  reviewAvg: string;
+  sessions: string;
+  certBadgeType: 'ok' | 'blue' | 'gray';
+  cocBadgeType: 'ok' | 'warn' | 'gray';
+  highlight?: boolean;
+  disabled?: boolean;
+}
+
+interface PaginationData {
+  custodians: Custodian[];
+  total: number;
+  currentPage: number;
+  totalPages: number;
+}
+
+export default function AdminCustodians() {
+  const router = useRouter();
+  const [custodians, setCustodians] = useState<Custodian[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    location: '',
+    country: '',
+    years_experience: 0,
+    specialty: '',
+    description: '',
+    price_from: 80,
+    availability: 'Available',
+    certification: '',
+    coc_status: '',
+    review_avg: 5.0,
+    sessions_count: 0,
+    // New fields for profile
+    about: '',
+    short_bio: '',
+    languages: [] as string[],
+    language_input: '',
+    services: [
+      { name: 'Free 15-min introduction', price: 0, description: 'Video call · meet, ask anything, no commitment' },
+      { name: 'Pre-trip preparation call', price: 80, description: '60 min · video · personalised plan for your visit' },
+      { name: 'Cape Coast accompaniment', price: 280, description: 'Full day in-person · castle visit + integration walk' },
+      { name: 'Post-trip integration', price: 60, description: '45 min · video · once you\'re home in the diaspora' },
+    ],
+    testimonials: [
+      { quote: '', author: '', location: '', date: '' },
+      { quote: '', author: '', location: '', date: '' },
+    ],
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const itemsPerPage = 10;
+
+  // Fetch custodians from backend
+  const fetchCustodians = async (page: number = 1, search: string = '') => {
+    setLoading(true);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+
+      if (!token) {
+        console.error('No auth token found');
+        setCustodians([]);
+        setTotal(0);
+        setTotalPages(1);
+        setLoading(false);
+        return;
+      }
+
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: itemsPerPage.toString(),
+        search: search,
+      });
+
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/admin/custodians?${queryParams}`, {
+        method: 'GET',
+        headers: AuthService.getAuthHeaders(),
+      });
+
+      console.log('Response status:', response.status);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch custodians: ${response.statusText}`);
+      }
+
+      const data: PaginationData = await response.json();
+      setCustodians(data.custodians);
+      setTotal(data.total);
+      setCurrentPage(data.currentPage);
+      setTotalPages(data.totalPages);
+    } catch (error) {
+      console.error('Error fetching custodians:', error);
+      setCustodians([]);
+      setTotal(0);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    fetchCustodians(1);
+  }, []);
+
+  // Handle search
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    setCurrentPage(1);
+    fetchCustodians(1, query);
+  };
+
+  // Handle pagination
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      fetchCustodians(page, searchQuery);
+    }
+  };
+
+  // Handle add custodian
+  const handleAddCustodian = async () => {
+    setSubmitting(true);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+
+      if (!token) {
+        console.error('No auth token found');
+        alert('No authentication token found. Please log in again.');
+        return;
+      }
+
+      console.log('Token exists:', !!token);
+      console.log('Token preview:', token.substring(0, 20) + '...');
+
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/admin/custodians`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      console.log('Add custodian response status:', response.status);
+      console.log('Response headers:', response.headers);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Backend error response:', errorData);
+        throw new Error(errorData.message || `Failed to create custodian: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Custodian created:', result);
+
+      // Reset form and close modal
+      setFormData({
+        name: '',
+        email: '',
+        location: '',
+        country: '',
+        years_experience: 0,
+        specialty: '',
+        description: '',
+        price_from: 80,
+        availability: 'Available',
+        certification: '',
+        coc_status: '',
+        review_avg: 5.0,
+        sessions_count: 0,
+        about: '',
+        short_bio: '',
+        languages: [],
+        language_input: '',
+        services: [
+          { name: 'Free 15-min introduction', price: 0, description: 'Video call · meet, ask anything, no commitment' },
+          { name: 'Pre-trip preparation call', price: 80, description: '60 min · video · personalised plan for your visit' },
+          { name: 'Cape Coast accompaniment', price: 280, description: 'Full day in-person · castle visit + integration walk' },
+          { name: 'Post-trip integration', price: 60, description: '45 min · video · once you\'re home in the diaspora' },
+        ],
+        testimonials: [
+          { quote: '', author: '', location: '', date: '' },
+          { quote: '', author: '', location: '', date: '' },
+        ],
+      });
+      setShowModal(false);
+
+      // Refresh custodians list
+      fetchCustodians(1);
+    } catch (error) {
+      console.error('Error adding custodian:', error);
+      alert(`Failed to add custodian: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="admin-main">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <div>
+          <div className="admin-eyebrow">Custodian Management</div>
+          <h1 className="admin-page-title">{total} Custodians</h1>
+        </div>
+        <button
+          className="a-btn-primary"
+          onClick={() => setShowModal(true)}
+          style={{ padding: '10px 16px', fontSize: '13px' }}
+        >
+          + Add Custodian
+        </button>
+      </div>
+
+      {/* Search */}
+      <div className="a-search-bar">
+        <input
+          type="text"
+          placeholder="Search by name or location…"
+          className="a-search-input"
+          value={searchQuery}
+          onChange={handleSearch}
+        />
+      </div>
+
+      {/* Table with Loader */}
+      <div className="a-table">
+        {/* Table Header */}
+        <div className="a-table-head" style={{ gridTemplateColumns: '2fr 1.2fr 1.2fr 1fr 80px 100px' }}>
+          <span>Custodian</span>
+          <span>Certification</span>
+          <span>CoC status</span>
+          <span>Review avg</span>
+          <span>Sessions</span>
+          <span>Actions</span>
+        </div>
+
+        {/* Loader or Table Rows */}
+        {loading ? (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '40px 20px',
+              minHeight: '300px',
+            }}
+          >
+            <div style={{ textAlign: 'center' }}>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  border: '3px solid #e5e7eb',
+                  borderTop: '3px solid #111827',
+                  borderRadius: '50%',
+                  animation: 'spin 0.8s linear infinite',
+                  margin: '0 auto 12px',
+                }}
+              />
+              <p style={{ fontSize: '13px', color: '#6b7280' }}>Loading custodians...</p>
+              <style>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}</style>
+            </div>
+          </div>
+        ) : custodians.length === 0 ? (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: '40px 20px',
+              minHeight: '300px',
+            }}
+          >
+            <p style={{ fontSize: '13px', color: '#9ca3af' }}>No custodians found</p>
+          </div>
+        ) : (
+          custodians.map((custodian) => (
+            <div
+              key={custodian.id}
+              className={`a-table-row ${custodian.highlight ? 'a-table-row-highlight' : ''} ${custodian.disabled ? 'a-table-row-disabled' : ''}`}
+              style={{ gridTemplateColumns: '2fr 1.2fr 1.2fr 1fr 80px 100px' }}
+            >
+              {/* Custodian Cell */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="avatar">{custodian.initials}</div>
+                <div>
+                  <div className="a-table-cell-name">{custodian.name}</div>
+                  <div className="a-table-cell-sub">{custodian.location}</div>
+                </div>
+              </div>
+
+              {/* Certification Cell */}
+              <div>
+                <span
+                  className={
+                    custodian.certBadgeType === 'ok'
+                      ? 'a-badge-ok'
+                      : custodian.certBadgeType === 'blue'
+                        ? 'a-badge-blue'
+                        : 'a-badge-gray'
+                  }
+                  style={{ fontSize: '9px' }}
+                >
+                  {custodian.certification}
+                </span>
+              </div>
+
+              {/* CoC Status Cell */}
+              <div>
+                <span
+                  className={
+                    custodian.cocBadgeType === 'ok'
+                      ? 'a-badge-ok'
+                      : custodian.cocBadgeType === 'warn'
+                        ? 'a-badge-warn'
+                        : 'a-badge-gray'
+                  }
+                  style={{ fontSize: '9px' }}
+                >
+                  {custodian.cocStatus}
+                </span>
+              </div>
+
+              {/* Review Avg Cell */}
+              <div className="a-table-cell-review">{custodian.reviewAvg}</div>
+
+              {/* Sessions Cell */}
+              <div className="a-table-cell-sessions">{custodian.sessions}</div>
+
+              {/* Actions Cell */}
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button className="a-btn-ghost" style={{ padding: '4px 8px', fontSize: '11px' }}>
+                  View
+                </button>
+                <button
+                  className="a-btn-ghost"
+                  style={{ padding: '4px 8px', fontSize: '11px', color: '#d97706', borderColor: '#fcd34d' }}
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && !loading && (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: '24px',
+            padding: '16px 0',
+          }}
+        >
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="a-btn-ghost"
+            style={{
+              padding: '6px 12px',
+              fontSize: '12px',
+              opacity: currentPage === 1 ? 0.5 : 1,
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+            }}
+          >
+            ← Previous
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => handlePageChange(page)}
+              style={{
+                padding: '6px 10px',
+                fontSize: '12px',
+                border: page === currentPage ? '1px solid #111827' : '1px solid #e5e7eb',
+                background: page === currentPage ? '#111827' : '#ffffff',
+                color: page === currentPage ? '#ffffff' : '#111827',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: page === currentPage ? 600 : 400,
+              }}
+            >
+              {page}
+            </button>
+          ))}
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="a-btn-ghost"
+            style={{
+              padding: '6px 12px',
+              fontSize: '12px',
+              opacity: currentPage === totalPages ? 0.5 : 1,
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Next →
+          </button>
+
+          <span style={{ fontSize: '12px', color: '#9ca3af', marginLeft: '12px' }}>
+            Page {currentPage} of {totalPages}
+          </span>
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '8px',
+              padding: '28px',
+              maxWidth: '700px',
+              width: '90%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '20px', color: '#111' }}>
+              Add New Custodian
+            </h2>
+
+            {/* Form */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Name */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="E.g., Akosua O."
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontFamily: 'inherit',
+                  }}
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="E.g., akosua@example.com"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontFamily: 'inherit',
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                  Location *
+                </label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="E.g., Accra"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontFamily: 'inherit',
+                  }}
+                />
+              </div>
+
+              {/* Country */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                  Country *
+                </label>
+                <input
+                  type="text"
+                  value={formData.country}
+                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                  placeholder="E.g., Ghana"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontFamily: 'inherit',
+                  }}
+                />
+              </div>
+
+              {/* Years Experience */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                    Years Experience *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.years_experience}
+                    onChange={(e) => setFormData({ ...formData, years_experience: parseInt(e.target.value) })}
+                    placeholder="0"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                </div>
+
+                {/* Specialty */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                    Specialty *
+                  </label>
+                  <select
+                    value={formData.specialty}
+                    onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    <option value="">Select specialty</option>
+                    <option value="Heritage sites">Heritage sites</option>
+                    <option value="Naming ceremony">Naming ceremony</option>
+                    <option value="Genealogy">Genealogy</option>
+                    <option value="Language">Language</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Price From */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                    Price From *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.price_from}
+                    onChange={(e) => setFormData({ ...formData, price_from: parseFloat(e.target.value) })}
+                    placeholder="80"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                </div>
+
+                {/* Availability */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                    Availability
+                  </label>
+                  <select
+                    value={formData.availability}
+                    onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    <option value="Available">Available</option>
+                    <option value="Booked">Booked</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                  Description *
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Add custodian description..."
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontFamily: 'inherit',
+                    resize: 'none',
+                  }}
+                />
+              </div>
+
+              {/* Review Avg */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                  Review Average
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={formData.review_avg}
+                  onChange={(e) => setFormData({ ...formData, review_avg: parseFloat(e.target.value) })}
+                  placeholder="5.0"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontFamily: 'inherit',
+                  }}
+                />
+              </div>
+
+              {/* ─── PROFILE PAGE FIELDS ─── */}
+              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px', marginTop: '16px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: '#9ca3af', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Profile Information
+                </div>
+
+                {/* Short Bio / Quote */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                    Short Bio (Quote) *
+                  </label>
+                  <textarea
+                    value={formData.short_bio}
+                    onChange={(e) => setFormData({ ...formData, short_bio: e.target.value })}
+                    placeholder="E.g., 'I have walked relatives through the Door of No Return more than two hundred times...'"
+                    rows={2}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontFamily: 'inherit',
+                      resize: 'none',
+                    }}
+                  />
+                </div>
+
+                {/* About */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151', marginTop: '12px' }}>
+                    About Section *
+                  </label>
+                  <textarea
+                    value={formData.about}
+                    onChange={(e) => setFormData({ ...formData, about: e.target.value })}
+                    placeholder="Detailed about section including education, training, and specializations..."
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontFamily: 'inherit',
+                      resize: 'none',
+                    }}
+                  />
+                </div>
+
+                {/* Languages - Multiple Select */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151', marginTop: '12px' }}>
+                    Languages *
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <input
+                      type="text"
+                      value={formData.language_input}
+                      onChange={(e) => setFormData({ ...formData, language_input: e.target.value })}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && formData.language_input.trim()) {
+                          setFormData({
+                            ...formData,
+                            languages: [...formData.languages, formData.language_input.trim()],
+                            language_input: '',
+                          });
+                        }
+                      }}
+                      placeholder="Type language and press Enter"
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                        fontFamily: 'inherit',
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {formData.languages.map((lang, idx) => (
+                      <span
+                        key={idx}
+                        style={{
+                          background: '#111827',
+                          color: '#ffffff',
+                          padding: '4px 10px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        {lang}
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, languages: formData.languages.filter((_, i) => i !== idx) })}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#ffffff',
+                            cursor: 'pointer',
+                            padding: 0,
+                            fontSize: '16px',
+                          }}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── SERVICES ─── */}
+              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px', marginTop: '16px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: '#9ca3af', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Services & Pricing
+                </div>
+
+                {formData.services.map((service, idx) => (
+                  <div key={idx} style={{ marginBottom: '16px', padding: '12px', background: '#f9fafb', borderRadius: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '12px', marginBottom: '8px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: '#6b7280' }}>
+                          Service Name
+                        </label>
+                        <input
+                          type="text"
+                          value={service.name}
+                          onChange={(e) => {
+                            const updated = [...formData.services];
+                            updated[idx].name = e.target.value;
+                            setFormData({ ...formData, services: updated });
+                          }}
+                          placeholder="Service name"
+                          style={{
+                            width: '100%',
+                            padding: '8px 10px',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontFamily: 'inherit',
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: '#6b7280' }}>
+                          Price ($)
+                        </label>
+                        <input
+                          type="number"
+                          value={service.price}
+                          onChange={(e) => {
+                            const updated = [...formData.services];
+                            updated[idx].price = parseFloat(e.target.value);
+                            setFormData({ ...formData, services: updated });
+                          }}
+                          placeholder="0"
+                          style={{
+                            width: '100%',
+                            padding: '8px 10px',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontFamily: 'inherit',
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: '#6b7280' }}>
+                        Description
+                      </label>
+                      <input
+                        type="text"
+                        value={service.description}
+                        onChange={(e) => {
+                          const updated = [...formData.services];
+                          updated[idx].description = e.target.value;
+                          setFormData({ ...formData, services: updated });
+                        }}
+                        placeholder="Service description"
+                        style={{
+                          width: '100%',
+                          padding: '8px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          fontFamily: 'inherit',
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* ─── TESTIMONIALS ─── */}
+              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '16px', marginTop: '16px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: '#9ca3af', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Testimonials
+                </div>
+
+                {formData.testimonials.map((testimonial, idx) => (
+                  <div key={idx} style={{ marginBottom: '16px', padding: '12px', background: '#f9fafb', borderRadius: '6px' }}>
+                    <div style={{ marginBottom: '8px' }}>
+                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: '#6b7280' }}>
+                        Quote {idx + 1}
+                      </label>
+                      <textarea
+                        value={testimonial.quote}
+                        onChange={(e) => {
+                          const updated = [...formData.testimonials];
+                          updated[idx].quote = e.target.value;
+                          setFormData({ ...formData, testimonials: updated });
+                        }}
+                        placeholder="Testimonial quote..."
+                        rows={2}
+                        style={{
+                          width: '100%',
+                          padding: '8px 10px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          fontFamily: 'inherit',
+                          resize: 'none',
+                        }}
+                      />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: '#6b7280' }}>
+                          Author
+                        </label>
+                        <input
+                          type="text"
+                          value={testimonial.author}
+                          onChange={(e) => {
+                            const updated = [...formData.testimonials];
+                            updated[idx].author = e.target.value;
+                            setFormData({ ...formData, testimonials: updated });
+                          }}
+                          placeholder="Initials (J.M.)"
+                          style={{
+                            width: '100%',
+                            padding: '8px 10px',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontFamily: 'inherit',
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: '#6b7280' }}>
+                          Location
+                        </label>
+                        <input
+                          type="text"
+                          value={testimonial.location}
+                          onChange={(e) => {
+                            const updated = [...formData.testimonials];
+                            updated[idx].location = e.target.value;
+                            setFormData({ ...formData, testimonials: updated });
+                          }}
+                          placeholder="City"
+                          style={{
+                            width: '100%',
+                            padding: '8px 10px',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontFamily: 'inherit',
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: '#6b7280' }}>
+                          Date
+                        </label>
+                        <input
+                          type="text"
+                          value={testimonial.date}
+                          onChange={(e) => {
+                            const updated = [...formData.testimonials];
+                            updated[idx].date = e.target.value;
+                            setFormData({ ...formData, testimonials: updated });
+                          }}
+                          placeholder="Apr 2026"
+                          style={{
+                            width: '100%',
+                            padding: '8px 10px',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontFamily: 'inherit',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="a-btn-ghost"
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    fontSize: '13px',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddCustodian}
+                  disabled={submitting}
+                  className="a-btn-primary"
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    fontSize: '13px',
+                    opacity: submitting ? 0.7 : 1,
+                    cursor: submitting ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {submitting ? 'Adding...' : 'Add Custodian'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

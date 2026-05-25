@@ -17,6 +17,9 @@ const Sidebar: React.FC = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('oauth_user');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('ourroots_progress');
     router.push('/login');
   };
 

@@ -111,6 +111,12 @@ export class AuthService {
   static logout(): void {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
+
+    localStorage.removeItem('token');
+ 
+    localStorage.removeItem('oauth_user');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('ourroots_progress');
   }
 
   static getToken(): string | null {
@@ -130,5 +136,14 @@ export class AuthService {
 
   static isAuthenticated(): boolean {
     return !!this.getToken();
+  }
+
+  static getAuthHeaders(): HeadersInit {
+    const token = this.getToken();
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+    };
   }
 }

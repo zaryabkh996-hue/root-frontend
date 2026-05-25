@@ -1,3 +1,5 @@
+import HeaderAuthButtons from './components/HeaderAuthButtons';
+
 export default async function Home() {
   return (
     <div>
@@ -19,9 +21,7 @@ export default async function Home() {
             <a href="#faq" className="ul-link text-cream/80 hover:text-cream hidden lg:inline">FAQ</a>
           </nav>
           <div className="flex items-center gap-2" style={{flexShrink:0}}>
-          
-            <a href="/login" className="btn-secondary inline-flex" style={{padding:'8px 14px',fontSize:'13px',whiteSpace:'nowrap'}}>Login →</a>
-            <a href="/quiz" className="btn-primary inline-flex" style={{padding:'8px 14px',fontSize:'13px',whiteSpace:'nowrap'}}>Begin →</a>
+            <HeaderAuthButtons />
           </div>
         </div>
       </header>
