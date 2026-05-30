@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CustodianSidebar from './CustodianSidebar';
+import { useNotification } from '@/app/lib/NotificationContext';
 
 interface CustodianLayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ interface CustodianLayoutProps {
 
 const CustodianLayout: React.FC<CustodianLayoutProps> = ({ children }) => {
   const router = useRouter();
+  const { notification, hideNotification } = useNotification();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -76,6 +78,50 @@ const CustodianLayout: React.FC<CustodianLayoutProps> = ({ children }) => {
 
   return (
     <div className="cust-screen">
+      {/* Notification */}
+      {notification && (
+        <div 
+          className={`a-alert ${notification.type === 'error' ? 'a-alert-high' : notification.type === 'info' ? 'a-alert-med' : 'a-alert-low'}`}
+          style={{ 
+            position: 'fixed', 
+            top: '20px', 
+            right: '20px', 
+            zIndex: 2000, 
+            minWidth: '300px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            animation: 'slideIn 0.3s ease-out'
+          }}
+        >
+          <div className="a-alert-title" style={{ textTransform: 'capitalize' }}>
+            {notification.type === 'success' ? '✓ Success' : notification.type === 'error' ? '⚠ Error' : 'ℹ Info'}
+          </div>
+          <div className="a-alert-sub" style={{ color: '#111', marginBottom: 0 }}>
+            {notification.message}
+          </div>
+          <button 
+            onClick={hideNotification}
+            style={{ 
+              position: 'absolute', 
+              top: '10px', 
+              right: '10px', 
+              background: 'none', 
+              border: 'none', 
+              cursor: 'pointer',
+              fontSize: '16px',
+              color: '#6b7280'
+            }}
+          >
+            ×
+          </button>
+          <style>{`
+            @keyframes slideIn {
+              from { transform: translateX(100%); opacity: 0; }
+              to { transform: translateX(0); opacity: 1; }
+            }
+          `}</style>
+        </div>
+      )}
+
       <div className="cust-shell">
         <CustodianSidebar />
         <main className="cust-main">

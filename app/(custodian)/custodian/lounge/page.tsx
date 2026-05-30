@@ -1,24 +1,206 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { AuthService } from '@/app/lib/authService';
+import { useNotification } from '@/app/lib/NotificationContext';
+
+interface Post {
+  id: number;
+  content: string;
+  category: 'question' | 'tip' | 'discussion';
+  likes_count: number;
+  replies_count: number;
+  isLiked: boolean;
+  created_at: string;
+  user: {
+    id: number;
+    name: string;
+    location: string;
+    country: string;
+    certification: string;
+  };
+  replies: any[];
+}
+
+interface LoungeStats {
+  totalMembers: number;
+  activeToday: number;
+  userStats: {
+    posts: number;
+    replies: number;
+    likes_received: number;
+  };
+}
 
 export default function CustodianLounge() {
+  const { showNotification } = useNotification();
   const [composeText, setComposeText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'question' | 'tip' | 'discussion'>('question');
-  const [likes, setLikes] = useState({ post1: 14, post2: 22, post3: 31 });
+  
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [stats, setStats] = useState<LoungeStats | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [submittingReply, setSubmittingReply] = useState(false);
 
-  const toggleLike = (postId: string) => {
-    setLikes(prev => ({
-      ...prev,
-      [postId]: (prev[postId as keyof typeof prev] || 0) + 1
-    }));
+  const fetchPosts = useCallback(async (page: number) => {
+    try {
+      setLoading(true);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const response = await fetch(`${backendUrl}/api/lounge/posts?page=${page}`, {
+        headers: AuthService.getAuthHeaders(),
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch posts');
+
+      const data = await response.json();
+      setPosts(data.posts);
+      setTotalPages(data.totalPages);
+      setCurrentPage(data.currentPage);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      showNotification('Failed to load posts', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [showNotification]);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const response = await fetch(`${backendUrl}/api/lounge/stats`, {
+        headers: AuthService.getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setCurrentUser(JSON.parse(userData));
+    }
+    fetchPosts(1);
+    fetchStats();
+  }, [fetchPosts, fetchStats]);
+
+  const toggleLike = async (postId: number) => {
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const response = await fetch(`${backendUrl}/api/lounge/posts/${postId}/like`, {
+        method: 'POST',
+        headers: AuthService.getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPosts(prev => prev.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              likes_count: data.likes_count,
+              isLiked: data.isLiked
+            };
+          }
+          return post;
+        }));
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
   };
 
-  const handlePost = () => {
-    if (composeText.trim()) {
-      console.log('Post created:', { text: composeText, category: selectedCategory });
-      setComposeText('');
+  const handleReply = async (postId: number) => {
+    if (!replyText.trim()) return;
+
+    try {
+      setSubmittingReply(true);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const response = await fetch(`${backendUrl}/api/lounge/posts/${postId}/replies`, {
+        method: 'POST',
+        headers: AuthService.getAuthHeaders(),
+        body: JSON.stringify({ content: replyText }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPosts(prev => prev.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              replies_count: post.replies_count + 1,
+              replies: [...(post.replies || []), data.reply]
+            };
+          }
+          return post;
+        }));
+        setReplyText('');
+        setReplyingTo(null);
+        showNotification('Reply posted successfully');
+        fetchStats();
+      } else {
+        throw new Error('Failed to post reply');
+      }
+    } catch (error) {
+      console.error('Error posting reply:', error);
+      showNotification('Failed to post reply', 'error');
+    } finally {
+      setSubmittingReply(false);
     }
+  };
+
+  const handlePost = async () => {
+    if (!composeText.trim()) return;
+
+    try {
+      setSubmitting(true);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const response = await fetch(`${backendUrl}/api/lounge/posts`, {
+        method: 'POST',
+        headers: AuthService.getAuthHeaders(),
+        body: JSON.stringify({
+          content: composeText,
+          category: selectedCategory
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPosts(prev => [data.post, ...prev]);
+        setComposeText('');
+        showNotification('Post shared successfully');
+        fetchStats(); // Update user stats
+      } else {
+        throw new Error('Failed to create post');
+      }
+    } catch (error) {
+      showNotification('Failed to share post', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hrs ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return date.toLocaleDateString();
   };
 
   return (
@@ -49,7 +231,7 @@ export default function CustodianLounge() {
           <div className="c-card c-card-pad" style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
               <div className="avatar avatar-photo" style={{ width: '36px', height: '36px', fontSize: '13px', border: '2px solid rgba(201,161,74,0.5)', flexShrink: 0 }}>
-                A
+                {currentUser?.name?.charAt(0) || 'C'}
               </div>
               <div style={{ flex: 1 }}>
                 <textarea
@@ -87,6 +269,7 @@ export default function CustodianLounge() {
                     ))}
                   </div>
                   <button
+                    disabled={submitting || !composeText.trim()}
                     onClick={handlePost}
                     style={{
                       background: '#c9a14a',
@@ -96,239 +279,214 @@ export default function CustodianLounge() {
                       borderRadius: '20px',
                       fontSize: '12px',
                       fontWeight: 600,
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      opacity: submitting || !composeText.trim() ? 0.6 : 1
                     }}
                   >
-                    Post
+                    {submitting ? 'Posting...' : 'Post'}
                   </button>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Post 1 */}
-          <div className="c-card c-card-pad" style={{ marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#2d6a4f', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', color: '#f0ebe0', flexShrink: 0 }}>
-                K
-              </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>Kwame Asante</span>
-                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#16a34a', padding: '2px 8px', borderRadius: '20px', background: 'rgba(22,163,74,0.1)' }}>
-                    ✓ Senior Custodian
-                  </span>
-                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '20px', background: '#dbeafe', color: '#1d4ed8', fontWeight: 600 }}>
-                    Question
-                  </span>
-                </div>
-                <div style={{ fontSize: '11px', color: '#8a7f72' }}>
-                  Kumasi, Ghana · 2 hrs ago
-                </div>
-              </div>
+          {loading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
+              <div className="a-loader"></div>
             </div>
-            <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 14px', lineHeight: '1.6' }}>
-              Has anyone found a good way to handle diaspora clients who arrive with strong preconceptions about what "authentic" Ghanaian food means? I had a client who was disappointed that we use gas stoves in homes now, not open fire. How do you navigate that conversation without making them feel corrected?
-            </p>
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '14px' }}>
-              <button
-                onClick={() => toggleLike('post1')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  color: '#8a7f72',
-                  padding: 0
-                }}
-              >
-                👍 {likes.post1}
-              </button>
-              <button
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  color: '#8a7f72',
-                  padding: 0
-                }}
-              >
-                💬 Reply (8)
-              </button>
-              <button
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  color: '#8a7f72',
-                  padding: 0
-                }}
-              >
-                🔖 Save
-              </button>
+          ) : posts.length === 0 ? (
+            <div className="c-card c-card-pad" style={{ textAlign: 'center', color: '#8a7f72', fontSize: '13px' }}>
+              No posts found. Start the conversation!
             </div>
-            <div style={{ paddingTop: '14px', borderTop: '1px solid #f0ebe0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#c9a14a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#fff', flexShrink: 0 }}>
-                  A
-                </div>
-                <div style={{ background: '#f9f6f0', borderRadius: '6px', padding: '10px', flex: 1 }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#1a1a1a', marginBottom: '4px' }}>
-                    Akosua Owusu-Ansah <span style={{ fontWeight: 400, color: '#8a7f72' }}>· 1 hr ago</span>
+          ) : (
+            <>
+              {posts.map((post) => (
+                <div key={post.id} className="c-card c-card-pad" style={{ marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                    <div style={{ 
+                      width: '36px', height: '36px', borderRadius: '50%', 
+                      background: post.user?.id % 3 === 0 ? '#2d6a4f' : post.user?.id % 3 === 1 ? '#8a4f2d' : '#4a2d8a', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', color: '#f0ebe0', flexShrink: 0 
+                    }}>
+                      {post.user?.name?.charAt(0) || 'C'}
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>{post.user?.name}</span>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#16a34a', padding: '2px 8px', borderRadius: '20px', background: 'rgba(22,163,74,0.1)' }}>
+                          ✓ {post.user?.certification || 'Certified Custodian'}
+                        </span>
+                        <span style={{ 
+                          fontSize: '10px', padding: '2px 8px', borderRadius: '20px', 
+                          background: post.category === 'question' ? '#dbeafe' : post.category === 'tip' ? '#dcfce7' : '#fef9c3',
+                          color: post.category === 'question' ? '#1d4ed8' : post.category === 'tip' ? '#16a34a' : '#b45309',
+                          fontWeight: 600 
+                        }}>
+                          {post.category.charAt(0).toUpperCase() + post.category.slice(1)}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#8a7f72' }}>
+                        {post.user?.location}, {post.user?.country} · {getTimeAgo(post.created_at)}
+                      </div>
+                    </div>
                   </div>
-                  <p style={{ fontSize: '12px', color: '#374151', margin: 0, lineHeight: '1.5' }}>
-                    I frame it as "this is how we live now — which is itself part of the story." The journey is about real life, not a museum exhibit.
+                  <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 14px', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+                    {post.content}
                   </p>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#4e5c8a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#fff', flexShrink: 0 }}>
-                  E
-                </div>
-                <div style={{ background: '#f9f6f0', borderRadius: '6px', padding: '10px', flex: 1 }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#1a1a1a', marginBottom: '4px' }}>
-                    Esi Mensah <span style={{ fontWeight: 400, color: '#8a7f72' }}>· 45 min ago</span>
+                  <div style={{ display: 'flex', gap: '16px', marginBottom: '14px' }}>
+                    <button
+                      onClick={() => toggleLike(post.id)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        color: post.isLiked ? '#c9a14a' : '#8a7f72',
+                        padding: 0,
+                        fontWeight: post.isLiked ? 600 : 400,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill={post.isLiked ? '#c9a14a' : 'none'} stroke={post.isLiked ? '#c9a14a' : '#8a7f72'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+                      </svg>
+                      {post.likes_count}
+                    </button>
+                    <button
+                      onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        color: replyingTo === post.id ? '#c9a14a' : '#8a7f72',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={replyingTo === post.id ? '#c9a14a' : '#8a7f72'} strokeWidth="2">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                      </svg>
+                      Reply ({post.replies_count})
+                    </button>
+                    <button
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        color: '#8a7f72',
+                        padding: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8a7f72" strokeWidth="2">
+                        <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                      </svg>
+                      Save
+                    </button>
                   </div>
-                  <p style={{ fontSize: '12px', color: '#374151', margin: 0, lineHeight: '1.5' }}>
-                    Agreed. I ask early — "what does home mean to you?" — so expectations are shaped before arrival.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Post 2 */}
-          <div className="c-card c-card-pad" style={{ marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#8a4f2d', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', color: '#f0ebe0', flexShrink: 0 }}>
-                F
-              </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>Fatou Diallo</span>
-                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#16a34a', padding: '2px 8px', borderRadius: '20px', background: 'rgba(22,163,74,0.1)' }}>
-                    ✓ Certified Custodian
-                  </span>
-                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '20px', background: '#dcfce7', color: '#16a34a', fontWeight: 600 }}>
-                    Tip
-                  </span>
-                </div>
-                <div style={{ fontSize: '11px', color: '#8a7f72' }}>
-                  Dakar, Senegal · 5 hrs ago
-                </div>
-              </div>
-            </div>
-            <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 14px', lineHeight: '1.6' }}>
-              💡 <strong>Knowledge Bank tip:</strong> I uploaded a 6-minute audio on Wolof greeting protocols — it has generated 89 Amen AI citations this month. Audio + context notes outperform text-only. Short, specific submissions work best.
-            </p>
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <button
-                onClick={() => toggleLike('post2')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  color: '#8a7f72',
-                  padding: 0
-                }}
-              >
-                👍 {likes.post2}
-              </button>
-              <button
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  color: '#8a7f72',
-                  padding: 0
-                }}
-              >
-                💬 Reply (4)
-              </button>
-              <button
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  color: '#c9a14a',
-                  padding: 0,
-                  fontWeight: 600
-                }}
-              >
-                + Contribute knowledge →
-              </button>
-            </div>
-          </div>
+                  {/* Reply Input */}
+                  {replyingTo === post.id && (
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '14px', paddingLeft: '20px' }}>
+                      <div className="avatar avatar-photo" style={{ width: '32px', height: '32px', fontSize: '12px', border: '2px solid rgba(201,161,74,0.5)', flexShrink: 0 }}>
+                        {currentUser?.name?.charAt(0) || 'C'}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <textarea
+                          className="c-field"
+                          rows={2}
+                          placeholder="Write your reply..."
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          style={{ resize: 'none', fontSize: '12px' }}
+                        />
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'flex-end' }}>
+                          <button
+                            onClick={() => { setReplyingTo(null); setReplyText(''); }}
+                            style={{
+                              background: 'transparent',
+                              border: '1px solid #d8d0c3',
+                              color: '#8a7f72',
+                              padding: '5px 12px',
+                              borderRadius: '16px',
+                              fontSize: '11px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handleReply(post.id)}
+                            disabled={submittingReply || !replyText.trim()}
+                            style={{
+                              background: '#c9a14a',
+                              border: 'none',
+                              color: '#fff',
+                              padding: '5px 12px',
+                              borderRadius: '16px',
+                              fontSize: '11px',
+                              cursor: submittingReply || !replyText.trim() ? 'not-allowed' : 'pointer',
+                              opacity: submittingReply || !replyText.trim() ? 0.6 : 1
+                            }}
+                          >
+                            {submittingReply ? 'Posting...' : 'Post Reply'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-          {/* Post 3 */}
-          <div className="c-card c-card-pad">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#4a2d8a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', color: '#f0ebe0', flexShrink: 0 }}>
-                O
-              </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>Olumide Adeyemi</span>
-                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#16a34a', padding: '2px 8px', borderRadius: '20px', background: 'rgba(22,163,74,0.1)' }}>
-                    ✓ Certified Custodian
-                  </span>
-                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '20px', background: '#fef9c3', color: '#b45309', fontWeight: 600 }}>
-                    Discussion
-                  </span>
+                  {/* Display Replies */}
+                  {post.replies && post.replies.length > 0 && (
+                    <div style={{ marginLeft: '20px', paddingLeft: '15px',borderTop: '1px solid #e8e3d9',paddingTop: '10px' }}>
+                      {post.replies.map((reply: any, idx: number) => (
+                        <div key={idx} style={{ marginBottom: '10px', padding: '10px', background: '#f9f6f0', borderRadius: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#1a1a1a' }}>{reply.user?.name || 'Anonymous'}</span>
+                            <span style={{ fontSize: '10px', color: '#8a7f72' }}>· {getTimeAgo(reply.created_at)}</span>
+                          </div>
+                          <p style={{ fontSize: '12px', color: '#374151', margin: 0, lineHeight: '1.5' }}>{reply.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div style={{ fontSize: '11px', color: '#8a7f72' }}>
-                  Lagos, Nigeria · Yesterday
+              ))}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '20px' }}>
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => fetchPosts(currentPage - 1)}
+                    className="a-btn-ghost"
+                    style={{ padding: '6px 12px', fontSize: '12px' }}
+                  >
+                    Previous
+                  </button>
+                  <span style={{ fontSize: '13px', color: '#8a7f72', alignSelf: 'center' }}>
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => fetchPosts(currentPage + 1)}
+                    className="a-btn-ghost"
+                    style={{ padding: '6px 12px', fontSize: '12px' }}
+                  >
+                    Next
+                  </button>
                 </div>
-              </div>
-            </div>
-            <p style={{ fontSize: '13px', color: '#374151', margin: '0 0 14px', lineHeight: '1.6' }}>
-              The Custodian Lounge separation from client hubs is the right call. We need a space to talk openly — what's working, what clients struggle with, how to improve our craft. What would you all want to discuss here regularly?
-            </p>
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <button
-                onClick={() => toggleLike('post3')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  color: '#8a7f72',
-                  padding: 0
-                }}
-              >
-                👍 {likes.post3}
-              </button>
-              <button
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  color: '#8a7f72',
-                  padding: 0
-                }}
-              >
-                💬 Reply (17)
-              </button>
-              <button
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  color: '#8a7f72',
-                  padding: 0
-                }}
-              >
-                🔖 Save
-              </button>
-            </div>
-          </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -339,27 +497,10 @@ export default function CustodianLounge() {
               Lounge Members
             </div>
             <div style={{ fontSize: '22px', fontWeight: 700, color: '#c9a14a', fontFamily: "'JetBrains Mono', monospace" }}>
-              47
+              {stats?.totalMembers || '...'}
             </div>
             <div style={{ fontSize: '11px', color: '#8a7f72', marginTop: '2px' }}>
-              Verified Custodians · 12 active today
-            </div>
-            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {[
-                { initial: 'K', name: 'Kwame Asante', location: 'Ghana' },
-                { initial: 'F', name: 'Fatou Diallo', location: 'Senegal' },
-                { initial: 'O', name: 'Olumide Adeyemi', location: 'Nigeria' }
-              ].map((member, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#374151' }}>
-                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: ['#2d6a4f', '#8a4f2d', '#4a2d8a'][idx], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#fff' }}>
-                    {member.initial}
-                  </div>
-                  {member.name} · {member.location}
-                </div>
-              ))}
-              <div style={{ fontSize: '11px', color: '#c9a14a', cursor: 'pointer', marginTop: '4px' }}>
-                See all 47 →
-              </div>
+              Verified Custodians · {stats?.activeToday || '0'} active today
             </div>
           </div>
 
@@ -399,10 +540,10 @@ export default function CustodianLounge() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
               {[
-                { label: 'Posts', value: '12', color: '#1a1a1a' },
-                { label: 'Replies', value: '34', color: '#1a1a1a' },
-                { label: 'Helpful votes', value: '187', color: '#c9a14a' },
-                { label: 'Rank', value: 'Top 15%', color: '#2d6a4f' }
+                { label: 'Posts', value: stats?.userStats?.posts || '0', color: '#1a1a1a' },
+                { label: 'Replies', value: stats?.userStats?.replies || '0', color: '#1a1a1a' },
+                { label: 'Likes received', value: stats?.userStats?.likes_received || '0', color: '#c9a14a' },
+                { label: 'Standing', value: '✓ Good', color: '#2d6a4f' }
               ].map((stat, idx) => (
                 <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#8a7f72' }}>{stat.label}</span>

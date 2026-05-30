@@ -47,7 +47,8 @@ export default function CustodianClients() {
       try {
         setLoading(true);
         const headers = AuthService.getAuthHeaders();
-        const response = await fetch('https://spectacular-wisdom-production-dfac.up.railway.app/api/bookings/custodian-calendar', { headers });
+         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+        const response = await fetch(`${backendUrl}/api/bookings/custodian-calendar`, { headers });
         
         if (!response.ok) throw new Error('Failed to fetch bookings');
         

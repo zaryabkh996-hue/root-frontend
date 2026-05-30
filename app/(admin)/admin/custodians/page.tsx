@@ -3,7 +3,28 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthService } from '@/app/lib/authService';
+import { useNotification } from '@/app/lib/NotificationContext';
 import { log } from 'console';
+
+const COUNTRY_DATA: Record<string, string[]> = {
+  'Ghana': ['Accra', 'Cape Coast', 'Kumasi', 'Elmina', 'Tamale', 'Takoradi'],
+  'Nigeria': ['Lagos', 'Abuja', 'Port Harcourt', 'Ibadan', 'Benin City'],
+  'Senegal': ['Dakar', 'Saint-Louis', 'Touba', 'Thiès'],
+  'Kenya': ['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru'],
+  'South Africa': ['Cape Town', 'Johannesburg', 'Durban', 'Pretoria'],
+  'Ethiopia': ['Addis Ababa', 'Gondar', 'Lalibela', 'Axum'],
+  'Egypt': ['Cairo', 'Alexandria', 'Luxor', 'Aswan'],
+  'Morocco': ['Casablanca', 'Marrakech', 'Fes', 'Rabat'],
+  'Tanzania': ['Dar es Salaam', 'Zanzibar City', 'Arusha', 'Dodoma'],
+  'Benin': ['Cotonou', 'Porto-Novo', 'Ouidah'],
+  'Gambia': ['Banjul', 'Serekunda', 'Bakau'],
+};
+
+const COMMON_LANGUAGES = [
+  'English', 'French', 'Portuguese', 'Arabic', 'Swahili', 'Yoruba', 'Igbo', 
+  'Hausa', 'Zulu', 'Xhosa', 'Shona', 'Amharic', 'Oromo', 'Somali', 
+  'Twi', 'Ga', 'Ewe', 'Fante', 'Wolof', 'Bambara', 'Lingala', 'Kinyarwanda'
+];
 
 interface Custodian {
   id: number;
@@ -13,10 +34,8 @@ interface Custodian {
   specialty: string;
   status: string;
   availability: string;
-  price_from: number;
   certification: string;
   cocStatus: string;
-  reviewAvg: string;
   sessions: string;
   certBadgeType: 'ok' | 'blue' | 'gray';
   cocBadgeType: 'ok' | 'warn' | 'gray';
@@ -33,6 +52,7 @@ interface PaginationData {
 
 export default function AdminCustodians() {
   const router = useRouter();
+  const { showNotification } = useNotification();
   const [custodians, setCustodians] = useState<Custodian[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -49,17 +69,17 @@ export default function AdminCustodians() {
     years_experience: 0,
     specialty: '',
     description: '',
-    price_from: 80,
     availability: 'Available',
     status: 'active',
     certification: '',
     coc_status: '',
-    review_avg: 5.0,
     sessions_count: 0,
     about: '',
     short_bio: '',
+    whatsapp: '',
+    instagram: '',
+    linkedin: '',
     languages: [] as string[],
-    language_input: '',
     services: [
       { name: 'Free 15-min introduction', price: 0, description: 'Video call · meet, ask anything, no commitment' },
       { name: 'Pre-trip preparation call', price: 80, description: '60 min · video · personalised plan for your visit' },
@@ -162,17 +182,17 @@ export default function AdminCustodians() {
           years_experience: fullData.years_experience || 0,
           specialty: fullData.specialty || '',
           description: fullData.description || '',
-          price_from: fullData.price_from || 80,
           availability: fullData.availability || 'Available',
           status: fullData.status || 'active',
           certification: fullData.certification || '',
           coc_status: fullData.coc_status || '',
-          review_avg: fullData.review_avg || 5.0,
           sessions_count: fullData.sessions_count || 0,
           about: fullData.about || '',
           short_bio: fullData.short_bio || '',
+          whatsapp: fullData.whatsapp || '',
+          instagram: fullData.instagram || '',
+          linkedin: fullData.linkedin || '',
           languages: fullData.languages && Array.isArray(fullData.languages) ? fullData.languages : [],
-          language_input: '',
           services: (fullData.services && Array.isArray(fullData.services) && fullData.services.length > 0) ? fullData.services : [
             { name: 'Free 15-min introduction', price: 0, description: 'Video call · meet, ask anything, no commitment' },
             { name: 'Pre-trip preparation call', price: 80, description: '60 min · video · personalised plan for your visit' },
@@ -194,17 +214,17 @@ export default function AdminCustodians() {
         years_experience: 0,
         specialty: '',
         description: '',
-        price_from: 80,
         availability: 'Available',
         status: 'active',
         certification: custodian.certification || '',
         coc_status: custodian.cocStatus || '',
-        review_avg: parseFloat(custodian.reviewAvg) || 5.0,
         sessions_count: parseInt(custodian.sessions) || 0,
         about: '',
         short_bio: '',
+        whatsapp: '',
+        instagram: '',
+        linkedin: '',
         languages: [],
-        language_input: '',
         services: [
           { name: 'Free 15-min introduction', price: 0, description: 'Video call · meet, ask anything, no commitment' },
           { name: 'Pre-trip preparation call', price: 80, description: '60 min · video · personalised plan for your visit' },
@@ -223,6 +243,38 @@ export default function AdminCustodians() {
     router.push(`/admin/custodians/${custodian.id}`);
   };
 
+  // Handle delete custodian
+  const handleDeleteCustodian = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this custodian? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const response = await fetch(`${backendUrl}/api/admin/custodians/${id}`, {
+        method: 'DELETE',
+        headers: AuthService.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to delete custodian: ${response.statusText}`);
+      }
+
+      showNotification('Custodian deleted successfully');
+      
+      // If we're on a page that now has no items, go back a page
+      if (custodians.length === 1 && currentPage > 1) {
+        fetchCustodians(currentPage - 1, searchQuery);
+      } else {
+        fetchCustodians(currentPage, searchQuery);
+      }
+    } catch (error) {
+      console.error('Error deleting custodian:', error);
+      showNotification(`Failed to delete custodian: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
+    }
+  };
+
   // Handle add custodian
   const handleAddCustodian = async () => {
     setSubmitting(true);
@@ -234,7 +286,7 @@ export default function AdminCustodians() {
       
       const method = editingCustodian ? 'PUT' : 'POST';
 
-      // Clean form data - remove temporary fields like language_input
+      // Clean form data
       const cleanFormData = {
         name: formData.name,
         email: formData.email,
@@ -243,15 +295,16 @@ export default function AdminCustodians() {
         years_experience: formData.years_experience,
         specialty: formData.specialty,
         description: formData.description,
-        price_from: formData.price_from,
         availability: formData.availability,
         status: formData.status,
         certification: formData.certification,
         coc_status: formData.coc_status,
-        review_avg: formData.review_avg,
         sessions_count: formData.sessions_count,
         about: formData.about,
         short_bio: formData.short_bio,
+        whatsapp: formData.whatsapp,
+        instagram: formData.instagram,
+        linkedin: formData.linkedin,
         languages: formData.languages,
         services: formData.services,
       };
@@ -284,17 +337,17 @@ export default function AdminCustodians() {
         years_experience: 0,
         specialty: '',
         description: '',
-        price_from: 80,
         availability: 'Available',
         status: 'active',
         certification: '',
         coc_status: '',
-        review_avg: 5.0,
         sessions_count: 0,
         about: '',
         short_bio: '',
+        whatsapp: '',
+        instagram: '',
+        linkedin: '',
         languages: [],
-        language_input: '',
         services: [
           { name: 'Free 15-min introduction', price: 0, description: 'Video call · meet, ask anything, no commitment' },
           { name: 'Pre-trip preparation call', price: 80, description: '60 min · video · personalised plan for your visit' },
@@ -306,13 +359,13 @@ export default function AdminCustodians() {
       setEditingCustodian(null);
 
       // Show success message
-      alert(`Custodian ${editingCustodian ? 'updated' : 'created'} successfully`);
+      showNotification(`Custodian ${editingCustodian ? 'updated' : 'created'} successfully`);
 
       // Refresh custodians list
       fetchCustodians(1);
     } catch (error) {
       console.error(`Error ${editingCustodian ? 'updating' : 'adding'} custodian:`, error);
-      alert(`Failed to ${editingCustodian ? 'update' : 'add'} custodian: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showNotification(`Failed to ${editingCustodian ? 'update' : 'add'} custodian: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -337,17 +390,17 @@ export default function AdminCustodians() {
               years_experience: 0,
               specialty: '',
               description: '',
-              price_from: 80,
               availability: 'Available',
               status: 'active',
               certification: '',
               coc_status: '',
-              review_avg: 5.0,
               sessions_count: 0,
               about: '',
               short_bio: '',
+              whatsapp: '',
+              instagram: '',
+              linkedin: '',
               languages: [],
-              language_input: '',
               services: [
                 { name: 'Free 15-min introduction', price: 0, description: 'Video call · meet, ask anything, no commitment' },
                 { name: 'Pre-trip preparation call', price: 80, description: '60 min · video · personalised plan for your visit' },
@@ -377,12 +430,12 @@ export default function AdminCustodians() {
       {/* Table with Loader */}
       <div className="a-table">
         {/* Table Header */}
-        <div className="a-table-head" style={{ gridTemplateColumns: '2fr 1.3fr 1fr 1.2fr 1fr 100px' }}>
+        <div className="a-table-head" style={{ gridTemplateColumns: '2fr 1.3fr 1fr 1.2fr 80px 140px' }}>
           <span>Custodian</span>
           <span>Specialty</span>
           <span>Status</span>
           <span>Availability</span>
-          <span>Price From</span>
+          <span>Sessions</span>
           <span>Actions</span>
         </div>
 
@@ -435,7 +488,7 @@ export default function AdminCustodians() {
             <div
               key={custodian.id}
               className={`a-table-row ${custodian.highlight ? 'a-table-row-highlight' : ''} ${custodian.disabled ? 'a-table-row-disabled' : ''}`}
-              style={{ gridTemplateColumns: '2fr 1.3fr 1fr 1.2fr 1fr 100px' }}
+              style={{ gridTemplateColumns: '2fr 1.3fr 1fr 1.2fr 80px 140px' }}
             >
               {/* Custodian Cell */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -496,22 +549,28 @@ export default function AdminCustodians() {
                 </span>
               </div>
 
-              {/* Price From Cell */}
+              {/* Sessions Cell */}
               <div>
                 <span style={{ fontSize: '13px', fontWeight: 500, color: '#374151' }}>
-                  ${custodian.price_from || 0}
+                  {custodian.sessions || 0}
                 </span>
               </div>
 
               {/* Actions Cell */}
               <div style={{ display: 'flex', gap: '4px' }}>
-                
                 <button
                   onClick={() => handleEditCustodian(custodian)}
                   className="a-btn-ghost"
                   style={{ padding: '4px 8px', fontSize: '11px', color: '#d97706', borderColor: '#fcd34d' }}
                 >
                   Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteCustodian(custodian.id)}
+                  className="a-btn-ghost"
+                  style={{ padding: '4px 8px', fontSize: '11px', color: '#dc2626', borderColor: '#fca5a5' }}
+                >
+                  Delete
                 </button>
               </div>
             </div>
@@ -620,89 +679,107 @@ export default function AdminCustodians() {
 
             {/* Form */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Name */}
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="E.g., Akosua O."
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    fontFamily: 'inherit',
-                  }}
-                />
+              {/* Name & Email */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                    Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="E.g., Akosua O."
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="E.g., akosua@example.com"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                </div>
               </div>
 
-              {/* Email */}
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="E.g., akosua@example.com"
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    fontFamily: 'inherit',
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
-                  Location *
-                </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="E.g., Accra"
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    fontFamily: 'inherit',
-                  }}
-                />
-              </div>
-
-              {/* Country */}
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
-                  Country *
-                </label>
-                <input
-                  type="text"
-                  value={formData.country}
-                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                  placeholder="E.g., Ghana"
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    fontFamily: 'inherit',
-                  }}
-                />
+              {/* Country & Location */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                    Country *
+                  </label>
+                  <select
+                    value={formData.country}
+                    onChange={(e) => {
+                      const newCountry = e.target.value;
+                      setFormData({ 
+                        ...formData, 
+                        country: newCountry,
+                        location: '' // Reset location when country changes
+                      });
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    <option value="">Select country</option>
+                    {Object.keys(COUNTRY_DATA).sort().map(country => (
+                      <option key={country} value={country}>{country}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                    Location (City) *
+                  </label>
+                  <select
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    disabled={!formData.country}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontFamily: 'inherit',
+                      backgroundColor: !formData.country ? '#f9fafb' : '#ffffff',
+                      cursor: !formData.country ? 'not-allowed' : 'default',
+                    }}
+                  >
+                    <option value="">{formData.country ? 'Select city' : 'Select country first'}</option>
+                    {formData.country && COUNTRY_DATA[formData.country]?.sort().map(city => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              {/* Years Experience */}
+              {/* Years Experience & Specialty */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
@@ -750,29 +827,8 @@ export default function AdminCustodians() {
                 </div>
               </div>
 
-              {/* Price From */}
+              {/* Availability & Status */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
-                    Price From *
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.price_from}
-                    onChange={(e) => setFormData({ ...formData, price_from: parseFloat(e.target.value) })}
-                    placeholder="80"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '6px',
-                      fontSize: '13px',
-                      fontFamily: 'inherit',
-                    }}
-                  />
-                </div>
-
-                {/* Availability */}
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
                     Availability
@@ -793,30 +849,30 @@ export default function AdminCustodians() {
                     <option value="Booked">Booked</option>
                   </select>
                 </div>
-              </div>
 
-              {/* Status */}
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
-                  Status *
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="suspended">Suspended</option>
-                  <option value="pending">Pending</option>
-                </select>
+                {/* Status */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                    Status *
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
               </div>
 
               {/* Description */}
@@ -841,26 +897,47 @@ export default function AdminCustodians() {
                 />
               </div>
 
-              {/* Review Avg */}
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
-                  Review Average
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={formData.review_avg}
-                  onChange={(e) => setFormData({ ...formData, review_avg: parseFloat(e.target.value) })}
-                  placeholder="5.0"
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '6px',
-                    fontSize: '13px',
-                    fontFamily: 'inherit',
-                  }}
-                />
+              {/* Social Media Links */}
+              <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a', margin: '8px 0 4px' }}>
+                Social Media Links
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                    WhatsApp
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.whatsapp}
+                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                    placeholder="Phone/Link"
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                    Instagram
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.instagram}
+                    onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                    placeholder="@username"
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#374151' }}>
+                    LinkedIn
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.linkedin}
+                    onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
+                    placeholder="username/link"
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '13px' }}
+                  />
+                </div>
               </div>
 
               {/* ─── PROFILE PAGE FIELDS ─── */}
@@ -919,20 +996,17 @@ export default function AdminCustodians() {
                     Languages *
                   </label>
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                    <input
-                      type="text"
-                      value={formData.language_input}
-                      onChange={(e) => setFormData({ ...formData, language_input: e.target.value })}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter' && formData.language_input.trim()) {
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val && !formData.languages.includes(val)) {
                           setFormData({
                             ...formData,
-                            languages: [...formData.languages, formData.language_input.trim()],
-                            language_input: '',
+                            languages: [...formData.languages, val],
                           });
                         }
                       }}
-                      placeholder="Type language and press Enter"
                       style={{
                         flex: 1,
                         padding: '10px 12px',
@@ -941,7 +1015,14 @@ export default function AdminCustodians() {
                         fontSize: '13px',
                         fontFamily: 'inherit',
                       }}
-                    />
+                    >
+                      <option value="">Add a language...</option>
+                      {COMMON_LANGUAGES.sort().map(lang => (
+                        <option key={lang} value={lang} disabled={formData.languages.includes(lang)}>
+                          {lang}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {formData.languages.map((lang, idx) => (

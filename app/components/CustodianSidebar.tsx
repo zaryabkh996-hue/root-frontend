@@ -1,12 +1,30 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 const CustodianSidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    const loadUser = () => {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          setUser(JSON.parse(userData));
+        } catch (e) {
+          console.error('Error parsing user data:', e);
+        }
+      }
+    };
+
+    loadUser();
+    window.addEventListener('storage', loadUser);
+    return () => window.removeEventListener('storage', loadUser);
+  }, []);
 
   const goto = (path: string) => {
     router.push(path);
@@ -60,10 +78,12 @@ const CustodianSidebar: React.FC = () => {
 
         {/* User card */}
         <div className="cust-user-card">
-          <div className="avatar avatar-photo" style={{ width: '34px', height: '34px', fontSize: '12px', border: '2px solid rgba(201,161,74,0.5)' }}>A</div>
+          <div className="avatar avatar-photo" style={{ width: '34px', height: '34px', fontSize: '12px', border: '2px solid rgba(201,161,74,0.5)' }}>
+            {user?.name?.charAt(0) || 'C'}
+          </div>
           <div>
-            <div className="cust-user-name">Akosua O.</div>
-            <div className="cust-cert-badge">✓ Afrofeast Certified</div>
+            <div className="cust-user-name">{user?.name || 'Custodian'}</div>
+            <div className="cust-cert-badge">{user?.certification || 'Afrofeast Certified'}</div>
           </div>
         </div>
 
@@ -72,6 +92,10 @@ const CustodianSidebar: React.FC = () => {
           <div className="cust-share-label">Share my profile</div>
           <div className="cust-share-btns">
             <button
+              onClick={() => {
+                const link = user?.whatsapp || `https://wa.me/?text=Check out my profile on OurRoots: ${window.location.origin}/custodians/${user?.id}`;
+                window.open(link.startsWith('http') ? link : `https://wa.me/${link}`, '_blank');
+              }}
               className="cust-share-btn"
               style={{ background: 'rgba(37,211,102,0.15)', borderColor: 'rgba(37,211,102,0.4)', color: '#a7f3d0' }}
             >
@@ -82,6 +106,10 @@ const CustodianSidebar: React.FC = () => {
               WhatsApp
             </button>
             <button
+              onClick={() => {
+                const link = user?.linkedin || `https://www.linkedin.com/sharing/share-offsite/?url=${window.location.origin}/custodians/${user?.id}`;
+                window.open(link.startsWith('http') ? link : `https://www.linkedin.com/in/${link}`, '_blank');
+              }}
               className="cust-share-btn"
               style={{ background: 'rgba(10,102,194,0.15)', borderColor: 'rgba(10,102,194,0.4)', color: '#93c5fd' }}
             >
@@ -92,6 +120,10 @@ const CustodianSidebar: React.FC = () => {
               LinkedIn
             </button>
             <button
+              onClick={() => {
+                const link = user?.instagram || `https://www.instagram.com/`;
+                window.open(link.startsWith('http') ? link : `https://www.instagram.com/${link}`, '_blank');
+              }}
               className="cust-share-btn"
               style={{ background: 'rgba(225,48,108,0.12)', borderColor: 'rgba(225,48,108,0.35)', color: '#f9a8d4' }}
             >
@@ -167,7 +199,38 @@ const CustodianSidebar: React.FC = () => {
         <div className="cust-status-section">
           <div className="cust-status-label">Standing</div>
           <span className="status-ok">✓ Good standing</span>
-          <div className="cust-status-text">0 warnings · 47 sessions<br />4.9 avg Afrofeast Review</div>
+          <div className="cust-status-text">0 warnings · {user?.sessions || 0} sessions<br />{user?.review_avg || '5.0'} avg Afrofeast Review</div>
+        </div>
+
+        {/* Logout */}
+        <div style={{ marginTop: 'auto', padding: '16px 0', borderTop: '1px solid var(--c-line)' }}>
+          <button
+            onClick={handleLogout}
+            className="w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors"
+            style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              color: '#ef4444',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Sign Out
+          </button>
         </div>
       </aside>
     </>

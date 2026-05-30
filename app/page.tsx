@@ -1,6 +1,321 @@
-import HeaderAuthButtons from './components/HeaderAuthButtons';
+'use client';
 
-export default async function Home() {
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import HeaderAuthButtons from './components/HeaderAuthButtons';
+import { AuthService } from '@/app/lib/authService';
+
+const COUNTRY_DATA: Record<string, string[]> = {
+  Ghana: ['Accra', 'Cape Coast', 'Kumasi', 'Elmina', 'Tamale', 'Takoradi'],
+  Nigeria: ['Lagos', 'Abuja', 'Port Harcourt', 'Ibadan', 'Benin City'],
+  Senegal: ['Dakar', 'Saint-Louis', 'Touba', 'Thiès'],
+  Kenya: ['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru'],
+  'South Africa': ['Cape Town', 'Johannesburg', 'Durban', 'Pretoria'],
+  Ethiopia: ['Addis Ababa', 'Gondar', 'Lalibela', 'Axum'],
+  Egypt: ['Cairo', 'Alexandria', 'Luxor', 'Aswan'],
+  Morocco: ['Casablanca', 'Marrakech', 'Fes', 'Rabat'],
+  Tanzania: ['Dar es Salaam', 'Zanzibar City', 'Arusha', 'Dodoma'],
+  Benin: ['Cotonou', 'Porto-Novo', 'Ouidah'],
+  Gambia: ['Banjul', 'Serekunda', 'Bakau'],
+};
+
+const COMMON_LANGUAGES = [
+  'English',
+  'French',
+  'Portuguese',
+  'Arabic',
+  'Swahili',
+  'Yoruba',
+  'Igbo',
+  'Hausa',
+  'Zulu',
+  'Xhosa',
+  'Shona',
+  'Amharic',
+  'Oromo',
+  'Somali',
+  'Twi',
+  'Ga',
+  'Ewe',
+  'Fante',
+  'Wolof',
+  'Bambara',
+  'Lingala',
+  'Kinyarwanda',
+];
+
+type CustodianApplicationForm = {
+  name: string;
+  email: string;
+  country: string;
+  location: string;
+  years_experience: number;
+  specialty: string;
+  availability: 'Available' | 'Booked';
+  description: string;
+  short_bio: string;
+  about: string;
+  certification: string;
+  coc_status: string;
+  whatsapp: string;
+  instagram: string;
+  linkedin: string;
+  languages: string[];
+  services: Array<{ name: string; price: number; description: string }>;
+};
+
+interface FeaturedCustodian {
+  id: number;
+  name: string;
+  location: string;
+  country: string;
+  years_experience: number;
+  specialty: string;
+  description: string;
+  avatar_initials: string;
+  avatar_class: string;
+  tags: string[];
+  verified: boolean;
+};
+
+export default function Home() {
+  const router = useRouter();
+  const [showCustodianModal, setShowCustodianModal] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [languageToAdd, setLanguageToAdd] = useState('');
+  const [featuredCustodians, setFeaturedCustodians] = useState<FeaturedCustodian[]>([]);
+  const [custodiansLoading, setCustodiansLoading] = useState(true);
+  const [totalCustodians, setTotalCustodians] = useState(0);
+
+  const defaultServices = useMemo(
+    () => [
+      { name: 'Free 15-min introduction', price: 0, description: 'Video call · meet, ask anything, no commitment' },
+      { name: 'Pre-trip preparation call', price: 80, description: '60 min · video · personalised plan for your visit' },
+      { name: 'Cape Coast accompaniment', price: 280, description: 'Full day in-person · castle visit + integration walk' },
+      { name: 'Post-trip integration', price: 60, description: "45 min · video · once you're home in the diaspora" },
+    ],
+    []
+  );
+
+  const [custodianForm, setCustodianForm] = useState<CustodianApplicationForm>({
+    name: '',
+    email: '',
+    country: '',
+    location: '',
+    years_experience: 0,
+    specialty: '',
+    availability: 'Available',
+    description: '',
+    short_bio: '',
+    about: '',
+    certification: '',
+    coc_status: '',
+    whatsapp: '',
+    instagram: '',
+    linkedin: '',
+    languages: [],
+    services: defaultServices,
+  });
+
+  useEffect(() => {
+    const userRaw = localStorage.getItem('user');
+    if (!userRaw) return;
+    try {
+      const user = JSON.parse(userRaw);
+      setCustodianForm((prev) => ({
+        ...prev,
+        name: user?.name || prev.name,
+        email: user?.email || prev.email,
+      }));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchFeaturedCustodians = async () => {
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+        const apiUrl = `${backendUrl}/api/custodians?page=1&limit=3`;
+        console.log('Fetching custodians from:', apiUrl);
+        
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          mode: 'cors',
+        });
+
+        console.log('API Response status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API Error Response:', errorText);
+          throw new Error(`Failed to fetch custodians: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Fetched custodians data:', data);
+        console.log('Custodians array:', data.custodians);
+        console.log('Number of custodians:', data.custodians?.length || 0);
+        
+        // Transform backend data to match FeaturedCustodian interface
+        const transformedCustodians = (data.custodians || []).map((custodian: any) => {
+          // Generate avatar initials from name
+          const avatar_initials = custodian.name
+            ? custodian.name
+                .split(' ')
+                .map((word: string) => word.charAt(0))
+                .join('')
+                .toUpperCase()
+                .substring(0, 2)
+            : 'C';
+          
+          // Parse tags if they're stored as JSON string
+          let tags = [];
+          if (custodian.tags) {
+            if (typeof custodian.tags === 'string') {
+              try {
+                tags = JSON.parse(custodian.tags);
+              } catch {
+                tags = custodian.tags.split(',').map((tag: string) => tag.trim());
+              }
+            } else if (Array.isArray(custodian.tags)) {
+              tags = custodian.tags;
+            }
+          }
+          
+          // Determine verified status (active status means verified)
+          const verified = custodian.status === 'active' || custodian.status === null;
+          
+          return {
+            id: custodian.id,
+            name: custodian.name || 'Unknown Custodian',
+            location: custodian.location || 'Unknown Location',
+            country: custodian.country || 'Unknown Country',
+            years_experience: custodian.years_experience || 0,
+            specialty: custodian.specialty || 'General Guidance',
+            description: custodian.description || 'No description available',
+            avatar_initials,
+            avatar_class: custodian.avatar_class || 'avatar-photo',
+            tags: tags || [],
+            verified,
+          };
+        });
+        
+        console.log('Transformed custodians:', transformedCustodians);
+        setFeaturedCustodians(transformedCustodians);
+        setTotalCustodians(data.total || 0);
+      } catch (error) {
+        console.error('Error fetching featured custodians:', error);
+        setFeaturedCustodians([]);
+      } finally {
+        setCustodiansLoading(false);
+      }
+    };
+
+    fetchFeaturedCustodians();
+  }, []);
+
+  const openCustodianModal = () => {
+    setSubmitError(null);
+    setSubmitSuccess(null);
+    setShowCustodianModal(true);
+  };
+
+  const closeCustodianModal = () => {
+    setShowCustodianModal(false);
+    setSubmitError(null);
+    setSubmitSuccess(null);
+    setSubmitting(false);
+    setLanguageToAdd('');
+  };
+
+  const addLanguage = (lang: string) => {
+    if (!lang) return;
+    setCustodianForm((prev) => {
+      if (prev.languages.includes(lang)) return prev;
+      return { ...prev, languages: [...prev.languages, lang] };
+    });
+  };
+
+  const removeLanguage = (lang: string) => {
+    setCustodianForm((prev) => ({ ...prev, languages: prev.languages.filter((l) => l !== lang) }));
+  };
+
+  const handleBrowseCustodians = () => {
+    if (AuthService.isAuthenticated()) {
+      router.push('/custodians');
+    } else {
+      router.push('/login');
+    }
+  };
+
+  const handleViewCustodianProfile = (custodianId: number) => {
+    if (AuthService.isAuthenticated()) {
+      router.push(`/custodians/${custodianId}`);
+    } else {
+      router.push('/login');
+    }
+  };
+
+  const handleCustodianApply = async () => {
+    setSubmitError(null);
+    setSubmitSuccess(null);
+
+    try {
+      setSubmitting(true);
+      const backendUrl =
+        process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+
+      const response = await fetch(`${backendUrl}/api/custodians/apply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(custodianForm),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const message =
+          data?.error ||
+          data?.message ||
+          (data?.errors ? Object.values(data.errors).flat().join(' ') : null) ||
+          'Failed to submit application.';
+        throw new Error(message);
+      }
+
+      setSubmitSuccess('Thank you for your application! We have received it and will review it shortly. You will be notified once your custodian status is approved.');
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : 'Failed to submit application.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const isCustodianFormValid = useMemo(() => {
+    return (
+      custodianForm.name.trim().length > 0 &&
+      custodianForm.email.trim().length > 0 &&
+      custodianForm.country.trim().length > 0 &&
+      custodianForm.location.trim().length > 0 &&
+      custodianForm.specialty.trim().length > 0 &&
+      custodianForm.description.trim().length > 0 &&
+      custodianForm.short_bio.trim().length > 0 &&
+      custodianForm.about.trim().length > 0 &&
+      custodianForm.languages.length > 0 &&
+      Number.isFinite(custodianForm.years_experience) &&
+      custodianForm.years_experience >= 0
+    );
+  }, [custodianForm]);
+
   return (
     <div>
       {/* Top header */}
@@ -42,7 +357,9 @@ export default async function Home() {
                 Discover your Travel DNA
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14m-6-6 6 6-6 6"></path></svg>
               </a>
-              <button className="btn-secondary">Become a Custodian</button>
+              <button type="button" className="btn-secondary" onClick={openCustodianModal}>
+                Become a Custodian
+              </button>
             </div>
             <div className="flex flex-wrap items-center gap-x-8 gap-y-3 mt-10 text-cream/60 fade-up d5">
               <div className="flex items-center gap-2 text-sm"><span className="w-1 h-1 rounded-full bg-brass"></span> 5 minutes</div>
@@ -190,33 +507,62 @@ export default async function Home() {
             <p className="text-ink-dim text-lg leading-relaxed">Vetted local advisors across Africa — heritage educators, language teachers, naming-ceremony elders, family-history researchers. Book a free 15-minute introduction directly from any profile. No middlemen, no waiting.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="scard p-6">
-              <div className="avatar avatar-lg avatar-photo mb-4">A</div>
-              <h3 className="display text-xl mb-1">Akosua O.</h3>
-              <div className="eyebrow mb-3">Accra · Ghana · 12 yrs</div>
-              <p className="text-sm text-ink-dim leading-relaxed mb-4">Heritage educator specialising in Cape Coast and Elmina. Twi, Fante, English. Has guided 200+ diaspora relatives through the Door of No Return.</p>
-              <div className="flex flex-wrap gap-1.5 mb-4"><span className="tag tag-brass">Heritage sites</span><span className="tag tag-emerald">Twi</span></div>
-              <button className="btn-ghost w-full justify-center">View profile · Book intro</button>
-            </div>
-            <div className="scard p-6">
-              <div className="avatar avatar-lg avatar-photo-2 mb-4">K</div>
-              <h3 className="display text-xl mb-1">Kwame B.</h3>
-              <div className="eyebrow mb-3">Kumasi · Ghana · 8 yrs</div>
-              <p className="text-sm text-ink-dim leading-relaxed mb-4">Ashanti cultural protocol and naming-ceremony facilitator. Connections to traditional courts. Trauma-informed.</p>
-              <div className="flex flex-wrap gap-1.5 mb-4"><span className="tag tag-emerald">Naming ceremony</span><span className="tag tag-brass">Protocol</span></div>
-              <button className="btn-ghost w-full justify-center">View profile · Book intro</button>
-            </div>
-            <div className="scard p-6">
-              <div className="avatar avatar-lg avatar-photo-3 mb-4">N</div>
-              <h3 className="display text-xl mb-1">Nia M.</h3>
-              <div className="eyebrow mb-3">Lagos · Nigeria · 6 yrs</div>
-              <p className="text-sm text-ink-dim leading-relaxed mb-4">Yoruba family-history researcher. DNA-to-village mapping for diaspora seeking genealogical roots. Igbo and Yoruba.</p>
-              <div className="flex flex-wrap gap-1.5 mb-4"><span className="tag tag-terra">Genealogy</span><span className="tag tag-emerald">Yoruba</span></div>
-              <button className="btn-ghost w-full justify-center">View profile · Book intro</button>
-            </div>
+            {custodiansLoading ? (
+              <div className="col-span-3 text-center py-12 text-ink-dim">Loading custodians...</div>
+            ) : featuredCustodians.length === 0 ? (
+              <>
+                <div className="scard p-6">
+                  <div className="avatar avatar-lg avatar-photo mb-4">A</div>
+                  <h3 className="display text-xl mb-1">Akosua O.</h3>
+                  <div className="eyebrow mb-3">Accra · Ghana · 12 yrs</div>
+                  <p className="text-sm text-ink-dim leading-relaxed mb-4">Heritage educator specialising in Cape Coast and Elmina. Twi, Fante, English. Has guided 200+ diaspora relatives through the Door of No Return.</p>
+                  <div className="flex flex-wrap gap-1.5 mb-4"><span className="tag tag-brass">Heritage sites</span><span className="tag tag-emerald">Twi</span></div>
+                  <button className="btn-ghost w-full justify-center">View profile · Book intro</button>
+                </div>
+                <div className="scard p-6">
+                  <div className="avatar avatar-lg avatar-photo-2 mb-4">K</div>
+                  <h3 className="display text-xl mb-1">Kwame B.</h3>
+                  <div className="eyebrow mb-3">Kumasi · Ghana · 8 yrs</div>
+                  <p className="text-sm text-ink-dim leading-relaxed mb-4">Ashanti cultural protocol and naming-ceremony facilitator. Connections to traditional courts. Trauma-informed.</p>
+                  <div className="flex flex-wrap gap-1.5 mb-4"><span className="tag tag-emerald">Naming ceremony</span><span className="tag tag-brass">Protocol</span></div>
+                  <button className="btn-ghost w-full justify-center">View profile · Book intro</button>
+                </div>
+                <div className="scard p-6">
+                  <div className="avatar avatar-lg avatar-photo-3 mb-4">N</div>
+                  <h3 className="display text-xl mb-1">Nia M.</h3>
+                  <div className="eyebrow mb-3">Lagos · Nigeria · 6 yrs</div>
+                  <p className="text-sm text-ink-dim leading-relaxed mb-4">Yoruba family-history researcher. DNA-to-village mapping for diaspora seeking genealogical roots. Igbo and Yoruba.</p>
+                  <div className="flex flex-wrap gap-1.5 mb-4"><span className="tag tag-terra">Genealogy</span><span className="tag tag-emerald">Yoruba</span></div>
+                  <button className="btn-ghost w-full justify-center">View profile · Book intro</button>
+                </div>
+              </>
+            ) : (
+              featuredCustodians.map((custodian) => (
+                <div key={custodian.id} className="scard p-6 flex flex-col">
+                  <div className={`avatar avatar-lg ${custodian.avatar_class || 'avatar-photo'} mb-4`}>
+                    {custodian.avatar_initials || custodian.name?.charAt(0) || 'C'}
+                  </div>
+                  <h3 className="display text-xl mb-1">{custodian.name}</h3>
+                  <div className="eyebrow mb-3">{custodian.location} · {custodian.country} · {custodian.years_experience} yrs</div>
+                  <p className="text-sm text-ink-dim leading-relaxed mb-4">{custodian.description}</p>
+                  <div className="flex flex-wrap gap-1.5 mb-4">
+                    {custodian.tags?.slice(0, 2).map((tag, index) => (
+                      <span key={index} className={`tag ${tag.includes('Heritage') || tag.includes('Genealogy') ? 'tag-terra' : tag.includes('Naming') ? 'tag-emerald' : 'tag-brass'}`}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-auto">
+                    <button className="btn-ghost w-full justify-center" onClick={() => handleViewCustodianProfile(custodian.id)}>
+                      View profile · Book intro
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
           <div className="text-center mt-10">
-            <button className="btn-ghost">Browse all 47 Custodians →</button>
+            <button className="btn-ghost" onClick={handleBrowseCustodians}>Browse all {totalCustodians} Custodians →</button>
           </div>
         </div>
       </section>
@@ -372,6 +718,336 @@ export default async function Home() {
           <div className="mono">hello@ourroots.africa · WhatsApp +61 433 960 900</div>
         </div>
       </footer>
+
+      {showCustodianModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(10, 24, 16, 0.78)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+          }}
+          onClick={closeCustodianModal}
+        >
+          <div
+            className="scard-dark p-8 w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '840px',
+              maxHeight: '86vh',
+              overflowY: 'auto',
+              border: '1px solid rgba(201,161,74,0.25)',
+              background: 'var(--forest-deep)',
+            }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="eyebrow eyebrow-cream mb-2">Custodian Application</div>
+                <h2 className="display text-3xl text-cream">Register as a Custodian</h2>
+                <div className="text-sm text-cream/60 mt-2">
+                  Your application is saved as pending. An admin will review and activate your profile.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeCustodianModal}
+                className="text-cream/60 hover:text-cream text-2xl leading-none"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            {submitError && (
+              <div
+                className="p-4 mb-5"
+                style={{
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  borderRadius: '6px',
+                  color: 'rgba(243, 237, 224, 0.95)',
+                  fontSize: '13px',
+                }}
+              >
+                {submitError}
+              </div>
+            )}
+
+            {submitSuccess && (
+              <div
+                className="p-4 mb-5"
+                style={{
+                  background: 'rgba(34, 197, 94, 0.10)',
+                  border: '1px solid rgba(34, 197, 94, 0.22)',
+                  borderRadius: '6px',
+                  color: 'rgba(243, 237, 224, 0.95)',
+                  fontSize: '13px',
+                }}
+              >
+                {submitSuccess}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-cream/60 block mb-2">Name *</label>
+                <input
+                  className="field-dark"
+                  value={custodianForm.name}
+                  onChange={(e) => setCustodianForm({ ...custodianForm, name: e.target.value })}
+                  placeholder="E.g., Akosua O."
+                />
+              </div>
+              <div>
+                <label className="text-xs text-cream/60 block mb-2">Email *</label>
+                <input
+                  type="email"
+                  className="field-dark"
+                  value={custodianForm.email}
+                  onChange={(e) => setCustodianForm({ ...custodianForm, email: e.target.value })}
+                  placeholder="E.g., akosua@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-cream/60 block mb-2">Country *</label>
+                <select
+                  className="field-dark"
+                  value={custodianForm.country}
+                  onChange={(e) =>
+                    setCustodianForm({
+                      ...custodianForm,
+                      country: e.target.value,
+                      location: '',
+                    })
+                  }
+                >
+                  <option value="">Select country</option>
+                  {Object.keys(COUNTRY_DATA)
+                    .sort()
+                    .map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs text-cream/60 block mb-2">Location (City) *</label>
+                <select
+                  className="field-dark"
+                  value={custodianForm.location}
+                  onChange={(e) => setCustodianForm({ ...custodianForm, location: e.target.value })}
+                  disabled={!custodianForm.country}
+                  style={{
+                    opacity: custodianForm.country ? 1 : 0.6,
+                    cursor: custodianForm.country ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  <option value="">{custodianForm.country ? 'Select city' : 'Select country first'}</option>
+                  {custodianForm.country &&
+                    (COUNTRY_DATA[custodianForm.country] || []).sort().map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs text-cream/60 block mb-2">Years Experience *</label>
+                <input
+                  type="number"
+                  min={0}
+                  className="field-dark"
+                  value={custodianForm.years_experience}
+                  onChange={(e) =>
+                    setCustodianForm({ ...custodianForm, years_experience: Number(e.target.value || 0) })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-cream/60 block mb-2">Specialty *</label>
+                <select
+                  className="field-dark"
+                  value={custodianForm.specialty}
+                  onChange={(e) => setCustodianForm({ ...custodianForm, specialty: e.target.value })}
+                >
+                  <option value="">Select specialty</option>
+                  <option value="Heritage sites">Heritage sites</option>
+                  <option value="Naming ceremony">Naming ceremony</option>
+                  <option value="Genealogy">Genealogy</option>
+                  <option value="Language">Language</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs text-cream/60 block mb-2">Availability *</label>
+                <select
+                  className="field-dark"
+                  value={custodianForm.availability}
+                  onChange={(e) =>
+                    setCustodianForm({ ...custodianForm, availability: e.target.value as 'Available' | 'Booked' })
+                  }
+                >
+                  <option value="Available">Available</option>
+                  <option value="Booked">Booked</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs text-cream/60 block mb-2">Certification</label>
+                <input
+                  className="field-dark"
+                  value={custodianForm.certification}
+                  onChange={(e) => setCustodianForm({ ...custodianForm, certification: e.target.value })}
+                  placeholder="E.g., Licensed tour guide, Elder council letter..."
+                />
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <label className="text-xs text-cream/60 block mb-2">Short Bio (Quote) *</label>
+              <textarea
+                className="field-dark"
+                value={custodianForm.short_bio}
+                onChange={(e) => setCustodianForm({ ...custodianForm, short_bio: e.target.value })}
+                rows={2}
+                placeholder="One strong sentence that captures your work."
+                style={{ resize: 'none' }}
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="text-xs text-cream/60 block mb-2">Description *</label>
+              <textarea
+                className="field-dark"
+                value={custodianForm.description}
+                onChange={(e) => setCustodianForm({ ...custodianForm, description: e.target.value })}
+                rows={3}
+                placeholder="What do you help diaspora relatives with?"
+                style={{ resize: 'none' }}
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="text-xs text-cream/60 block mb-2">About *</label>
+              <textarea
+                className="field-dark"
+                value={custodianForm.about}
+                onChange={(e) => setCustodianForm({ ...custodianForm, about: e.target.value })}
+                rows={4}
+                placeholder="Your background, training, protocols you observe, and what makes you safe to work with."
+                style={{ resize: 'none' }}
+              />
+            </div>
+
+            <div className="mt-5">
+              <div className="flex items-center justify-between gap-4 mb-2">
+                <label className="text-xs text-cream/60 block">Languages *</label>
+                <div className="text-xs text-cream/45">Select at least 1</div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-3">
+                {custodianForm.languages.map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => removeLanguage(lang)}
+                    className="tag tag-brass"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {lang} ×
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-3 items-center">
+                <select
+                  className="field-dark"
+                  value={languageToAdd}
+                  onChange={(e) => setLanguageToAdd(e.target.value)}
+                >
+                  <option value="">Add language</option>
+                  {COMMON_LANGUAGES.filter((l) => !custodianForm.languages.includes(l)).map((l) => (
+                    <option key={l} value={l}>
+                      {l}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  className="btn-ghost-dark"
+                  onClick={() => {
+                    addLanguage(languageToAdd);
+                    setLanguageToAdd('');
+                  }}
+                  disabled={!languageToAdd}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="eyebrow eyebrow-cream mb-3">Contact</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs text-cream/60 block mb-2">WhatsApp</label>
+                  <input
+                    className="field-dark"
+                    value={custodianForm.whatsapp}
+                    onChange={(e) => setCustodianForm({ ...custodianForm, whatsapp: e.target.value })}
+                    placeholder="+233..."
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-cream/60 block mb-2">Instagram</label>
+                  <input
+                    className="field-dark"
+                    value={custodianForm.instagram}
+                    onChange={(e) => setCustodianForm({ ...custodianForm, instagram: e.target.value })}
+                    placeholder="@username"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-cream/60 block mb-2">LinkedIn</label>
+                  <input
+                    className="field-dark"
+                    value={custodianForm.linkedin}
+                    onChange={(e) => setCustodianForm({ ...custodianForm, linkedin: e.target.value })}
+                    placeholder="profile link"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-7 flex flex-col md:flex-row gap-3">
+              <button
+                type="button"
+                className="btn-primary flex-1"
+                onClick={handleCustodianApply}
+                disabled={submitting || !isCustodianFormValid}
+              >
+                {submitting ? 'Submitting…' : 'Submit application'}
+              </button>
+              <button type="button" className="btn-ghost-dark" onClick={closeCustodianModal} disabled={submitting}>
+                Close
+              </button>
+            </div>
+
+            <div className="text-xs text-cream/45 mt-5">
+              Your application will be reviewed by our team. You will be notified via email once approved.
+            </div>
+          </div>
+        </div>
+      )}
 
 
       {/* Stage 2 Modal */}
