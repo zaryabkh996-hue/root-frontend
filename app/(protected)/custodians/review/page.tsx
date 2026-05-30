@@ -114,7 +114,7 @@ export default function ReviewPage() {
       </div>
 
       <div className="flex gap-3">
-        <button className="btn-ghost" onClick={handleChangeTime}>← Change time</button>
+        <button className="btn-secondary" onClick={handleChangeTime}>← Change time</button>
         <button 
           className="btn-primary" 
           onClick={handleConfirmBooking}
