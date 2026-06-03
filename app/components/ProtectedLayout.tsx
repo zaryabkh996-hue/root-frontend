@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
 import { ProgressProvider } from '../lib/progressContext';
+import { useNotification } from '../lib/NotificationContext';
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
@@ -11,6 +12,7 @@ interface ProtectedLayoutProps {
 
 const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children }) => {
   const router = useRouter();
+  const { notification, hideNotification } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -89,6 +91,55 @@ const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children }) => {
 
   return (
     <ProgressProvider>
+      {/* Notification Toast */}
+      {notification && (
+        <div 
+          style={{ 
+            position: 'fixed', 
+            top: '20px', 
+            right: '20px', 
+            zIndex: 9999, 
+            minWidth: '300px',
+            background: notification.type === 'error' ? 'rgba(239, 68, 68, 0.95)' : notification.type === 'info' ? 'rgba(59, 130, 246, 0.95)' : 'rgba(16, 185, 129, 0.95)',
+            color: '#fff',
+            padding: '16px',
+            borderRadius: '6px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+            backdropFilter: 'blur(4px)',
+            animation: 'slideIn 0.3s ease-out'
+          }}
+        >
+          <div style={{ fontWeight: 600, textTransform: 'capitalize', marginBottom: '4px', fontSize: '13px' }}>
+            {notification.type === 'success' ? '✓ Success' : notification.type === 'error' ? '⚠ Error' : 'ℹ Info'}
+          </div>
+          <div style={{ fontSize: '12px', opacity: 0.9 }}>
+            {notification.message}
+          </div>
+          <button 
+            onClick={hideNotification}
+            style={{ 
+              position: 'absolute', 
+              top: '10px', 
+              right: '10px', 
+              background: 'none', 
+              border: 'none', 
+              cursor: 'pointer',
+              fontSize: '16px',
+              color: '#fff',
+              opacity: 0.7
+            }}
+          >
+            ×
+          </button>
+          <style>{`
+            @keyframes slideIn {
+              from { transform: translateX(100%); opacity: 0; }
+              to { transform: translateX(0); opacity: 1; }
+            }
+          `}</style>
+        </div>
+      )}
+
       <div className="app-shell">
         <Sidebar />
         <main className="app-main">

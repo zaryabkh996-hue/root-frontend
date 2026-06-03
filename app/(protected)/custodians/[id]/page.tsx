@@ -55,6 +55,20 @@ export default function CustodianProfilePage() {
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<{ date: Date; dayOfMonth: number } | null>(null);
   const [selectedTime, setSelectedTime] = useState('12:00pm');
 
+  const defaultServices = [
+    { name: 'Free 15-min introduction', price: 0, duration: 15, description: 'Video call · meet, ask anything, no commitment' },
+    { name: 'Pre-trip preparation call', price: 80, duration: 60, description: '60 min · video · personalised plan for your visit' },
+    { name: 'Cape Coast accompaniment', price: 280, duration: 480, description: 'Full day in-person · castle visit + integration walk' },
+    { name: 'Post-trip integration', price: 60, duration: 45, description: '45 min · video · once you\'re home in the diaspora' }
+  ];
+
+  const [selectedService, setSelectedService] = useState({
+    name: 'Free 15-min introduction',
+    price: 0,
+    duration: 15,
+    description: 'Video call · meet, ask anything, no commitment'
+  });
+
   // Generate 15-minute time slots from 9 AM to 5 PM
   const generateTimeSlots = () => {
     const slots = [];
@@ -129,6 +143,16 @@ export default function CustodianProfilePage() {
         if (!response.ok) throw new Error('Failed to fetch custodian');
         const data = await response.json();
         setCustodian(data.custodian);
+        if (data.custodian) {
+          const servicesList = data.custodian.services && data.custodian.services.length > 0 ? data.custodian.services : defaultServices;
+          const first = servicesList[0];
+          setSelectedService({
+            name: first.name,
+            price: first.price,
+            duration: (first as any).duration || (first.name.includes('15') ? 15 : (first.name.includes('45') ? 45 : (first.name.includes('60') ? 60 : 60))),
+            description: first.description
+          });
+        }
       } catch (err) {
         console.error('Error fetching custodian:', err);
         setNotFound(true);
@@ -264,48 +288,32 @@ export default function CustodianProfilePage() {
           <div className="mb-8">
             <div className="eyebrow eyebrow-cream mb-3">What you can book</div>
             <div className="space-y-3">
-              {custodian?.services && custodian.services.length > 0 ? (
-                custodian.services.map((service, idx) => (
-                  <div key={idx} className="scard-dark p-4 flex items-center justify-between">
+              {(custodian?.services && custodian.services.length > 0 ? custodian.services : defaultServices).map((service, idx) => {
+                const serviceDuration = (service as any).duration || (service.name.includes('15') ? 15 : (service.name.includes('45') ? 45 : (service.name.includes('60') ? 60 : 60)));
+                const isSelected = selectedService.name === service.name;
+                return (
+                  <div 
+                    key={idx} 
+                    onClick={() => setSelectedService({
+                      name: service.name,
+                      price: service.price,
+                      duration: serviceDuration,
+                      description: service.description
+                    })}
+                    className="scard-dark p-4 flex items-center justify-between cursor-pointer transition-all hover:border-brass/50"
+                    style={{
+                      borderLeft: isSelected ? '3px solid var(--brass)' : '1px solid rgba(201,161,74,0.2)',
+                      background: isSelected ? 'rgba(201,161,74,0.08)' : 'rgba(243,237,224,0.02)',
+                    }}
+                  >
                     <div>
                       <div className="font-medium text-cream">{service.name}</div>
                       <div className="text-xs text-cream/60 mono mt-1">{service.description}</div>
                     </div>
                     <div className="display text-xl text-cream">{service.price === 0 ? 'Free' : `$${service.price}`}</div>
                   </div>
-                ))
-              ) : (
-                <>
-                  <div className="scard-dark p-4 flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-cream">Free 15-min introduction</div>
-                      <div className="text-xs text-cream/60 mono mt-1">Video call · meet, ask anything, no commitment</div>
-                    </div>
-                    <div className="display text-xl text-cream">Free</div>
-                  </div>
-                  <div className="scard-dark p-4 flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-cream">Pre-trip preparation call</div>
-                      <div className="text-xs text-cream/60 mono mt-1">60 min · video · personalised plan for your visit</div>
-                    </div>
-                    <div className="display text-xl text-cream">$80</div>
-                  </div>
-                  <div className="scard-dark p-4 flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-cream">Cape Coast accompaniment</div>
-                      <div className="text-xs text-cream/60 mono mt-1">Full day in-person · castle visit + integration walk</div>
-                    </div>
-                    <div className="display text-xl text-cream">$280</div>
-                  </div>
-                  <div className="scard-dark p-4 flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-cream">Post-trip integration</div>
-                      <div className="text-xs text-cream/60 mono mt-1">45 min · video · once you're home in the diaspora</div>
-                    </div>
-                    <div className="display text-xl text-cream">$60</div>
-                  </div>
-                </>
-              )}
+                );
+              })}
             </div>
           </div>
 
@@ -356,10 +364,10 @@ export default function CustodianProfilePage() {
             style={{ background: 'rgba(243,237,224,0.97)', color: 'var(--ink)' }}
           >
             <div className="eyebrow" style={{ color: 'var(--ink)' }}>
-              Book your free intro
+              Book your session
             </div>
             <h3 className="display text-2xl mb-4 leading-tight" style={{ color: 'var(--ink)' }}>
-              15 minutes. Video. No commitment.
+              {selectedService.name} ({selectedService.price === 0 ? 'Free' : `$${selectedService.price}`})
             </h3>
 
             <div className="mb-5">
@@ -502,7 +510,9 @@ export default function CustodianProfilePage() {
                     {selectedCalendarDay?.date.toLocaleString('default', { weekday: 'short' })} {selectedCalendarDay?.dayOfMonth} {selectedCalendarDay?.date.toLocaleString('default', { month: 'short' })} · {selectedTime.toUpperCase()} EST
                   </strong>
                   <br />
-                  <span style={{ color: 'rgba(0,0,0,0.6)' }}>{custodian?.name?.split(' ')[0]}'s local time</span>
+                  <span style={{ color: 'rgba(0,0,0,0.6)' }}>
+                    {selectedService.duration} mins · {selectedService.price === 0 ? 'Free intro' : `$${selectedService.price}`}
+                  </span>
                 </div>
               </div>
             </div>
@@ -514,13 +524,13 @@ export default function CustodianProfilePage() {
                   onClick={() => {
                     if (!selectedCalendarDay) return;
                     const formattedDate = selectedCalendarDay.date.toISOString().split('T')[0]; // YYYY-MM-DD format
-                    router.push(`/custodians/review?id=${id}&date=${formattedDate}&day=${selectedCalendarDay.dayOfMonth}&time=${encodeURIComponent(selectedTime)}&custodianName=${encodeURIComponent(custodian?.name || '')}&location=${encodeURIComponent(custodian?.location || '')}`);
+                    router.push(`/custodians/review?id=${id}&date=${formattedDate}&day=${selectedCalendarDay.dayOfMonth}&time=${encodeURIComponent(selectedTime)}&custodianName=${encodeURIComponent(custodian?.name || '')}&location=${encodeURIComponent(custodian?.location || '')}&session_type=${encodeURIComponent(selectedService.name)}&duration=${selectedService.duration}&price=${selectedService.price}`);
                   }}
                 >
-                  Book free intro →
+                  {selectedService.price === 0 ? 'Book free intro →' : `Book session for $${selectedService.price} →`}
                 </button>
                 <p className="text-xs text-center" style={{ color: 'rgba(0,0,0,0.4)' }}>
-                  No payment required for the intro
+                  {selectedService.price === 0 ? 'No payment required for the intro' : 'Processed via platform'}
                 </p>
               </div>
             </div>

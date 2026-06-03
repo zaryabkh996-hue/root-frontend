@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <g fill="none" stroke="#c9a14a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Crown curves -->
+    <path d="M 200 135 C 190 95, 310 95, 300 135" />
+    <path d="M 180 145 C 180 120, 205 125, 200 135 C 195 145, 175 140, 185 160" />
+    <path d="M 320 145 C 320 120, 295 125, 300 135 C 305 145, 325 140, 315 160" />
+    <path d="M 200 135 Q 250 160 300 135" />
+
+    <!-- Main face mask -->
+    <path d="M 195 175 C 170 230, 170 300, 250 330 C 330 300, 330 230, 305 175 C 295 160, 205 160, 195 175 Z" />
+
+    <!-- Forehead V -->
+    <path d="M 235 180 L 250 205 L 265 180" />
+
+    <!-- Eyes -->
+    <path d="M 200 230 C 205 215, 230 215, 235 230" />
+    <path d="M 200 230 C 205 235, 230 235, 235 230" />
+    
+    <path d="M 265 230 C 270 215, 295 215, 300 230" />
+    <path d="M 265 230 C 270 235, 295 235, 300 230" />
+
+    <!-- Nose -->
+    <path d="M 250 205 L 250 290 Q 250 300 240 300 M 250 290 Q 250 300 260 300" stroke-width="8" />
+
+    <!-- Mouth -->
+    <path d="M 230 310 C 235 300, 265 300, 270 310 Z" />
+
+    <!-- Cheek Dots -->
+    <circle cx="215" cy="265" r="4.5" fill="#c9a14a" stroke="none" />
+    <circle cx="225" cy="275" r="4.5" fill="#c9a14a" stroke="none" />
+    <circle cx="235" cy="265" r="4.5" fill="#c9a14a" stroke="none" />
+    
+    <circle cx="285" cy="265" r="4.5" fill="#c9a14a" stroke="none" />
+    <circle cx="275" cy="275" r="4.5" fill="#c9a14a" stroke="none" />
+    <circle cx="265" cy="265" r="4.5" fill="#c9a14a" stroke="none" />
+
+    <!-- Left Leaf Sprig -->
+    <path d="M 140 280 C 140 230, 160 210, 160 210" />
+    <path d="M 140 280 Q 155 270 160 255" />
+    <path d="M 140 280 Q 130 270 120 255" />
+    <path d="M 160 255 C 165 240, 150 230, 148 245" />
+    <path d="M 120 255 C 115 240, 130 230, 132 245" />
+
+    <!-- Right Leaf Sprig -->
+    <path d="M 360 280 C 360 230, 340 210, 340 210" />
+    <path d="M 360 280 Q 345 270 340 255" />
+    <path d="M 360 280 Q 370 270 380 255" />
+    <path d="M 340 255 C 335 240, 350 230, 352 245" />
+    <path d="M 380 255 C 385 240, 370 230, 368 245" />
+  </g>
+
+  <!-- Typography -->
+  <text x="250" y="395" font-family="'Times New Roman', 'Fraunces', 'Georgia', serif" font-size="46" font-weight="bold" fill="#c9a14a" text-anchor="middle" letter-spacing="2">OUR ROOTS</text>
+  <text x="250" y="455" font-family="'Times New Roman', 'Fraunces', 'Georgia', serif" font-size="64" font-weight="bold" fill="#c9a14a" text-anchor="middle" letter-spacing="6">AFRICA</text>
+</svg>

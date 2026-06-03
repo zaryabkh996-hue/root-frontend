@@ -14,6 +14,9 @@ export default function ReviewPage() {
   const selectedTime = searchParams.get('time') || '12:00pm';
   const custodianName = searchParams.get('custodianName') || 'Custodian';
   const location = searchParams.get('location') || 'Ghana';
+  const sessionType = searchParams.get('session_type') || 'Free 15-min introduction';
+  const sessionDuration = searchParams.get('duration') || '15';
+  const sessionPrice = searchParams.get('price') || '0';
   
   const [message, setMessage] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -40,6 +43,9 @@ export default function ReviewPage() {
         booking_date: selectedDate, // Already in YYYY-MM-DD format
         booking_time: selectedTime,
         message: message,
+        session_type: sessionType,
+        session_duration: parseInt(sessionDuration, 10),
+        amount_charged_usd: parseFloat(sessionPrice),
       };
 
       const response = await fetch(`${backendUrl}/api/bookings`, {
@@ -80,8 +86,9 @@ export default function ReviewPage() {
             {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
           </div></div>
           <div><div className="text-xs text-cream/40 mb-1">Your time (EDT)</div><div className="text-sm font-medium" style={{ fontFamily: 'monospace' }}>{selectedTime.toUpperCase()}</div></div>
-          <div><div className="text-xs text-cream/40 mb-1">Duration</div><div className="text-sm font-medium">15 minutes</div></div>
-          <div><div className="text-xs text-cream/40 mb-1">Cost</div><div className="text-sm font-medium" style={{ color: 'var(--forest-light)' }}>Free intro — no payment</div></div>
+          <div><div className="text-xs text-cream/40 mb-1">Session Type</div><div className="text-sm font-medium">{sessionType}</div></div>
+          <div><div className="text-xs text-cream/40 mb-1">Duration</div><div className="text-sm font-medium">{sessionDuration} minutes</div></div>
+          <div><div className="text-xs text-cream/40 mb-1">Cost</div><div className="text-sm font-medium" style={{ color: 'var(--forest-light)' }}>{sessionPrice === '0' ? 'Free intro — no payment' : `$${sessionPrice}`}</div></div>
         </div>
       </div>
 
@@ -109,7 +116,7 @@ export default function ReviewPage() {
           <li>✓ Calendar invite sent to your email immediately</li>
           <li>✓ WhatsApp confirmation from {custodianName?.split(' ')[0]} within 2 hours</li>
           <li>✓ Video call link provided 30 minutes before session</li>
-          <li>✓ No payment taken — this is a free introduction</li>
+          <li>✓ {sessionPrice === '0' ? 'No payment taken — this is a free introduction' : `Amount due: $${sessionPrice} (Processed via platform)`}</li>
         </ul>
       </div>
 
@@ -135,7 +142,7 @@ export default function ReviewPage() {
               </svg>
             </div>
             <div className="eyebrow mb-2">Confirmed</div>
-            <h2 className="display text-3xl mb-3 leading-tight">Your introduction is booked.</h2>
+            <h2 className="display text-3xl mb-3 leading-tight">Your booking is confirmed.</h2>
             <p className="text-ink-dim mb-6 leading-relaxed">
               {custodianName} will see you on {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} at {selectedTime.toUpperCase()} EDT. Calendar invite + WhatsApp confirmation sent automatically.
             </p>
@@ -147,10 +154,12 @@ export default function ReviewPage() {
                 <div className="font-medium mono">{new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</div>
                 <div className="text-ink-dim">Your time</div>
                 <div className="font-medium mono">{selectedTime.toUpperCase()} EDT</div>
+                <div className="text-ink-dim">Session Type</div>
+                <div className="font-medium">{sessionType}</div>
                 <div className="text-ink-dim">Duration</div>
-                <div className="font-medium">15 minutes</div>
+                <div className="font-medium">{sessionDuration} minutes</div>
                 <div className="text-ink-dim">Cost</div>
-                <div className="font-medium" style={{color:'var(--forest-light)'}}>Free intro</div>
+                <div className="font-medium" style={{color:'var(--forest-light)'}}>{sessionPrice === '0' ? 'Free intro' : `$${sessionPrice}`}</div>
               </div>
             </div>
             <button 

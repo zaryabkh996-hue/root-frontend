@@ -59,9 +59,19 @@ const Sidebar: React.FC = () => {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-2 px-2 mb-8">
-            <div className="w-8 h-8 border border-brass flex items-center justify-center text-brass display text-sm font-semibold">O</div>
-            <div className="display text-sm font-semibold">OurRoots<span className="text-brass">.Africa</span></div>
+          <div 
+            onClick={() => router.push('/dashboard')}
+            className="flex items-center gap-3 px-3 py-4 mb-4 cursor-pointer hover:opacity-95 transition-all"
+          >
+            <img src="/logo-icon.svg" alt="Our Roots Africa" className="w-12 h-12 flex-shrink-0" />
+            <div className="flex flex-col">
+              <div className="font-serif text-lg font-bold leading-tight text-[#f3ede0]">
+                OurRoots<span className="text-[#c9a14a]">.Africa</span>
+              </div>
+              <div className="text-[8px] text-[#c9a14a] font-mono tracking-[0.2em] font-bold mt-0.5 leading-none">
+                SANCTUARY
+              </div>
+            </div>
           </div>
           <div className="eyebrow eyebrow-cream px-3 mb-3" style={{fontSize: '9px'}}>Sanctuary</div>
 

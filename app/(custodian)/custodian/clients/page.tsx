@@ -11,6 +11,11 @@ interface Booking {
   booking_time: string;
   message?: string;
   status: string;
+  session_type?: string;
+  session_duration?: number;
+  platform_link?: string;
+  booking_reference?: string;
+  amount_charged_usd?: string | number;
   created_at: string;
   updated_at: string;
   user?: {
@@ -26,6 +31,10 @@ interface UpcomingSession {
   date: string;
   details: string;
   status: string;
+  bookingReference?: string;
+  sessionType?: string;
+  platformLink?: string;
+  amountChargedUsd?: string | number;
 }
 
 interface PastSession {
@@ -79,10 +88,14 @@ export default function CustodianClients() {
             
             upcoming.push({
               bookingId: booking.id,
-              relative: `${clientName} · Stage 4 · Heritage Journey`,
+              relative: `${clientName} · Ref: ${booking.booking_reference || 'TBA'}`,
               date: `${dayOfWeek} ${monthDate} · ${booking.booking_time || 'Time TBA'}`,
-              details: `${booking.message || 'Cultural experience'} · 90 min · Stage 4 complete`,
-              status: booking.status
+              details: `${booking.message || 'Cultural experience'} · ${booking.session_type || 'Intro'} · ${booking.session_duration || 15} min · USD ${booking.amount_charged_usd || '0.00'}`,
+              status: booking.status,
+              bookingReference: booking.booking_reference,
+              sessionType: booking.session_type,
+              platformLink: booking.platform_link,
+              amountChargedUsd: booking.amount_charged_usd
             });
           } else if (bookingDateTime < now) {
             // Past sessions (before today, regardless of status)
@@ -93,7 +106,7 @@ export default function CustodianClients() {
               relative: clientName,
               location: `${location} · ${date} May`,
               review: '🌅',
-              earned: '$80'
+              earned: booking.amount_charged_usd ? `$${booking.amount_charged_usd}` : '$0'
             });
           }
         });
@@ -208,6 +221,26 @@ export default function CustodianClients() {
                   <span className="a-badge-blue" style={{ padding: '7px 14px', fontSize: '12px' }}>
                     ✓ Confirmed
                   </span>
+                )}
+                {session.platformLink && (
+                  <a 
+                    href={session.platformLink.startsWith('http') ? session.platformLink : `https://${session.platformLink}`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="c-btn-primary" 
+                    style={{ 
+                      fontSize: '12px', 
+                      padding: '7px 14px', 
+                      background: '#1f5a3d', 
+                      color: '#ffffff', 
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      borderRadius: '2px'
+                    }}
+                  >
+                    💻 Join Meeting
+                  </a>
                 )}
                 <button className="c-btn-ghost">Message via platform</button>
               </div>

@@ -17,12 +17,12 @@ export default function HeaderAuthButtons() {
         else setDashPath('/dashboard');
         return;
       }
-      // Check Auth0 session (OAuth users)
+      // Check Auth0 session (OAuth users) without throwing 401 errors in console
       try {
-        const res = await fetch('/api/auth/user');
+        const res = await fetch('/api/auth/check-session');
         if (res.ok) {
           const data = await res.json();
-          if (data.user) {
+          if (data.session?.user) {
             setIsLoggedIn(true);
             setDashPath('/dashboard');
           }

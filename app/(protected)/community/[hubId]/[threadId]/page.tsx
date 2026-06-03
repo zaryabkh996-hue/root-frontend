@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { AuthService } from '@/app/lib/authService';
+import { useNotification } from '@/app/lib/NotificationContext';
 
 interface ThreadPost {
   id: string;
+  user_id?: number | string;
   author: string;
   author_initials: string;
   time_ago: string;
@@ -19,6 +21,7 @@ interface ThreadPost {
 
 interface Reply {
   id: string;
+  user_id?: number | string;
   author: string;
   author_initials: string;
   is_custodian?: boolean;
@@ -39,6 +42,11 @@ export default function ThreadDetailPage() {
   const [thread, setThread] = useState<ThreadPost | null>(null);
   const [replies, setReplies] = useState<Reply[]>([]);
   const [loading, setLoading] = useState(true);
+  const currentUser = AuthService.getUser();
+  const { showNotification } = useNotification();
+
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{ type: 'thread' | 'reply', id: string } | null>(null);
 
   useEffect(() => {
     const fetchThreadData = async () => {
@@ -70,6 +78,7 @@ export default function ThreadDetailPage() {
 
         setThread({
           ...threadItem,
+          user_id: threadItem.user_id,
           content: contentArray,
           replies_count: threadItem.replies_count || 0,
           custodian_responses: threadItem.custodian_responses || 0,
@@ -88,6 +97,7 @@ export default function ThreadDetailPage() {
           const repliesData = await repliesResponse.json();
           const mappedReplies = repliesData.data.map((reply: any) => ({
             id: reply.id,
+            user_id: reply.user_id,
             author: reply.author,
             author_initials: reply.author_initials,
             is_custodian: reply.is_custodian,
@@ -144,6 +154,7 @@ export default function ThreadDetailPage() {
           const repliesData = await repliesResponse.json();
           const mappedReplies = repliesData.data.map((reply: any) => ({
             id: reply.id,
+            user_id: reply.user_id,
             author: reply.author,
             author_initials: reply.author_initials,
             is_custodian: reply.is_custodian,
@@ -154,13 +165,53 @@ export default function ThreadDetailPage() {
           }));
           setReplies(mappedReplies);
         }
-        alert('Reply posted. The community appreciates your contribution.');
+        showNotification('Reply posted. The community appreciates your contribution.', 'success');
       }
     } catch (error) {
       console.error('Error posting reply:', error);
-      alert('Failed to post reply');
+      showNotification('Failed to post reply', 'error');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const triggerReportConfirm = (type: 'thread' | 'reply', id: string) => {
+    setReportTarget({ type, id });
+    setConfirmModalOpen(true);
+  };
+
+  const handleConfirmReport = async () => {
+    if (!reportTarget) return;
+    setConfirmModalOpen(false);
+    const { type, id } = reportTarget;
+
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const response = await fetch(
+        `${backendUrl}/api/community/reports`,
+        {
+          method: 'POST',
+          headers: AuthService.getAuthHeaders(),
+          body: JSON.stringify({
+            item_type: type,
+            item_id: id,
+            reason: 'Reported via community flag icon.',
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        showNotification(result.message || 'Thank you for reporting. The administrators will review it.', 'success');
+      } else {
+        showNotification(result.error || 'Failed to submit report.', 'error');
+      }
+    } catch (error) {
+      console.error('Error reporting post:', error);
+      showNotification('Failed to submit report. Please try again later.', 'error');
+    } finally {
+      setReportTarget(null);
     }
   };
 
@@ -220,22 +271,36 @@ export default function ThreadDetailPage() {
 
       {/* Original Post */}
       <div className="scard-dark p-5 mb-6" style={{ borderLeft: '3px solid var(--brass)' }}>
-        <div className="flex items-start gap-3 mb-4">
-          <div 
-            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold text-brass flex-shrink-0"
-            style={{ background: 'rgba(201,161,74,0.2)' }}
-          >
-            {thread.author_initials}
-          </div>
-          <div>
-            <div className="text-sm font-medium">
-              {thread.author} 
-              <span className="text-cream/40 text-xs mono" style={{ marginLeft: '8px' }}>
-                · {thread.time_ago} · {thread.location}
-              </span>
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-start gap-3">
+            <div 
+              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold text-brass flex-shrink-0"
+              style={{ background: 'rgba(201,161,74,0.2)' }}
+            >
+              {thread.author_initials}
             </div>
-            <div className="text-xs text-cream/40">{thread.user_stage}</div>
+            <div>
+              <div className="text-sm font-medium">
+                {thread.author} 
+                <span className="text-cream/40 text-xs mono" style={{ marginLeft: '8px' }}>
+                  · {thread.time_ago} · {thread.location}
+                </span>
+              </div>
+              <div className="text-xs text-cream/40">{thread.user_stage}</div>
+            </div>
           </div>
+          {currentUser && String(currentUser.id) !== String(thread.user_id) && (
+            <button 
+              onClick={() => triggerReportConfirm('thread', thread.id)}
+              title="Report this post"
+              className="text-cream/40 hover:text-red-500 transition-colors p-1"
+              style={{ display: 'flex', alignItems: 'center' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"></path>
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Title */}
@@ -267,30 +332,45 @@ export default function ThreadDetailPage() {
             className="scard-dark p-4"
             style={reply.is_custodian ? { borderLeft: '3px solid var(--forest-light)' } : {}}
           >
-            <div className="flex items-start gap-3">
-              <div 
-                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
-                style={{
-                  background: reply.is_custodian ? 'rgba(31,90,61,0.3)' : reply.avatarBg,
-                  color: reply.avatarColor || (reply.is_custodian ? 'var(--forest-light)' : 'inherit'),
-                }}
-              >
-                {reply.author_initials}
-              </div>
-              <div className="flex-1">
-                <div className="text-sm font-medium mb-1">
-                  {reply.author}
-                  {reply.is_custodian && (
-                    <span className="tag tag-brass" style={{ fontSize: '8px', padding: '1px 5px', marginLeft: '4px' }}>
-                      Custodian
-                    </span>
-                  )}
-                  <span className="text-cream/40 text-xs mono" style={{ marginLeft: '8px' }}>
-                    · {reply.time_ago}
-                  </span>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 flex-1">
+                <div 
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
+                  style={{
+                    background: reply.is_custodian ? 'rgba(31,90,61,0.3)' : reply.avatarBg,
+                    color: reply.avatarColor || (reply.is_custodian ? 'var(--forest-light)' : 'inherit'),
+                  }}
+                >
+                  {reply.author_initials}
                 </div>
-                <p className="text-sm text-cream/70 leading-relaxed">{reply.content}</p>
+                <div className="flex-1">
+                  <div className="text-sm font-medium mb-1">
+                    {reply.author}
+                    {reply.is_custodian && (
+                      <span className="tag tag-brass" style={{ fontSize: '8px', padding: '1px 5px', marginLeft: '4px' }}>
+                        Custodian
+                      </span>
+                    )}
+                    <span className="text-cream/40 text-xs mono" style={{ marginLeft: '8px' }}>
+                      · {reply.time_ago}
+                    </span>
+                  </div>
+                  <p className="text-sm text-cream/70 leading-relaxed">{reply.content}</p>
+                </div>
               </div>
+              
+              {currentUser && String(currentUser.id) !== String(reply.user_id) && (
+                <button 
+                  onClick={() => triggerReportConfirm('reply', reply.id)}
+                  title="Report this message"
+                  className="text-cream/30 hover:text-red-500 transition-colors p-1"
+                  style={{ display: 'flex', alignItems: 'center' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"></path>
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -324,6 +404,61 @@ export default function ThreadDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px',
+        }}>
+          <div className="scard-dark" style={{
+            width: '100%',
+            maxWidth: '400px',
+            padding: '24px',
+            borderRadius: '8px',
+            border: '1px solid rgba(201,161,74,0.2)',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+            textAlign: 'center',
+          }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--brass)" strokeWidth="2" style={{ marginBottom: '12px', marginLeft: 'auto', marginRight: 'auto' }}>
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--cream)', marginBottom: '8px', fontFamily: 'inherit' }}>
+              Report Message
+            </h3>
+            <p style={{ fontSize: '13px', color: 'rgba(243,237,224,0.7)', marginBottom: '20px', lineHeight: '1.5' }}>
+              Are you sure you want to report this message for guidelines violations?
+            </p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button 
+                onClick={() => { setConfirmModalOpen(false); setReportTarget(null); }}
+                className="btn-ghost text-xs"
+                style={{ padding: '8px 16px', background: 'rgba(243,237,224,0.05)', border: '1px solid rgba(243,237,224,0.1)' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleConfirmReport}
+                className="btn-primary text-xs"
+                style={{ padding: '8px 16px', background: '#b91c1c', border: '1px solid #b91c1c', color: '#fff' }}
+              >
+                Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

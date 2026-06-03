@@ -12,6 +12,11 @@ interface Booking {
   booking_time: string;
   message: string | null;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  session_type?: string;
+  session_duration?: number;
+  platform_link?: string;
+  booking_reference?: string;
+  amount_charged_usd?: string | number;
   user: {
     id: number;
     name: string;
@@ -177,20 +182,47 @@ export default function CustodianBookingsPage() {
                   
                   <div className="grid grid-cols-3 gap-4 mb-3 text-xs">
                     <div>
-                      <div className="text-cream/40 mb-1">Date</div>
+                      <div className="text-cream/40 mb-1">Date &amp; Time</div>
                       <div className="font-medium" style={{ fontFamily: 'monospace' }}>
-                        {formatDate(booking.booking_date)}
+                        {formatDate(booking.booking_date)} · {booking.booking_time.toUpperCase()}
                       </div>
                     </div>
                     <div>
-                      <div className="text-cream/40 mb-1">Time</div>
-                      <div className="font-medium" style={{ fontFamily: 'monospace' }}>
-                        {booking.booking_time.toUpperCase()}
+                      <div className="text-cream/40 mb-1">Reference</div>
+                      <div className="font-medium text-brass/80" style={{ fontFamily: 'monospace' }}>
+                        {booking.booking_reference || 'Pending'}
                       </div>
                     </div>
                     <div>
-                      <div className="text-cream/40 mb-1">Email</div>
-                      <div className="font-medium text-brass/80">{booking.user.email}</div>
+                      <div className="text-cream/40 mb-1">Session Info</div>
+                      <div className="font-medium text-cream">
+                        {booking.session_type || 'Introduction'} ({booking.session_duration || 15} min)
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-cream/40 mb-1">Amount Charged</div>
+                      <div className="font-medium text-forest-light">
+                        {booking.amount_charged_usd ? `$${booking.amount_charged_usd}` : 'Free'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-cream/40 mb-1">Platform Link</div>
+                      <div className="font-medium">
+                        {booking.platform_link ? (
+                          <a 
+                            href={booking.platform_link.startsWith('http') ? booking.platform_link : `https://${booking.platform_link}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-brass hover:underline"
+                          >
+                            Join Session
+                          </a>
+                        ) : 'Not set'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-cream/40 mb-1">Client Email</div>
+                      <div className="font-medium text-cream/70">{booking.user.email}</div>
                     </div>
                   </div>
 

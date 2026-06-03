@@ -121,6 +121,9 @@ export default function ProfilePage() {
             });
             setProfileVisibility(data.profileVisibility || 'public');
             setPhotosDefault(data.journeyPhotosDefault || 'community');
+            if (data.notificationPreferences) {
+              setNotifications(data.notificationPreferences);
+            }
           }
         } else {
           console.error('[Profile Load] Response not OK:', response.status);
@@ -442,8 +445,34 @@ export default function ProfilePage() {
     }
   };
 
-  const toggleNotification = (key: keyof typeof notifications) => {
-    setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
+  const toggleNotification = async (key: keyof typeof notifications) => {
+    const newValue = !notifications[key];
+    setNotifications(prev => ({ ...prev, [key]: newValue }));
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+      const response = await fetch(`${apiUrl}/user/notifications`, {
+        method: 'PUT',
+        headers: {
+          ...AuthService.getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          [key]: newValue,
+        }),
+      });
+
+      if (!response.ok) {
+        setNotifications(prev => ({ ...prev, [key]: !newValue }));
+        setError('Failed to update notification preferences');
+      } else {
+        setSuccess('Notification preferences updated');
+        setTimeout(() => setSuccess(null), 3000);
+      }
+    } catch (err) {
+      setNotifications(prev => ({ ...prev, [key]: !newValue }));
+      setError('Failed to update notification preferences');
+    }
   };
 
   const getUserName = () => userProfile.name || 'Loading...';

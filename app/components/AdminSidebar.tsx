@@ -51,14 +51,17 @@ const AdminSidebar: React.FC = () => {
         <div className="flex flex-col h-full">
 
           {/* Logo */}
-          <div style={{ padding: '20px 14px'}}>
-            <div className="flex items-center gap-2">
-              <div className="admin-brand-mark">O</div>
-              <div>
-                <div className="admin-brand-text">
-                  OurRoots<span style={{ color: '#c9a14a' }}>.Africa</span>
-                </div>
-                <div style={{ fontSize: '8px', color: '#9ca3af', marginTop: '3px', fontWeight: 500 }}>Admin Portal</div>
+          <div 
+            onClick={() => router.push('/admin/dashboard')}
+            className="flex items-center gap-3 px-3 py-4 mb-4 cursor-pointer hover:opacity-95 transition-all"
+          >
+            <img src="/logo-icon.svg" alt="Our Roots Africa" className="w-12 h-12 flex-shrink-0" />
+            <div className="flex flex-col">
+              <div className="font-serif text-lg font-bold leading-tight text-[#f3ede0]">
+                OurRoots<span className="text-[#c9a14a]">.Africa</span>
+              </div>
+              <div className="text-[8px] text-[#c9a14a] font-mono tracking-[0.2em] font-bold mt-0.5 leading-none">
+                ADMIN PORTAL
               </div>
             </div>
           </div>

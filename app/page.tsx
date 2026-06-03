@@ -81,6 +81,7 @@ interface FeaturedCustodian {
 export default function Home() {
   const router = useRouter();
   const [showCustodianModal, setShowCustodianModal] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -139,8 +140,8 @@ export default function Home() {
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
         const apiUrl = `${backendUrl}/api/custodians?page=1&limit=3`;
-        console.log('Fetching custodians from:', apiUrl);
-        
+
+
         const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
@@ -150,31 +151,28 @@ export default function Home() {
           mode: 'cors',
         });
 
-        console.log('API Response status:', response.status, response.statusText);
-        
+
+
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('API Error Response:', errorText);
+
           throw new Error(`Failed to fetch custodians: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
-        console.log('Fetched custodians data:', data);
-        console.log('Custodians array:', data.custodians);
-        console.log('Number of custodians:', data.custodians?.length || 0);
-        
+
         // Transform backend data to match FeaturedCustodian interface
         const transformedCustodians = (data.custodians || []).map((custodian: any) => {
           // Generate avatar initials from name
           const avatar_initials = custodian.name
             ? custodian.name
-                .split(' ')
-                .map((word: string) => word.charAt(0))
-                .join('')
-                .toUpperCase()
-                .substring(0, 2)
+              .split(' ')
+              .map((word: string) => word.charAt(0))
+              .join('')
+              .toUpperCase()
+              .substring(0, 2)
             : 'C';
-          
+
           // Parse tags if they're stored as JSON string
           let tags = [];
           if (custodian.tags) {
@@ -188,10 +186,10 @@ export default function Home() {
               tags = custodian.tags;
             }
           }
-          
+
           // Determine verified status (active status means verified)
           const verified = custodian.status === 'active' || custodian.status === null;
-          
+
           return {
             id: custodian.id,
             name: custodian.name || 'Unknown Custodian',
@@ -206,12 +204,11 @@ export default function Home() {
             verified,
           };
         });
-        
-        console.log('Transformed custodians:', transformedCustodians);
+
+
         setFeaturedCustodians(transformedCustodians);
         setTotalCustodians(data.total || 0);
       } catch (error) {
-        console.error('Error fetching featured custodians:', error);
         setFeaturedCustodians([]);
       } finally {
         setCustodiansLoading(false);
@@ -320,14 +317,23 @@ export default function Home() {
     <div>
       {/* Top header */}
       <header className="bg-forest-deepest text-cream">
-        <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 border-2 border-brass flex items-center justify-center text-brass display text-xl font-semibold">O</div>
-            <div>
-              <div className="display text-base font-semibold leading-none">OurRoots<span className="text-brass">.Africa</span></div>
-              <div className="eyebrow eyebrow-cream mt-1" style={{fontSize:'9px'}}>Sanctuary Edition</div>
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 md:py-5 flex items-center justify-between">
+          <div 
+            onClick={() => router.push('/')}
+            className="flex items-center gap-2 md:gap-3 cursor-pointer hover:opacity-95 transition-all"
+          >
+            <img src="/logo-icon.svg" alt="Our Roots Africa" className="h-8 w-8 md:h-12 md:w-12 flex-shrink-0" style={{ maxHeight: '32px' }} />
+            <div className="flex flex-col">
+              <div className="font-serif text-sm md:text-lg font-bold leading-tight text-[#f3ede0]">
+                OurRoots<span className="text-[#c9a14a]">.Africa</span>
+              </div>
+              <div className="text-[7px] md:text-[8px] text-[#c9a14a] font-mono tracking-[0.2em] font-bold mt-0.5 leading-none">
+                SANCTUARY EDITION
+              </div>
             </div>
           </div>
+
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-7 text-sm">
             <a href="#how-it-works" className="ul-link text-cream/80 hover:text-cream">How it works</a>
             <a href="#the-6-stages" className="ul-link text-cream/80 hover:text-cream hidden lg:inline">The 6 stages</a>
@@ -335,10 +341,96 @@ export default function Home() {
             <a href="#pricing" className="ul-link text-cream/80 hover:text-cream hidden lg:inline">Pricing</a>
             <a href="#faq" className="ul-link text-cream/80 hover:text-cream hidden lg:inline">FAQ</a>
           </nav>
-          <div className="flex items-center gap-2" style={{flexShrink:0}}>
-            <HeaderAuthButtons />
+
+          {/* Right actions */}
+          <div className="flex items-center gap-2 md:gap-3" style={{ flexShrink: 0 }}>
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center gap-2">
+              <HeaderAuthButtons />
+            </div>
+
+            {/* Mobile Actions: Always show primary CTA outside drawer */}
+            <div className="flex md:hidden items-center gap-2">
+              <a 
+                href="/quiz" 
+                className="navbar-cta-primary flex items-center justify-center font-semibold transition-colors"
+                style={{
+                  fontFamily: "'Instrument Sans', sans-serif",
+                  fontSize: '0.875rem',
+                  padding: '6px 12px',
+                  background: '#c9a14a',
+                  color: '#0a1810',
+                  borderRadius: '4px',
+                  minHeight: '36px',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                Begin
+              </a>
+              {/* Hamburger Button: minimum 44px touch target */}
+              <button 
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="w-11 h-11 flex items-center justify-center text-cream focus:outline-none"
+                aria-label="Toggle navigation menu"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  {isMobileMenuOpen ? (
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  ) : (
+                    <path d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile Drawer */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}>
+            <div 
+              className="absolute top-0 right-0 h-screen w-64 bg-[#0a1810] border-l border-brass/10 p-6 flex flex-col gap-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-brass/10 pb-4">
+                <span className="font-serif text-base font-bold text-[#f3ede0]">Menu</span>
+                <button 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-10 h-10 flex items-center justify-center text-cream"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <nav className="flex flex-col gap-4 text-cream/80 font-medium">
+                <a href="#how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brass py-2 border-b border-brass/5">How it works</a>
+                <a href="#the-6-stages" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brass py-2 border-b border-brass/5">The 6 stages</a>
+                <a href="#custodians" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brass py-2 border-b border-brass/5">Custodians</a>
+                <a href="#pricing" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brass py-2 border-b border-brass/5">Pricing</a>
+                <a href="#faq" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brass py-2 border-b border-brass/5">FAQ</a>
+              </nav>
+              <div className="mt-auto flex flex-col gap-3 pt-6 border-t border-brass/10">
+                {/* Mobile Drawer Auth Actions */}
+                <a 
+                  href="/login" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full py-3 text-center border border-brass/25 hover:border-brass text-cream font-semibold rounded"
+                >
+                  Login
+                </a>
+                <a 
+                  href="/quiz" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full py-3 text-center bg-brass hover:bg-brass-light text-forest-deepest font-semibold rounded"
+                >
+                  Begin
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Hero */}
@@ -612,7 +704,7 @@ export default function Home() {
               <a href="#modal-community" className="btn-ghost w-full justify-center">Choose Community</a>
             </div>
             {/* Preparation */}
-            <div className="scard-dark p-7 flex flex-col relative" style={{background:'var(--forest-deepest)'}}>
+            <div className="scard-dark p-7 flex flex-col relative" style={{ background: 'var(--forest-deepest)' }}>
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brass text-forest-deepest text-xs mono font-semibold px-3 py-1 tracking-wider">MOST POPULAR</div>
               <div className="eyebrow eyebrow-cream mb-2">Tier 03 · Immersive</div>
               <h3 className="display text-3xl mb-1 text-cream">Preparation</h3>
@@ -714,8 +806,16 @@ export default function Home() {
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-8 mt-10 pt-6 border-t border-brass/10 flex flex-col md:flex-row justify-between gap-3 text-xs text-cream/50">
-          <div>© 2026 AnomozSoftwares · All rights reserved</div>
-          <div className="mono">hello@ourroots.africa · WhatsApp +61 433 960 900</div>
+          <div>
+            <div>© 2026 OurRoots.Africa · 3Men Pty Ltd</div>
+            <div className="mt-1">Level 1, 63-73 Ann Street, Surry Hills NSW 2010, Australia</div>
+          </div>
+          <div className="mono">
+            <a href="mailto:support@ourroots.africa" className="hover:underline">support@ourroots.africa</a> ·{' '}
+            <a href="https://wa.me/61433960900" target="_blank" rel="noopener noreferrer" className="hover:underline">
+              WhatsApp +61 433 960 900
+            </a>
+          </div>
         </div>
       </footer>
 
@@ -1052,11 +1152,11 @@ export default function Home() {
 
       {/* Stage 2 Modal */}
       <div id="modal-community" className="modal-overlay">
-        <div className="modal-card scard-dark p-9" style={{maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)'}}>
+        <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)' }}>
           <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 2 · Cultural Intelligence</div>
           <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
           <p className="text-sm text-cream/70 leading-relaxed mb-6">Greetings, protocols, elder etiquette, market language, sacred space behaviour.</p>
-          <div className="scard-warm p-5 mb-5" style={{background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)'}}>
+          <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
             <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Community tier</div><div className="display text-3xl text-brass-light">$27<span className="text-sm text-cream/60">/mo</span></div></div>
             <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
           </div>
@@ -1076,11 +1176,11 @@ export default function Home() {
 
       {/* Stage 3 Modal */}
       <div id="modal-stage3" className="modal-overlay">
-        <div className="modal-card scard-dark p-9" style={{maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)'}}>
+        <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)' }}>
           <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 3 · Practical Preparation</div>
           <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
           <p className="text-sm text-cream/70 leading-relaxed mb-6">Visa paperwork, health, packing, money, transport, accommodation.</p>
-          <div className="scard-warm p-5 mb-5" style={{background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)'}}>
+          <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
             <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
             <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
           </div>
@@ -1101,11 +1201,11 @@ export default function Home() {
 
       {/* Stage 4 Modal */}
       <div id="modal-preparation" className="modal-overlay">
-        <div className="modal-card scard-dark p-9" style={{maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)'}}>
+        <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)' }}>
           <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 4 · Arrival Orientation</div>
           <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
           <p className="text-sm text-cream/70 leading-relaxed mb-6">First 72 hours. Airport handover, host family meeting, jet-lag protocol, the chief's blessing if a Day Name awaits you.</p>
-          <div className="scard-warm p-5 mb-5" style={{background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)'}}>
+          <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
             <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
             <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
           </div>
@@ -1126,11 +1226,11 @@ export default function Home() {
 
       {/* Stage 5 Modal */}
       <div id="modal-stage5" className="modal-overlay">
-        <div className="modal-card scard-dark p-9" style={{maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)'}}>
+        <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)' }}>
           <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 5 · Heritage Journey</div>
           <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
           <p className="text-sm text-cream/70 leading-relaxed mb-6">The deepest part. Cape Coast Castle. The Door of No Return. Real-time emotional support via Amen AI on WhatsApp throughout your in-country experience.</p>
-          <div className="scard-warm p-5 mb-5" style={{background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)'}}>
+          <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
             <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
             <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
           </div>
@@ -1151,11 +1251,11 @@ export default function Home() {
 
       {/* Stage 6 Modal */}
       <div id="modal-stage6" className="modal-overlay">
-        <div className="modal-card scard-dark p-9" style={{maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)'}}>
+        <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)' }}>
           <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 6 · Post-Journey Integration</div>
           <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
           <p className="text-sm text-cream/70 leading-relaxed mb-6">Re-entry is its own journey. The Love Hub community, debrief sessions, the question of whether — and how — you carry Africa home with you.</p>
-          <div className="scard-warm p-5 mb-5" style={{background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)'}}>
+          <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
             <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
             <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
           </div>

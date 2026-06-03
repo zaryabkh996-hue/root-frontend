@@ -70,9 +70,19 @@ const CustodianSidebar: React.FC = () => {
       {/* Sidebar */}
       <aside className="cust-side">
         {/* Logo */}
-        <div className="cust-side-logo">
-          <div style={{ fontFamily: 'Fraunces,Georgia,serif', fontSize: '13px', fontWeight: 500, color: '#f0ebe0' }}>
-            OurRoots<span style={{ color: 'var(--c-amber)' }}>.Africa</span>
+        <div 
+          onClick={() => router.push('/custodian/dashboard')}
+          className="cust-side-logo flex items-center gap-3 px-3 py-4 hover:opacity-95 transition-all"
+          style={{ cursor: 'pointer' }}
+        >
+          <img src="/logo-icon.svg" alt="Our Roots Africa" className="w-12 h-12 flex-shrink-0" />
+          <div className="flex flex-col">
+            <div className="font-serif text-lg font-bold leading-tight text-[#f0ebe0]">
+              OurRoots<span className="text-[#c9a14a]">.Africa</span>
+            </div>
+            <div className="text-[8px] text-[#c9a14a] font-mono tracking-[0.2em] font-bold mt-0.5 leading-none">
+              CUSTODIAN PORTAL
+            </div>
           </div>
         </div>
 
