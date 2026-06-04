@@ -318,7 +318,7 @@ export default function Home() {
       {/* Top header */}
       <header className="bg-forest-deepest text-cream">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 md:py-5 flex items-center justify-between">
-          <div 
+          <div
             onClick={() => router.push('/')}
             className="flex items-center gap-2 md:gap-3 cursor-pointer hover:opacity-95 transition-all"
           >
@@ -351,8 +351,8 @@ export default function Home() {
 
             {/* Mobile Actions: Always show primary CTA outside drawer */}
             <div className="flex md:hidden items-center gap-2">
-              <a 
-                href="/quiz" 
+              <a
+                href="/quiz"
                 className="navbar-cta-primary flex items-center justify-center font-semibold transition-colors"
                 style={{
                   fontFamily: "'Instrument Sans', sans-serif",
@@ -369,7 +369,7 @@ export default function Home() {
                 Begin
               </a>
               {/* Hamburger Button: minimum 44px touch target */}
-              <button 
+              <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="w-11 h-11 flex items-center justify-center text-cream focus:outline-none"
                 aria-label="Toggle navigation menu"
@@ -389,13 +389,13 @@ export default function Home() {
         {/* Mobile Drawer */}
         {isMobileMenuOpen && (
           <div className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}>
-            <div 
+            <div
               className="absolute top-0 right-0 h-screen w-64 bg-[#0a1810] border-l border-brass/10 p-6 flex flex-col gap-6 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between border-b border-brass/10 pb-4">
                 <span className="font-serif text-base font-bold text-[#f3ede0]">Menu</span>
-                <button 
+                <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-10 h-10 flex items-center justify-center text-cream"
                 >
@@ -413,15 +413,15 @@ export default function Home() {
               </nav>
               <div className="mt-auto flex flex-col gap-3 pt-6 border-t border-brass/10">
                 {/* Mobile Drawer Auth Actions */}
-                <a 
-                  href="/login" 
+                <a
+                  href="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full py-3 text-center border border-brass/25 hover:border-brass text-cream font-semibold rounded"
                 >
                   Login
                 </a>
-                <a 
-                  href="/quiz" 
+                <a
+                  href="/quiz"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full py-3 text-center bg-brass hover:bg-brass-light text-forest-deepest font-semibold rounded"
                 >
@@ -805,7 +805,24 @@ export default function Home() {
             <ul className="space-y-2 text-xs"><li>Privacy</li><li>Terms</li><li>Custodian Code</li><li>Trauma-informed pledge</li></ul>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto px-8 mt-10 pt-6 border-t border-brass/10 flex flex-col md:flex-row justify-between gap-3 text-xs text-cream/50">
+        <div className="max-w-7xl mx-auto px-8 mt-12 pt-8 border-t border-brass/10 flex flex-col items-center gap-4 text-sm">
+          <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-cream/90 font-medium">
+            <a href="https://www.instagram.com/ourroots.africa" target="_blank" rel="noopener noreferrer" className="hover:text-brass transition-colors">Instagram</a>
+            <a href="https://www.facebook.com/ourroots.africa" target="_blank" rel="noopener noreferrer" className="hover:text-brass transition-colors">Facebook</a>
+            <a href="https://www.youtube.com/@ourroots.africa" target="_blank" rel="noopener noreferrer" className="hover:text-brass transition-colors">YouTube</a>
+            <a href="https://www.linkedin.com/company/ourroots-africa/" target="_blank" rel="noopener noreferrer" className="hover:text-brass transition-colors">LinkedIn</a>
+            <a href="https://au.pinterest.com/afrofeast/" target="_blank" rel="noopener noreferrer" className="hover:text-brass transition-colors">Pinterest @afrofeast</a>
+          </div>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-cream/50 text-xs">
+            <a href="https://ourroots.africa" target="_blank" rel="noopener noreferrer" className="hover:text-brass transition-colors">OurRoots.Africa</a>
+            <a href="https://amenai.africa" target="_blank" rel="noopener noreferrer" className="hover:text-brass transition-colors">AmenAI.Africa</a>
+            <a href="https://afrofeast.com.au" target="_blank" rel="noopener noreferrer" className="hover:text-brass transition-colors">Afrofeast.com.au</a>
+            <a href="https://afrofeast.travel" target="_blank" rel="noopener noreferrer" className="hover:text-brass transition-colors">Afrofeast.travel</a>
+            <a href="https://daal.africa" target="_blank" rel="noopener noreferrer" className="hover:text-brass transition-colors">DAAL.Africa</a>
+            <a href="https://dennisobel.com" target="_blank" rel="noopener noreferrer" className="hover:text-brass transition-colors">DennisObel.com</a>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-8 mt-8 pt-6 flex flex-col md:flex-row justify-between gap-3 text-xs text-cream/50">
           <div>
             <div>© 2026 OurRoots.Africa · 3Men Pty Ltd</div>
             <div className="mt-1">Level 1, 63-73 Ann Street, Surry Hills NSW 2010, Australia</div>
