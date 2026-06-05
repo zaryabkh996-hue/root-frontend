@@ -13,9 +13,13 @@ import {
   ComputedProgress,
   loadProgress,
   saveProgress,
+  getModuleById,
   getNextModuleId,
   computeProgress,
   STAGES,
+  ACTIVE_STAGES,
+  setGlobalStages,
+  Stage,
 } from './progressStore';
 import {
   fetchRemoteProgress,
@@ -25,6 +29,71 @@ import {
   remoteSetFeedback,
   RemoteProgress,
 } from './progressApi';
+
+const TRACK_TO_STAGE_ID: Record<string, number> = {
+  'Emotional Preparation': 1,
+  'Cultural Intelligence': 2,
+  'Practical Preparation': 3,
+  'Arrival Orientation': 4,
+  'Heritage Journey Experience': 5,
+  'Post Journey Experience': 6,
+};
+
+function buildStagesFromModules(sanityModules: any[]): Stage[] {
+  return STAGES.map(staticStage => {
+    const stageModules = sanityModules
+      .filter(m => {
+        const stageId = TRACK_TO_STAGE_ID[m.track];
+        return stageId === staticStage.id;
+      })
+      .sort((a, b) => (a.moduleNumber || 0) - (b.moduleNumber || 0))
+      .map(m => {
+        let duration = '10 min';
+        if (m.subtitle) {
+          const parts = m.subtitle.split(' · ');
+          if (parts[0]) {
+            duration = parts[0];
+          }
+        }
+
+        let warning: string | undefined = undefined;
+        if (m.sensitivity === 'high') {
+          warning = 'High sensitivity';
+        } else if (m.sensitivity === 'low' && (m.title.includes('Truths') || m.title.includes('Castle'))) {
+          warning = 'Content warning';
+        }
+
+        return {
+          id: `${staticStage.id}.${m.moduleNumber}`,
+          title: m.title,
+          duration: duration,
+          type: m.contentType || 'Story Module',
+          warning,
+          meta: m.slug, // Store slug in meta
+          slug: m.slug,
+          body: m.body,
+          takeaways: m.takeaways,
+          resourceUrl: m.resourceUrl,
+        };
+      });
+
+    const totalDuration = stageModules.reduce((sum, m) => {
+      const minutes = parseInt(m.duration) || 0;
+      return sum + minutes;
+    }, 0);
+
+    const tierDisplay = staticStage.tier;
+    const durationDisplay = totalDuration > 0 ? `~${totalDuration} min` : '0 min';
+    const modulesCountDisplay = `${stageModules.length} ${stageModules.length === 1 ? 'module' : 'modules'}`;
+    const meta = `Stage 0${staticStage.id} · ${tierDisplay} · ${durationDisplay} · ${modulesCountDisplay}`;
+
+    return {
+      ...staticStage,
+      meta,
+      modules: stageModules,
+    };
+  });
+}
 
 interface ProgressContextValue {
   progress: UserProgress;
@@ -87,18 +156,34 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     setIsSyncing(true);
 
-    fetchRemoteProgress().then(remote => {
-      if (cancelled) return;
-      setIsSyncing(false);
+    // Fetch published modules from API first, build dynamic stages, and update store
+    fetch('/api/content')
+      .then(res => res.json())
+      .then(result => {
+        if (cancelled) return;
+        if (result.success && Array.isArray(result.data)) {
+          const dynamicStages = buildStagesFromModules(result.data);
+          setGlobalStages(dynamicStages);
+          // Trigger progress update/recompute
+          setProgress(prev => ({ ...prev }));
+        }
+      })
+      .catch(err => console.error('Failed to load Sanity modules:', err))
+      .finally(() => {
+        if (cancelled) return;
+        fetchRemoteProgress().then(remote => {
+          if (cancelled) return;
+          setIsSyncing(false);
 
-      if (remote) {
-        setProgress(local => {
-          const merged = mergeRemote(local, remote);
-          saveProgress(merged); // keep localStorage in sync
-          return merged;
+          if (remote) {
+            setProgress(local => {
+              const merged = mergeRemote(local, remote);
+              saveProgress(merged); // keep localStorage in sync
+              return merged;
+            });
+          }
         });
-      }
-    });
+      });
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,16 +196,20 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
   // ── Complete a module ────────────────────────────────────────────────────
   const completeModule = useCallback((moduleId: string) => {
-    setProgress(prev => {
-      if (prev.completedModules.includes(moduleId)) return prev;
+    // Resolve module ID to numeric format (e.g., '1.1')
+    const found = getModuleById(moduleId);
+    const resolvedId = found ? found.module.id : moduleId;
 
-      const newCompleted = [...prev.completedModules, moduleId];
-      const nextId = getNextModuleId(moduleId);
+    setProgress(prev => {
+      if (prev.completedModules.includes(resolvedId)) return prev;
+
+      const newCompleted = [...prev.completedModules, resolvedId];
+      const nextId = getNextModuleId(resolvedId);
 
       const newUnlocked = [...prev.unlockedStages];
       const newCompletedStages = [...prev.completedStages];
 
-      for (const stage of STAGES) {
+      for (const stage of ACTIVE_STAGES) {
         const allDone = stage.modules.every(m => newCompleted.includes(m.id));
         if (allDone && !newCompletedStages.includes(stage.id)) {
           newCompletedStages.push(stage.id);
@@ -131,13 +220,14 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      const pointsPerModule = Math.floor(100 / 37);
+      const totalModulesCount = ACTIVE_STAGES.reduce((sum, s) => sum + s.modules.length, 0) || 37;
+      const pointsPerModule = Math.floor(100 / totalModulesCount);
       const newScore = Math.min(100, prev.afroScore + pointsPerModule);
 
       const updated: UserProgress = {
         ...prev,
         completedModules: newCompleted,
-        currentModuleId:  nextId ?? moduleId,
+        currentModuleId:  nextId ?? resolvedId,
         unlockedStages:   newUnlocked,
         completedStages:  newCompletedStages,
         lastActiveAt:     new Date().toISOString(),
@@ -146,7 +236,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
       // Fire-and-forget: granular DB update (fastest path)
       remoteCompleteModule({
-        module_id:        moduleId,
+        module_id:        resolvedId,
         next_module_id:   nextId,
         unlocked_stages:  newUnlocked,
         completed_stages: newCompletedStages,
@@ -159,27 +249,33 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
   // ── Save journal entry ───────────────────────────────────────────────────
   const saveJournal = useCallback((moduleId: string, text: string) => {
+    const found = getModuleById(moduleId);
+    const resolvedId = found ? found.module.id : moduleId;
+
     setProgress(prev => ({
       ...prev,
-      journalEntries: { ...prev.journalEntries, [moduleId]: text },
+      journalEntries: { ...prev.journalEntries, [resolvedId]: text },
     }));
 
     // Debounce API call — user may still be typing
     if (journalDebounceRef.current) clearTimeout(journalDebounceRef.current);
     journalDebounceRef.current = setTimeout(() => {
-      remoteSetJournal(moduleId, text);
+      remoteSetJournal(resolvedId, text);
     }, 1500);
   }, []);
 
   // ── Save feedback reaction ───────────────────────────────────────────────
   const saveFeedback = useCallback((moduleId: string, key: string) => {
+    const found = getModuleById(moduleId);
+    const resolvedId = found ? found.module.id : moduleId;
+
     setProgress(prev => ({
       ...prev,
-      feedbackEntries: { ...prev.feedbackEntries, [moduleId]: key },
+      feedbackEntries: { ...prev.feedbackEntries, [resolvedId]: key },
     }));
 
     // Single tap action — send immediately
-    remoteSetFeedback(moduleId, key);
+    remoteSetFeedback(resolvedId, key);
   }, []);
 
   // ── Full background sync after progress changes ──────────────────────────
@@ -204,9 +300,12 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
   const isModuleAccessible = useCallback(
     (moduleId: string): boolean => {
+      const found = getModuleById(moduleId);
+      const resolvedId = found ? found.module.id : moduleId;
+
       const computed = computeProgress(progress);
       for (const stage of computed.stageStatuses) {
-        const mod = stage.moduleStatuses.find(m => m.id === moduleId);
+        const mod = stage.moduleStatuses.find(m => m.id === resolvedId);
         if (mod) return mod.status !== 'locked';
       }
       return false;

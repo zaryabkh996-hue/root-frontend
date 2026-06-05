@@ -2,12 +2,14 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useProgress } from '../../lib/progressContext';
+import { getModuleById } from '../../lib/progressStore';
 
 interface LibraryItem {
   id: string;
   moduleId: string;
   stage: number;
-  type: 'audio' | 'video' | 'pdf' | 'text';
+  type: 'audio' | 'video' | 'pdf';
   title: string;
   duration: number;
   durationLabel: string;
@@ -24,96 +26,6 @@ interface FilterPill {
   count: number;
 }
 
-const LIBRARY_ITEMS: LibraryItem[] = [
-  {
-    id: '1',
-    moduleId: '1.4',
-    stage: 1,
-    type: 'audio',
-    title: 'Preparing for the Emotional Weight',
-    duration: 10,
-    durationLabel: '10 min · narrated by Ama',
-    narrator: 'Ama',
-    photoClass: 'hero-photo',
-    locked: false,
-    tags: ['Stage 1', 'Audio'],
-  },
-  {
-    id: '2',
-    moduleId: '2.1',
-    stage: 2,
-    type: 'video',
-    title: 'Greeting Elders — A Twi protocol guide',
-    duration: 22,
-    durationLabel: '22 min',
-    photoClass: 'photo-2',
-    locked: true,
-    tags: ['Stage 2', 'Video', 'Locked'],
-  },
-  {
-    id: '3',
-    moduleId: '1.3',
-    stage: 1,
-    type: 'video',
-    title: 'The Uncomfortable Truths',
-    duration: 10,
-    durationLabel: '10 min · documentary',
-    photoClass: 'photo-3',
-    locked: false,
-    tags: ['Stage 1', 'Video'],
-  },
-  {
-    id: '4',
-    moduleId: '5.1',
-    stage: 5,
-    type: 'audio',
-    title: 'At the Door of No Return — A real-time companion',
-    duration: 15,
-    durationLabel: '15 min · narrated by Nana Kweku',
-    narrator: 'Nana Kweku',
-    photoClass: 'hero-photo',
-    locked: true,
-    tags: ['Stage 5', 'Audio', 'Locked'],
-  },
-  {
-    id: '5',
-    moduleId: '3.1',
-    stage: 3,
-    type: 'pdf',
-    title: 'DIY Budget Travel Guide · Ghana',
-    duration: 42,
-    durationLabel: '42 pages',
-    pages: 42,
-    photoClass: 'photo-2',
-    locked: true,
-    tags: ['Stage 3', 'PDF', 'Locked'],
-  },
-  {
-    id: '6',
-    moduleId: '4.3',
-    stage: 4,
-    type: 'video',
-    title: 'Day Name Ceremony — what to expect',
-    duration: 12,
-    durationLabel: '12 min · documentary',
-    photoClass: 'hero-photo',
-    locked: true,
-    tags: ['Stage 4', 'Video', 'Locked'],
-  },
-  {
-    id: '7',
-    moduleId: '6.1',
-    stage: 6,
-    type: 'audio',
-    title: 'Re-entry · The Atlanta-shaped grief',
-    duration: 18,
-    durationLabel: '18 min',
-    photoClass: 'photo-3',
-    locked: true,
-    tags: ['Stage 6', 'Audio', 'Locked'],
-  },
-];
-
 const STAGE_NAMES: Record<number, string> = {
   1: 'Stage 1 — Emotional Preparation',
   2: 'Stage 2 — Cultural Intelligence',
@@ -125,6 +37,7 @@ const STAGE_NAMES: Record<number, string> = {
 
 export default function LibraryPage() {
   const router = useRouter();
+  const { computed } = useProgress();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStage, setFilterStage] = useState('all');
@@ -132,6 +45,66 @@ export default function LibraryPage() {
   const [typeDropOpen, setTypeDropOpen] = useState(false);
   const [stageDropOpen, setStageDropOpen] = useState(false);
   const [durationDropOpen, setDurationDropOpen] = useState(false);
+
+  const [guidanceModalOpen, setGuidanceModalOpen] = useState(false);
+  const [guidanceModalItem, setGuidanceModalItem] = useState<{ title: string; stage: number } | null>(null);
+
+  // Map Sanity dynamic modules to LibraryItems format
+  const LIBRARY_ITEMS = useMemo(() => {
+    const items: LibraryItem[] = [];
+    if (!computed || !computed.stageStatuses) return items;
+
+    computed.stageStatuses.forEach(stage => {
+      stage.moduleStatuses.forEach(mod => {
+        const typeLower = (mod.type || '').toLowerCase();
+        if (typeLower === 'audio' || typeLower === 'video' || typeLower === 'pdf') {
+          // Parse duration
+          let durationVal = 10;
+          if (mod.duration) {
+            const parsed = parseInt(mod.duration);
+            if (!isNaN(parsed)) {
+              durationVal = parsed;
+            }
+          }
+
+          // Construct durationLabel
+          let durationLabel = mod.duration || '';
+          if (typeLower === 'audio') {
+            durationLabel = `${durationLabel} · Audio Guide`;
+          } else if (typeLower === 'video') {
+            durationLabel = `${durationLabel} · Video Presentation`;
+          } else if (typeLower === 'pdf') {
+            durationLabel = `${durationLabel} · PDF Document`;
+          }
+
+          const isLocked = mod.status === 'locked';
+
+          // Assign background classes consistent with the static designs
+          let photoClass = 'hero-photo';
+          if (mod.id.startsWith('2') || mod.id.startsWith('5')) {
+            photoClass = 'photo-2';
+          } else if (mod.id.startsWith('3') || mod.id.startsWith('6')) {
+            photoClass = 'photo-3';
+          }
+
+          items.push({
+            id: mod.id,
+            moduleId: mod.id,
+            stage: stage.id,
+            type: typeLower as 'audio' | 'video' | 'pdf',
+            title: mod.title,
+            duration: durationVal,
+            durationLabel: durationLabel,
+            locked: isLocked,
+            photoClass: photoClass,
+            tags: [`Stage ${stage.id}`, typeLower.toUpperCase(), ...(isLocked ? ['Locked'] : [])],
+          });
+        }
+      });
+    });
+
+    return items;
+  }, [computed]);
 
   // Calculate type pills with counts
   const typePills = useMemo(() => {
@@ -145,7 +118,7 @@ export default function LibraryPage() {
       { type: 'video', label: 'Video', count: video },
       { type: 'pdf', label: 'PDF', count: pdf },
     ];
-  }, []);
+  }, [LIBRARY_ITEMS]);
 
   // Filter items
   const filteredItems = useMemo(() => {
@@ -177,10 +150,20 @@ export default function LibraryPage() {
 
       return true;
     });
-  }, [searchTerm, filterType, filterStage, filterDuration]);
+  }, [searchTerm, filterType, filterStage, filterDuration, LIBRARY_ITEMS]);
 
-  const handleModuleClick = (moduleId: string) => {
-    router.push(`/module/${moduleId}`);
+  const handleItemClick = (item: LibraryItem) => {
+    if (item.locked) {
+      setGuidanceModalItem({
+        title: item.title,
+        stage: item.stage,
+      });
+      setGuidanceModalOpen(true);
+    } else {
+      const info = getModuleById(item.moduleId);
+      const slugOrId = info?.module.slug || item.moduleId;
+      router.push(`/journey/module?id=${slugOrId}`);
+    }
   };
 
   const handleClearFilters = () => {
@@ -521,7 +504,7 @@ export default function LibraryPage() {
             <div
               key={item.id}
               className="lib-card scard-dark p-5 cursor-pointer hover:border-brass/40 transition"
-              onClick={() => handleModuleClick(item.moduleId)}
+              onClick={() => handleItemClick(item)}
             >
               <div className={`${item.photoClass} aspect-video mb-4 rounded-sm`}></div>
               <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -548,6 +531,37 @@ export default function LibraryPage() {
       <button className="amen-bubble" onClick={() => router.push('/amen')}>
         Ask Amen AI
       </button>
+
+      {/* Guidance Modal */}
+      {guidanceModalOpen && guidanceModalItem && (
+        <div className="modal-shroud" onClick={() => setGuidanceModalOpen(false)}>
+          <div
+            className="modal-card scard-dark p-9"
+            style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="text-3xl mb-4">🔒</div>
+            <h2 className="display text-2xl font-light mb-3">Module Locked</h2>
+            <p className="text-cream/70 text-sm mb-6 leading-relaxed">
+              &ldquo;{guidanceModalItem.title}&rdquo; is locked. Complete the previous modules in Stage {guidanceModalItem.stage} to unlock this.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button className="btn-ghost-dark" onClick={() => setGuidanceModalOpen(false)}>
+                Close
+              </button>
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  setGuidanceModalOpen(false);
+                  router.push('/journey');
+                }}
+              >
+                Go to Journey Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

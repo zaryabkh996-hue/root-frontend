@@ -3,7 +3,7 @@
 import { Fragment, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProgress } from '../../lib/progressContext';
-import { STAGES } from '../../lib/progressStore';
+import { STAGES, ACTIVE_STAGES } from '../../lib/progressStore';
 
 // Radial chart constants (r = 84, circumference ≈ 527.8)
 const CIRC = 527.8;
@@ -33,7 +33,7 @@ export default function DashboardPage() {
       .reverse()
       .slice(0, 2)
       .map(id => {
-        for (const stage of STAGES) {
+        for (const stage of ACTIVE_STAGES) {
           const m = stage.modules.find(mod => mod.id === id);
           if (m) return { ...m, stageTitle: stage.title };
         }
@@ -185,7 +185,7 @@ export default function DashboardPage() {
         {/* Continue card */}
         <div
           className="scard-dark p-6 cursor-pointer hover:border-brass/40 transition"
-          onClick={() => currentModule && router.push(`/module?id=${currentModule.id}`)}
+          onClick={() => currentModule && router.push(`/journey/module?id=${currentModule.slug || currentModule.meta || currentModule.id}`)}
         >
           <div className="eyebrow eyebrow-cream mb-3">
             Continue · Module {currentModule?.id ?? '—'}
@@ -253,7 +253,7 @@ export default function DashboardPage() {
               <div
                 key={mod.id}
                 className="flex items-start gap-3 p-4 scard-dark cursor-pointer hover:border-brass/40 transition"
-                onClick={() => router.push(`/module?id=${mod.id}`)}
+                onClick={() => router.push(`/journey/module?id=${mod.slug || mod.meta || mod.id}`)}
               >
                 <div className="w-9 h-9 rounded-full bg-brass/15 flex items-center justify-center flex-shrink-0 text-brass-light text-xs mono">
                   {mod.id}

@@ -46,7 +46,10 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:1000;
 
 .lib-card{background:var(--forest-mid);border:1px solid rgba(201,161,74,0.15);border-radius:3px;color:var(--cream);}
 
-.manifesto p{font-family:var(--font-fraunces),Georgia,serif;font-size:23px;line-height:1.5;color:var(--cream);margin-bottom:18px;}
+.manifesto p{font-family:var(--font-fraunces),Georgia,serif;font-size:1.125rem;line-height:1.5;color:var(--cream);margin-bottom:18px;}
+@media (max-width: 767px) {
+  .manifesto p{font-size:1rem;}
+}
 .manifesto p em{color:var(--brass-light);font-style:italic;}
 .manifesto p strong{color:var(--brass);font-weight:500;}
 

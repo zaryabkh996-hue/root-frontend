@@ -1,30 +1,41 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 type TabKey = 'all' | 'pending' | 'tracks';
 type ModuleTrack =
-  | 'Orientation'
-  | 'History'
-  | 'Culture'
-  | 'Logistics'
-  | 'Emotional'
-  | 'Citizenship';
+  | 'Emotional Preparation'
+  | 'Cultural Intelligence'
+  | 'Practical Preparation'
+  | 'Arrival Orientation'
+  | 'Heritage Journey Experience'
+  | 'Post Journey Experience';
 type ModuleTier = 'Free' | 'Community' | 'Preparation';
-type FilterStatus = 'published' | 'pending' | 'draft';
-type BadgeStatus = 'published' | 'pending' | 'draft';
 type ToastType = 'success' | 'warn' | 'error';
 
-interface ModuleRow {
-  num: string;
+interface SanityModule {
+  _id: string;
   title: string;
-  sub: string;
-  track: ModuleTrack;
-  tier: ModuleTier;
-  filterStatus: FilterStatus;
-  badgeStatus: BadgeStatus;
-  action: 'view' | 'approve';
-  editLabel: string;
+  slug: string;
+  moduleNumber: number;
+  subtitle: string;
+  track: string;
+  tier: string;
+  contentType: string;
+  sensitivity: string;
+  body: string;
+  takeaways: string;
+  status: 'pending' | 'published';
+  revisionNote?: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string;
+  resourceUrl?: string;
+  approvalStep?: number;
 }
 
 interface TrackSummaryRow {
@@ -40,383 +51,153 @@ interface TrackSummaryRow {
   pending: number;
 }
 
-interface ApprovalCard {
-  num: string;
-  title: string;
-  meta: string;
-  badge: string;
-  pipeline: Array<{ label: string; tone: 'done' | 'pending' | 'waiting' }>;
-  quote: string;
-  noteId: string;
-  kind: 'high' | 'low';
-  actionLabel: string;
-  actionDisabled?: boolean;
-  actionTitle?: string;
-  actionStyle?: React.CSSProperties;
-}
-
 const trackOrder: ModuleTrack[] = [
-  'Orientation',
-  'History',
-  'Culture',
-  'Logistics',
-  'Emotional',
-  'Citizenship',
+  'Emotional Preparation',
+  'Cultural Intelligence',
+  'Practical Preparation',
+  'Arrival Orientation',
+  'Heritage Journey Experience',
+  'Post Journey Experience',
 ];
 
 const trackMeta: Record<
   ModuleTrack,
   { range: string; color: string; pillClass: string }
 > = {
-  Orientation: {
-    range: 'Modules 1–6 · Free tier · 6 modules',
+  'Emotional Preparation': {
+    range: 'Free tier',
     color: '#15803d',
     pillClass: 'a-cc-track-pill a-cc-track-free',
   },
-  History: {
-    range: 'Modules 7–14 · Community $27/mo · 8 modules',
+  'Cultural Intelligence': {
+    range: 'Community $27/mo',
     color: '#1d4ed8',
     pillClass: 'a-cc-track-pill a-cc-track-community',
   },
-  Culture: {
-    range: 'Modules 15–22 · Community $27/mo · 8 modules',
-    color: '#1d4ed8',
-    pillClass: 'a-cc-track-pill a-cc-track-community',
-  },
-  Logistics: {
-    range: 'Modules 23–27 · Preparation $67/mo · 5 modules',
+  'Practical Preparation': {
+    range: 'Preparation $67/mo',
     color: '#7e22ce',
     pillClass: 'a-cc-track-pill a-cc-track-prep',
   },
-  Emotional: {
-    range: 'Modules 28–32 · Preparation $67/mo · 5 modules',
+  'Arrival Orientation': {
+    range: 'Preparation $67/mo',
     color: '#7e22ce',
     pillClass: 'a-cc-track-pill a-cc-track-prep',
   },
-  Citizenship: {
-    range: 'Modules 33–37 · Preparation $67/mo · 5 modules',
+  'Heritage Journey Experience': {
+    range: 'Preparation $67/mo',
+    color: '#7e22ce',
+    pillClass: 'a-cc-track-pill a-cc-track-prep',
+  },
+  'Post Journey Experience': {
+    range: 'Preparation $67/mo',
     color: '#7e22ce',
     pillClass: 'a-cc-track-pill a-cc-track-prep',
   },
 };
 
-const moduleRows: ModuleRow[] = [
-  {
-    num: '1',
-    title: 'Welcome Home — What This Journey Is',
-    sub: '45 min · Introduction',
-    track: 'Orientation',
-    tier: 'Free',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'Welcome Home — What This Journey Is',
-  },
-  {
-    num: '2',
-    title: 'The Wound That Travels — Intergenerational Trauma',
-    sub: '60 min · Foundation',
-    track: 'Orientation',
-    tier: 'Free',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'The Wound That Travels',
-  },
-  {
-    num: '3',
-    title: 'DNA Results — Percentages Without People',
-    sub: '45 min · Identity',
-    track: 'Orientation',
-    tier: 'Free',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'DNA Results',
-  },
-  {
-    num: '4',
-    title: "Am I African Enough? — The Question That Won't Disappear",
-    sub: '50 min · Identity',
-    track: 'Orientation',
-    tier: 'Free',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'Am I African Enough?',
-  },
-  {
-    num: '5',
-    title: 'The Six Doorways — West African Peoples & Regions',
-    sub: '55 min · Geography',
-    track: 'Orientation',
-    tier: 'Free',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'The Six Doorways',
-  },
-  {
-    num: '6',
-    title: 'Setting Your Intention — Why You Are Going',
-    sub: '30 min · Reflection',
-    track: 'Orientation',
-    tier: 'Free',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'Setting Your Intention',
-  },
-  {
-    num: '7',
-    title: 'Before the Ships — The Kingdoms of West Africa',
-    sub: '70 min · History',
-    track: 'History',
-    tier: 'Community',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'Before the Ships',
-  },
-  {
-    num: '8',
-    title: 'The Transatlantic Trade — What Actually Happened',
-    sub: '75 min · History · High sensitivity',
-    track: 'History',
-    tier: 'Community',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'The Transatlantic Trade',
-  },
-  {
-    num: '9',
-    title: 'The Forts & Castles — Cape Coast and Elmina',
-    sub: '65 min · Sacred Sites',
-    track: 'History',
-    tier: 'Community',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'The Forts and Castles',
-  },
-  {
-    num: '10',
-    title: 'Year of Return — What It Meant and What It Left',
-    sub: '60 min · Modern History',
-    track: 'History',
-    tier: 'Community',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'Year of Return',
-  },
-  {
-    num: '11–14',
-    title: 'History Track — Modules 11 to 14',
-    sub: 'Resistance · Pan-Africanism · Diaspora policy · AU Sixth Region',
-    track: 'History',
-    tier: 'Community',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'History Track — Modules 11 to 14',
-  },
-  {
-    num: '15–22',
-    title: 'Culture Track — Modules 15 to 22',
-    sub: 'Akan protocols · Twi language · Dress · Food · Festival calendar · Community norms · Grief rituals · Spiritual practices',
-    track: 'Culture',
-    tier: 'Community',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'Culture Track — Modules 15 to 22',
-  },
-  {
-    num: '23–27',
-    title: 'Logistics Track — Modules 23 to 27',
-    sub: 'Flights & costs · Accommodation · Visa & citizenship · Health & vaccinations · Budget planning',
-    track: 'Logistics',
-    tier: 'Preparation',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'Logistics Track — Modules 23 to 27',
-  },
-  {
-    num: '28',
-    title: 'Before You Arrive — Emotional Preparation',
-    sub: '80 min · Emotional · High sensitivity ⚠️',
-    track: 'Emotional',
-    tier: 'Preparation',
-    filterStatus: 'pending',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'Before You Arrive',
-  },
-  {
-    num: '29',
-    title: 'Module 5.4 · Holding Space for Grief',
-    sub: '90 min · Reflection Lab · High sensitivity ⚠️',
-    track: 'Emotional',
-    tier: 'Preparation',
-    filterStatus: 'pending',
-    badgeStatus: 'pending',
-    action: 'approve',
-    editLabel: 'Holding Space for Grief',
-  },
-  {
-    num: '30–32',
-    title: 'Emotional Track — Modules 30 to 32',
-    sub: 'In-country support · Processing what you find · Re-entry and return',
-    track: 'Emotional',
-    tier: 'Preparation',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'Emotional Track — Modules 30 to 32',
-  },
-  {
-    num: '33',
-    title: 'Module 2.6 · Festival Calendar & Protocol Practice',
-    sub: '55 min · Protocol Practice · Cultural advisor review in progress',
-    track: 'Citizenship',
-    tier: 'Preparation',
-    filterStatus: 'pending',
-    badgeStatus: 'pending',
-    action: 'approve',
-    editLabel: 'Festival Calendar',
-  },
-  {
-    num: '34–37',
-    title: 'Citizenship Track — Modules 34 to 37',
-    sub: 'Ghana citizenship process · PANAFEST · Right of Abode · Building roots',
-    track: 'Citizenship',
-    tier: 'Preparation',
-    filterStatus: 'published',
-    badgeStatus: 'published',
-    action: 'view',
-    editLabel: 'Citizenship Track — Modules 34 to 37',
-  },
-];
-
 const trackSummary: TrackSummaryRow[] = [
   {
-    name: 'Orientation',
-    desc: 'Introduction to the heritage journey',
+    name: 'Emotional Preparation',
+    desc: 'Mental & emotional preparation for reconnecting with African heritage',
     tier: 'Free',
     tierBg: '#f0fdf4',
     tierColor: '#15803d',
     tierBorder: '#86efac',
     price: '$0',
-    modules: 6,
-    published: 6,
+    modules: 0,
+    published: 0,
     pending: 0,
   },
   {
-    name: 'History',
-    desc: 'Pre-colonial kingdoms through to now',
+    name: 'Cultural Intelligence',
+    desc: 'Local customs, language basics, protocols, and social dynamics',
     tier: 'Community',
     tierBg: '#eff6ff',
     tierColor: '#1d4ed8',
     tierBorder: '#93c5fd',
     price: '$27/mo',
-    modules: 8,
-    published: 8,
+    modules: 0,
+    published: 0,
     pending: 0,
   },
   {
-    name: 'Culture',
-    desc: 'Protocols, language, dress, food, community',
-    tier: 'Community',
-    tierBg: '#eff6ff',
-    tierColor: '#1d4ed8',
-    tierBorder: '#93c5fd',
-    price: '$27/mo',
-    modules: 8,
-    published: 7,
-    pending: 1,
-  },
-  {
-    name: 'Logistics',
-    desc: 'Flights, costs, visa, health, budget',
+    name: 'Practical Preparation',
+    desc: 'Visas, health requirements, budgeting, packing, and flight logistics',
     tier: 'Preparation',
     tierBg: '#fdf4ff',
     tierColor: '#7e22ce',
     tierBorder: '#d8b4fe',
     price: '$67/mo',
-    modules: 5,
-    published: 5,
+    modules: 0,
+    published: 0,
     pending: 0,
   },
   {
-    name: 'Emotional',
-    desc: 'Emotional prep, in-country support, re-entry',
+    name: 'Arrival Orientation',
+    desc: 'Airport navigation, initial days safety, SIM cards, and local transit',
     tier: 'Preparation',
     tierBg: '#fdf4ff',
     tierColor: '#7e22ce',
     tierBorder: '#d8b4fe',
     price: '$67/mo',
-    modules: 5,
-    published: 4,
-    pending: 1,
+    modules: 0,
+    published: 0,
+    pending: 0,
   },
   {
-    name: 'Citizenship',
-    desc: 'Ghana citizenship process · PANAFEST · Right of Abode',
+    name: 'Heritage Journey Experience',
+    desc: 'Guided reflection and deep cultural engagement during your stay',
     tier: 'Preparation',
     tierBg: '#fdf4ff',
     tierColor: '#7e22ce',
     tierBorder: '#d8b4fe',
     price: '$67/mo',
-    modules: 5,
-    published: 5,
+    modules: 0,
+    published: 0,
+    pending: 0,
+  },
+  {
+    name: 'Post Journey Experience',
+    desc: 'Re-entry processing, integration, and continuous community action',
+    tier: 'Preparation',
+    tierBg: '#fdf4ff',
+    tierColor: '#7e22ce',
+    tierBorder: '#d8b4fe',
+    price: '$67/mo',
+    modules: 0,
+    published: 0,
     pending: 0,
   },
 ];
 
-const approvalCards: ApprovalCard[] = [
-  {
-    num: '29',
-    title: 'Module 5.4 · Holding Space for Grief · Reflection Lab',
-    meta: 'Track: Emotional · Tier: Preparation · Sensitivity: 🔴 High · Est. read: 90 min',
-    badge: '⏳ Awaiting founder sign-off',
-    pipeline: [
-      { label: '✓ Authored', tone: 'done' },
-      { label: '✓ Auto checks', tone: 'done' },
-      { label: '✓ Peer reviewed', tone: 'done' },
-      { label: '✓ Cultural advisor', tone: 'done' },
-      { label: '⏳ Founder sign-off', tone: 'pending' },
-    ],
-    quote:
-      '"This module guides members through preparing emotionally for the Door of No Return experience. It includes grounding exercises, journaling prompts, and a post-visit integration practice…"',
-    noteId: 'note-29',
-    kind: 'high',
-    actionLabel: 'Approve & publish',
-  },
-  {
-    num: '33',
-    title: 'Module 2.6 · Festival Calendar & Protocol Practice',
-    meta: 'Track: Citizenship · Tier: Preparation · Sensitivity: 🟢 Low · Est. read: 55 min',
-    badge: '⏳ Cultural advisor in progress',
-    pipeline: [
-      { label: '✓ Authored', tone: 'done' },
-      { label: '✓ Auto checks', tone: 'done' },
-      { label: '✓ Peer reviewed', tone: 'done' },
-      { label: '⏳ Cultural advisor', tone: 'pending' },
-      { label: '— Founder sign-off', tone: 'waiting' },
-    ],
-    quote:
-      `"A practical guide to Ghana's major festivals — Homowo, PANAFEST, Chale Wote — with protocol guidance for diaspora visitors attending for the first time…"`,
-    noteId: 'note-33',
-    kind: 'low',
-    actionLabel: 'Awaiting cultural advisor',
-    actionDisabled: true,
-    actionTitle: 'Waiting for cultural advisor to complete review',
-    actionStyle: { background: '#6b7280', cursor: 'not-allowed' },
-  },
-];
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function slugify(value: string): string {
+  let slug = value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || '';
+}
+
+function tierLabel(tier: string): ModuleTier {
+  if (tier === 'community') return 'Community';
+  if (tier === 'preparation') return 'Preparation';
+  return 'Free';
+}
+
+function tierPillClass(track: string): string {
+  const meta = trackMeta[track as ModuleTrack];
+  return meta?.pillClass ?? 'a-cc-track-pill a-cc-track-free';
+}
+
+// ---------------------------------------------------------------------------
+// Initial form state
+// ---------------------------------------------------------------------------
 
 const initialForm = {
   num: '',
@@ -429,135 +210,320 @@ const initialForm = {
   body: '',
   takeaways: '',
   slug: '',
+  resourceUrl: '',
 };
 
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export default function ContentPage() {
+  // --- Data state ---
+  const [modules, setModules] = useState<SanityModule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // --- UI state ---
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [search, setSearch] = useState('');
   const [trackFilter, setTrackFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('Add new module');
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(initialForm);
+  const [submitting, setSubmitting] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: ToastType } | null>(
     null,
   );
 
-  const showToast = (msg: string, type: ToastType = 'success') => {
+  // --- Toast ---
+  const showToast = useCallback((msg: string, type: ToastType = 'success') => {
     setToast({ msg, type });
-  };
+  }, []);
 
   useEffect(() => {
-    if (!toast) {
-      return;
-    }
-
+    if (!toast) return;
     const timeoutId = window.setTimeout(() => setToast(null), 2500);
     return () => window.clearTimeout(timeoutId);
   }, [toast]);
 
+  // --- Fetch modules ---
+  const fetchModules = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch('/api/admin/content');
+      const data = await res.json();
+      if (data.success) {
+        setModules(data.data ?? []);
+      } else {
+        setError(data.error ?? 'Failed to fetch modules');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Network error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchModules();
+  }, [fetchModules]);
+
+  // --- Computed stats ---
+  const stats = useMemo(() => {
+    const total = modules.length;
+    const published = modules.filter((m) => m.status === 'published').length;
+    const pending = modules.filter((m) => m.status === 'pending').length;
+    return { total, published, pending, drafts: 0 };
+  }, [modules]);
+
+  // --- Filtered modules for All tab ---
   const filteredModules = useMemo(() => {
-    return moduleRows.filter((module) => {
+    return modules.filter((mod) => {
       const query = search.trim().toLowerCase();
       const matchesSearch =
         !query ||
-        module.title.toLowerCase().includes(query) ||
-        module.sub.toLowerCase().includes(query);
-      const matchesTrack = !trackFilter || module.track === trackFilter;
+        mod.title.toLowerCase().includes(query) ||
+        mod.subtitle.toLowerCase().includes(query);
+      const matchesTrack = !trackFilter || mod.track === trackFilter;
       const matchesStatus =
-        !statusFilter || module.filterStatus === statusFilter;
-
+        !statusFilter || mod.status === statusFilter;
       return matchesSearch && matchesTrack && matchesStatus;
     });
-  }, [search, statusFilter, trackFilter]);
+  }, [modules, search, statusFilter, trackFilter]);
 
   const groupedModules = useMemo(() => {
     return trackOrder
       .map((track) => ({
         track,
         meta: trackMeta[track],
-        modules: filteredModules.filter((module) => module.track === track),
+        modules: filteredModules.filter((mod) => mod.track === track),
       }))
       .filter((group) => group.modules.length > 0);
   }, [filteredModules]);
 
+  // --- Pending modules ---
+  const pendingModules = useMemo(() => {
+    return modules.filter((m) => m.status === 'pending');
+  }, [modules]);
+
+  const [selectedPendingId, setSelectedPendingId] = useState<string | null>(null);
+
+  const activePendingModule = useMemo(() => {
+    if (pendingModules.length === 0) return null;
+    const found = pendingModules.find((m) => m._id === selectedPendingId);
+    return found || pendingModules[0];
+  }, [pendingModules, selectedPendingId]);
+
+  const dynamicTrackSummary = useMemo(() => {
+    return trackSummary.map((track) => {
+      const trackModules = modules.filter((m) => m.track === track.name);
+      const published = trackModules.filter((m) => m.status === 'published').length;
+      const pending = trackModules.filter((m) => m.status === 'pending').length;
+      return {
+        ...track,
+        modules: trackModules.length,
+        published,
+        pending,
+      };
+    });
+  }, [modules]);
+
+  // --- Modal ---
   const openAddModal = () => {
     setModalTitle('Add new module');
+    setEditingId(null);
     setForm(initialForm);
     setModalOpen(true);
   };
 
-  const closeModal = () => setModalOpen(false);
-
-  const openEditModal = (module: ModuleRow) => {
-    setModalTitle(`Edit module ${module.num} — ${module.editLabel}`);
-    setForm((current) => ({
-      ...current,
-      num: module.num.replace(/[^\d]/g, ''),
-      time: module.sub.split(' min')[0] ?? '',
-      title: module.title,
-      track: module.track,
-      tier:
-        module.tier === 'Free'
-          ? 'free'
-          : module.tier === 'Community'
-            ? 'community'
-            : 'preparation',
-      type: module.sub.includes('Reflection Lab')
-        ? 'Reflection Lab'
-        : module.sub.includes('Protocol Practice')
-          ? 'Protocol Practice'
-          : 'Reading',
-      sens: module.sub.includes('High sensitivity') ? 'high' : 'low',
-    }));
-    setModalOpen(true);
-    showToast(`Module loaded for editing · ID ${module.num}`, 'success');
-  };
-
-  const saveDraft = () => {
-    if (!form.title.trim()) {
-      showToast('Add a title before saving', 'warn');
-      return;
-    }
-
+  const closeModal = () => {
     setModalOpen(false);
-    showToast(`Draft saved · "${form.title}"`, 'success');
+    setEditingId(null);
   };
 
-  const submitModule = () => {
+  const openEditModal = (mod: SanityModule) => {
+    setModalTitle(`Edit module ${mod.moduleNumber} — ${mod.title}`);
+    setEditingId(mod._id);
+    setForm({
+      num: String(mod.moduleNumber || ''),
+      time: mod.subtitle.split(' min')[0] ?? '',
+      title: mod.title,
+      track: mod.track,
+      tier: mod.tier,
+      type: mod.contentType || 'Reading',
+      sens: mod.sensitivity || 'low',
+      body: mod.body || '',
+      takeaways: mod.takeaways || '',
+      slug: mod.slug || '',
+      resourceUrl: mod.resourceUrl || '',
+    });
+    setModalOpen(true);
+  };
+
+  // --- Auto-generate slug from title ---
+  useEffect(() => {
+    if (form.title) {
+      const generated = slugify(form.title);
+      setForm((c) => ({ ...c, slug: generated }));
+    }
+  }, [form.title]);
+
+  // --- Submit module (create or update) ---
+  const submitModule = async () => {
     if (!form.title.trim() || !form.track) {
       showToast('Title and track are required', 'warn');
       return;
     }
 
-    setModalOpen(false);
-    showToast(`Module submitted for review · "${form.title}"`, 'success');
+    setSubmitting(true);
+
+    try {
+      const payload = {
+        title: form.title,
+        moduleNumber: Number(form.num) || 0,
+        subtitle: form.time ? `${form.time} min · ${form.type}` : form.type,
+        track: form.track,
+        tier: form.tier,
+        contentType: form.type,
+        sensitivity: form.sens,
+        body: form.body,
+        takeaways: form.takeaways,
+        resourceUrl: form.resourceUrl,
+      };
+
+      if (editingId) {
+        // Update existing
+        const res = await fetch(`/api/admin/content/${encodeURIComponent(editingId)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+        showToast(`Module updated · "${form.title}"`, 'success');
+      } else {
+        // Create new
+        const res = await fetch('/api/admin/content', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+        showToast(`Module submitted for review · "${form.title}"`, 'success');
+      }
+
+      setModalOpen(false);
+      setEditingId(null);
+      await fetchModules();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to save module', 'error');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const previewModule = (num: string) => {
-    showToast(`Preview module ${num}`, 'success');
+  // --- Delete module ---
+  const handleDelete = async (mod: SanityModule) => {
+    if (!confirm(`Delete module "${mod.title}"? This cannot be undone.`)) return;
+
+    setActionLoading(mod._id);
+    try {
+      const res = await fetch(`/api/admin/content/${encodeURIComponent(mod._id)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      showToast(`Module deleted · "${mod.title}"`, 'success');
+      await fetchModules();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to delete', 'error');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const approveModule = (num: string, title: string) => {
-    showToast(`Module ${num} · ${title} approved & published`, 'success');
+  // --- Approve & publish ---
+  const approveAndPublish = async (mod: SanityModule) => {
+    setActionLoading(mod._id);
+    try {
+      const res = await fetch(
+        `/api/admin/content/${encodeURIComponent(mod._id)}/approve`,
+        { method: 'POST' },
+      );
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      showToast(`Module ${mod.moduleNumber} · ${mod.title} approved & published`, 'success');
+      await fetchModules();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to approve', 'error');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const approveAndPublish = (num: string, title: string) => {
-    showToast(`Module ${num} · ${title} approved & published`, 'success');
+  // --- Approve & next step ---
+  const approveNextStep = async (mod: SanityModule) => {
+    const currentStep = mod.approvalStep ?? 1;
+    if (currentStep >= 5) {
+      await approveAndPublish(mod);
+      return;
+    }
+
+    setActionLoading(mod._id);
+    try {
+      const res = await fetch(`/api/admin/content/${encodeURIComponent(mod._id)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approvalStep: currentStep + 1 }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      showToast(`Module advanced to Step ${currentStep + 1} · "${mod.title}"`, 'success');
+      await fetchModules();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to advance step', 'error');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const requestRevision = (num: string, title: string, noteId: string) => {
+  // --- Request revision ---
+  const handleRequestRevision = async (mod: SanityModule, noteId: string) => {
     const noteValue =
-      (
-        document.getElementById(noteId) as HTMLInputElement | null
-      )?.value.trim() ?? '';
+      (document.getElementById(noteId) as HTMLInputElement | null)?.value.trim() ?? '';
 
-    showToast(
-      noteValue
-        ? `Revision requested for module ${num} · ${title}`
-        : `Revision requested for module ${num} · ${title}`,
-      'warn',
-    );
+    setActionLoading(mod._id);
+    try {
+      const res = await fetch(
+        `/api/admin/content/${encodeURIComponent(mod._id)}/revision`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ note: noteValue }),
+        },
+      );
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      showToast(
+        `Revision requested for module ${mod.moduleNumber} · ${mod.title}`,
+        'warn',
+      );
+      await fetchModules();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to request revision', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // --- Preview ---
+  const previewModule = (mod: SanityModule) => {
+    showToast(`Preview module ${mod.moduleNumber}`, 'success');
   };
 
   return (
@@ -568,7 +534,7 @@ export default function ContentPage() {
         <div>
           <h1 className="admin-page-title">Modules &amp; Content</h1>
           <p className="admin-page-sub">
-            Manage all 37 learning modules across 6 tracks · 5-step publish
+            Manage all {stats.total} learning modules across 6 tracks · 5-step publish
             pipeline for sensitive content
           </p>
         </div>
@@ -610,12 +576,13 @@ export default function ContentPage() {
         </div>
       </div>
 
+      {/* Stats row — dynamic */}
       <div className="a-cc-stats-row">
         <div className="a-cc-stat-card">
           <div className="a-cc-stat-icon" style={{ background: '#f0f9ff' }}>
             📚
           </div>
-          <div className="a-cc-stat-num">37</div>
+          <div className="a-cc-stat-num">{stats.total}</div>
           <div className="a-cc-stat-label">Total modules</div>
         </div>
 
@@ -623,7 +590,7 @@ export default function ContentPage() {
           <div className="a-cc-stat-icon" style={{ background: '#f0fdf4' }}>
             ✅
           </div>
-          <div className="a-cc-stat-num">35</div>
+          <div className="a-cc-stat-num">{stats.published}</div>
           <div className="a-cc-stat-label">Published</div>
         </div>
 
@@ -631,7 +598,7 @@ export default function ContentPage() {
           <div className="a-cc-stat-icon" style={{ background: '#fffbeb' }}>
             ⏳
           </div>
-          <div className="a-cc-stat-num">2</div>
+          <div className="a-cc-stat-num">{stats.pending}</div>
           <div className="a-cc-stat-label">Pending approval</div>
         </div>
 
@@ -639,17 +606,18 @@ export default function ContentPage() {
           <div className="a-cc-stat-icon" style={{ background: '#fdf4ff' }}>
             ✏️
           </div>
-          <div className="a-cc-stat-num">0</div>
+          <div className="a-cc-stat-num">{stats.drafts}</div>
           <div className="a-cc-stat-label">Drafts</div>
         </div>
       </div>
 
+      {/* Tabs — dynamic counts */}
       <div className="a-cc-tabs">
         <div
           className={`a-cc-tab ${activeTab === 'all' ? 'active' : ''}`}
           onClick={() => setActiveTab('all')}
         >
-          All modules <span className="a-cc-tab-count">37</span>
+          All modules <span className="a-cc-tab-count">{stats.total}</span>
         </div>
 
         <div
@@ -657,7 +625,7 @@ export default function ContentPage() {
           onClick={() => setActiveTab('pending')}
         >
           Pending approval{' '}
-          <span className="a-cc-tab-count a-cc-tab-count-warn">2</span>
+          <span className="a-cc-tab-count a-cc-tab-count-warn">{stats.pending}</span>
         </div>
 
         <div
@@ -668,7 +636,39 @@ export default function ContentPage() {
         </div>
       </div>
 
-      {activeTab === 'all' && (
+      {/* Loading / Error states */}
+      {loading && (
+        <div className="a-cc-content-table" style={{ padding: '60px 20px', textAlign: 'center' }}>
+          <div className="a-cc-loading-spinner" />
+          <div style={{ color: '#6b7280', fontSize: '13px', marginTop: '12px' }}>
+            Loading modules from Sanity…
+          </div>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div style={{
+          padding: '20px',
+          background: '#fff1f0',
+          border: '1px solid #fecdca',
+          borderRadius: '8px',
+          color: '#b42318',
+          fontSize: '13px',
+          marginBottom: '20px',
+        }}>
+          <strong>Error:</strong> {error}
+          <button
+            className="a-cc-btn-ghost"
+            style={{ marginLeft: '12px' }}
+            onClick={fetchModules}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* ═══════════ ALL MODULES TAB ═══════════ */}
+      {activeTab === 'all' && !loading && (
         <div>
           <div className="a-cc-content-table">
             <div className="a-cc-table-toolbar">
@@ -686,12 +686,12 @@ export default function ContentPage() {
                 onChange={(event) => setTrackFilter(event.target.value)}
               >
                 <option value="">All tracks</option>
-                <option value="Orientation">Orientation</option>
-                <option value="History">History</option>
-                <option value="Culture">Culture</option>
-                <option value="Logistics">Logistics</option>
-                <option value="Emotional">Emotional</option>
-                <option value="Citizenship">Citizenship</option>
+                <option value="Emotional Preparation">Emotional Preparation</option>
+                <option value="Cultural Intelligence">Cultural Intelligence</option>
+                <option value="Practical Preparation">Practical Preparation</option>
+                <option value="Arrival Orientation">Arrival Orientation</option>
+                <option value="Heritage Journey Experience">Heritage Journey Experience</option>
+                <option value="Post Journey Experience">Post Journey Experience</option>
               </select>
 
               <select
@@ -702,18 +702,18 @@ export default function ContentPage() {
                 <option value="">All statuses</option>
                 <option value="published">Published</option>
                 <option value="pending">Pending</option>
-                <option value="draft">Draft</option>
               </select>
             </div>
 
-            <div className="a-cc-table-head">
-              <span>#</span>
-              <span>Module</span>
-              <span>Track</span>
-              <span>Tier</span>
-              <span>Status</span>
-              <span>Actions</span>
-            </div>
+            <div className="a-cc-table-responsive">
+              <div className="a-cc-table-head">
+                <span>#</span>
+                <span>Module</span>
+                <span>Track</span>
+                <span>Tier</span>
+                <span>Status</span>
+                <span>Actions</span>
+              </div>
 
             {groupedModules.length === 0 && (
               <div
@@ -724,7 +724,9 @@ export default function ContentPage() {
                   fontSize: '13px',
                 }}
               >
-                No modules match your filters.
+                {modules.length === 0
+                  ? 'No modules yet. Click "Add module" to create your first one.'
+                  : 'No modules match your filters.'}
               </div>
             )}
 
@@ -738,39 +740,34 @@ export default function ContentPage() {
                     {group.track}
                   </span>
                   <span className="a-cc-track-header-meta">
-                    {group.meta.range}
+                    {group.meta.range} · {group.modules.length} {group.modules.length === 1 ? 'module' : 'modules'}
                   </span>
                 </div>
 
-                {group.modules.map((module) => (
-                  <div key={`${group.track}-${module.num}`} className="a-cc-table-row">
-                    <span className="a-cc-module-num">{module.num}</span>
+                {group.modules.map((mod) => (
+                  <div key={mod._id} className="a-cc-table-row">
+                    <span className="a-cc-module-num">{mod.moduleNumber || '—'}</span>
 
                     <div>
-                      <div className="a-cc-module-title">{module.title}</div>
-                      <div className="a-cc-module-sub">{module.sub}</div>
+                      <div className="a-cc-module-title">{mod.title}</div>
+                      <div className="a-cc-module-sub">{mod.subtitle}</div>
                     </div>
 
                     <div>
-                      <span className={group.meta.pillClass}>{module.track}</span>
+                      <span className={tierPillClass(mod.track)}>{mod.track}</span>
                     </div>
 
-                    <div className="a-cc-tier-label">{module.tier}</div>
+                    <div className="a-cc-tier-label">{tierLabel(mod.tier)}</div>
 
                     <div>
-                      {module.badgeStatus === 'published' && (
+                      {mod.status === 'published' && (
                         <span className="a-cc-badge a-cc-badge-published">
                           ● Published
                         </span>
                       )}
-                      {module.badgeStatus === 'pending' && (
+                      {mod.status === 'pending' && (
                         <span className="a-cc-badge a-cc-badge-pending">
                           ⏳ Pending
-                        </span>
-                      )}
-                      {module.badgeStatus === 'draft' && (
-                        <span className="a-cc-badge a-cc-badge-draft">
-                          ● Draft
                         </span>
                       )}
                     </div>
@@ -778,182 +775,246 @@ export default function ContentPage() {
                     <div className="a-cc-row-actions">
                       <button
                         className="a-cc-btn-icon"
-                        onClick={() => openEditModal(module)}
+                        onClick={() => openEditModal(mod)}
                       >
                         ✏️ Edit
                       </button>
 
-                      {module.action === 'approve' ? (
-                        <button
-                          className="a-cc-btn-accent"
-                          style={{ padding: '5px 10px', fontSize: '11px' }}
-                          onClick={() =>
-                            approveModule(module.num, module.editLabel)
-                          }
-                        >
-                          Approve
-                        </button>
-                      ) : (
-                        <button
-                          className="a-cc-btn-icon"
-                          onClick={() => previewModule(module.num)}
-                        >
-                          👁 View
-                        </button>
-                      )}
+                      <button
+                        className="a-cc-btn-icon"
+                        style={{ color: '#dc2626', borderColor: '#fecdca' }}
+                        onClick={() => handleDelete(mod)}
+                        disabled={actionLoading === mod._id}
+                      >
+                        {actionLoading === mod._id ? '…' : '🗑 Delete'}
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
             ))}
+            </div>
           </div>
         </div>
       )}
 
-      {activeTab === 'pending' && (
+      {/* ═══════════ PENDING APPROVAL TAB ═══════════ */}
+      {activeTab === 'pending' && !loading && (
         <div>
           <div className="a-cc-sens-note">
-            ⚠️ Sensitive modules require founder sign-off. Stage 1.4 and Stage
-            5 modules go through all 5 steps before publish.
+            ℹ️ All new content starts at <strong>Step 1 (Author)</strong>. Select a module below to view and advance its pipeline.
           </div>
 
-          <div className="a-cc-pipeline-steps">
-            <div className="a-cc-pipeline-step a-cc-pipeline-step-done">
-              <div className="a-cc-pipeline-step-num">Step 1</div>
-              <div className="a-cc-pipeline-step-label">Author</div>
-              <div className="a-cc-pipeline-step-status">✓ Complete</div>
-            </div>
-            <div className="a-cc-pipeline-step a-cc-pipeline-step-done">
-              <div className="a-cc-pipeline-step-num">Step 2</div>
-              <div className="a-cc-pipeline-step-label">Auto checks</div>
-              <div className="a-cc-pipeline-step-status">✓ Complete</div>
-            </div>
-            <div className="a-cc-pipeline-step a-cc-pipeline-step-done">
-              <div className="a-cc-pipeline-step-num">Step 3</div>
-              <div className="a-cc-pipeline-step-label">Peer review</div>
-              <div className="a-cc-pipeline-step-status">✓ Complete</div>
-            </div>
-            <div className="a-cc-pipeline-step a-cc-pipeline-step-active">
-              <div className="a-cc-pipeline-step-num">Step 4</div>
-              <div className="a-cc-pipeline-step-label">Cultural advisor</div>
-              <div className="a-cc-pipeline-step-status">⏳ In progress</div>
-            </div>
-            <div className="a-cc-pipeline-step">
-              <div className="a-cc-pipeline-step-num">Step 5</div>
-              <div className="a-cc-pipeline-step-label">Founder sign-off</div>
-              <div
-                className="a-cc-pipeline-step-status"
-                style={{ color: '#9ca3af' }}
-              >
-                Waiting
-              </div>
-            </div>
-          </div>
+          {/* Pipeline steps — Dynamic based on active pending module */}
+          {activePendingModule && (
+            <div className="a-cc-pipeline-steps">
+              {[
+                { num: 1, label: 'Author' },
+                { num: 2, label: 'Auto checks' },
+                { num: 3, label: 'Peer review' },
+                { num: 4, label: 'Cultural advisor' },
+                { num: 5, label: 'Founder sign-off' },
+              ].map((s) => {
+                const currentStep = activePendingModule.approvalStep ?? 1;
+                const isDone = s.num < currentStep;
+                const isActive = s.num === currentStep;
 
-          {approvalCards.map((card) => (
+                let stepClass = 'a-cc-pipeline-step';
+                let statusText = 'Waiting';
+                let statusStyle = {};
+
+                if (isDone) {
+                  stepClass = 'a-cc-pipeline-step a-cc-pipeline-step-done';
+                  statusText = '✓ Complete';
+                } else if (isActive) {
+                  stepClass = 'a-cc-pipeline-step a-cc-pipeline-step-active';
+                  statusText = '⏳ In progress';
+                  statusStyle = { color: '#d97706' };
+                }
+
+                return (
+                  <div key={s.num} className={stepClass}>
+                    <div className="a-cc-pipeline-step-num">Step {s.num}</div>
+                    <div className="a-cc-pipeline-step-label">{s.label}</div>
+                    <div className="a-cc-pipeline-step-status" style={statusStyle}>
+                      {statusText}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {pendingModules.length === 0 && (
             <div
-              key={card.num}
-              className={`a-cc-approval-card ${
-                card.kind === 'high'
-                  ? 'a-cc-approval-card-high'
-                  : 'a-cc-approval-card-low'
-              }`}
+              style={{
+                padding: '40px 20px',
+                textAlign: 'center',
+                color: '#9ca3af',
+                fontSize: '13px',
+                background: '#fff',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+              }}
             >
-              <div className="a-cc-approval-card-header">
-                <div>
-                  <div className="a-cc-approval-card-title">{card.title}</div>
-                  <div className="a-cc-approval-card-meta">{card.meta}</div>
+              No modules pending approval. All content is published! 
+            </div>
+          )}
+
+          {pendingModules.map((mod) => {
+            const noteId = `note-${mod._id}`;
+            const isHigh = mod.sensitivity === 'high';
+            const currentStep = mod.approvalStep ?? 1;
+            const isSelected = activePendingModule?._id === mod._id;
+
+            return (
+              <div
+                key={mod._id}
+                onClick={() => setSelectedPendingId(mod._id)}
+                className={`a-cc-approval-card ${
+                  isHigh ? 'a-cc-approval-card-high' : 'a-cc-approval-card-low'
+                } ${isSelected ? 'a-cc-approval-card-selected' : ''}`}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="a-cc-approval-card-header">
+                  <div>
+                    <div className="a-cc-approval-card-title">
+                      Module {mod.moduleNumber} · {mod.title}
+                    </div>
+                    <div className="a-cc-approval-card-meta">
+                      Track: {mod.track} · Tier: {tierLabel(mod.tier)} ·
+                      Sensitivity: {isHigh ? '🔴 High' : '🟢 Low'} ·
+                      Type: {mod.contentType}
+                    </div>
+                  </div>
+
+                  <span className="a-cc-badge a-cc-badge-pending">
+                    ⏳ Step {currentStep} Awaiting
+                  </span>
                 </div>
 
-                <span className="a-cc-badge a-cc-badge-pending">
-                  {card.badge}
-                </span>
-              </div>
+                {/* Pipeline badges for each card */}
+                <div className="a-cc-approval-card-pipeline">
+                  {[
+                    { num: 1, label: 'Author sign-off' },
+                    { num: 2, label: 'Auto checks' },
+                    { num: 3, label: 'Peer review' },
+                    { num: 4, label: 'Cultural advisor' },
+                    { num: 5, label: 'Founder sign-off' },
+                  ].map((s) => {
+                    const isDone = s.num < currentStep;
+                    const isActive = s.num === currentStep;
+                    let badgeClass = 'a-cc-pipeline-badge a-cc-pb-locked';
+                    let prefix = '🔒 ';
+                    if (isDone) {
+                      badgeClass = 'a-cc-pipeline-badge a-cc-pb-done';
+                      prefix = '✓ ';
+                    } else if (isActive) {
+                      badgeClass = 'a-cc-pipeline-badge a-cc-pb-pending';
+                      prefix = '⏳ ';
+                    }
+                    return (
+                      <span key={s.num} className={badgeClass}>
+                        {prefix}{s.label}
+                      </span>
+                    );
+                  })}
+                </div>
 
-              <div className="a-cc-approval-card-pipeline">
-                {card.pipeline.map((step) => (
-                  <span
-                    key={step.label}
-                    className={`a-cc-pipeline-badge ${
-                      step.tone === 'done'
-                        ? 'a-cc-pb-done'
-                        : step.tone === 'pending'
-                          ? 'a-cc-pb-pending'
-                          : 'a-cc-pb-waiting'
-                    }`}
+                {/* Body preview */}
+                {mod.body && (
+                  <div className="a-cc-approval-card-quote">
+                    &ldquo;{mod.body.length > 250 ? mod.body.slice(0, 250) + '…' : mod.body}&rdquo;
+                  </div>
+                )}
+
+                {/* Revision note if present */}
+                {mod.revisionNote && (
+                  <div style={{
+                    background: '#fef3c7',
+                    border: '1px solid #fcd34d',
+                    borderRadius: '6px',
+                    padding: '10px 14px',
+                    marginBottom: '14px',
+                    fontSize: '12px',
+                    color: '#78350f',
+                  }}>
+                    <strong>Previous revision note:</strong> {mod.revisionNote}
+                  </div>
+                )}
+
+                <div className="a-cc-approval-actions">
+                  <input
+                    type="text"
+                    className="a-cc-approval-note"
+                    placeholder="Add a revision note (optional)…"
+                    id={noteId}
+                  />
+
+                  <button
+                    className="a-cc-btn-ghost"
+                    disabled={actionLoading === mod._id}
+                    onClick={() => handleRequestRevision(mod, noteId)}
                   >
-                    {step.label}
-                  </span>
-                ))}
+                    {actionLoading === mod._id ? 'Sending…' : 'Request revision'}
+                  </button>
+
+                  <button
+                    className="a-cc-btn-primary"
+                    disabled={actionLoading === mod._id}
+                    onClick={() => {
+                      if (currentStep >= 5) {
+                        approveAndPublish(mod);
+                      } else {
+                        approveNextStep(mod);
+                      }
+                    }}
+                  >
+                    {actionLoading === mod._id ? (
+                      'Processing…'
+                    ) : (
+                      <>
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        {currentStep >= 5 ? 'Approve & publish' : 'Approve & next step'}
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-
-              <div className="a-cc-approval-card-quote">{card.quote}</div>
-
-              <div className="a-cc-approval-actions">
-                <input
-                  type="text"
-                  className="a-cc-approval-note"
-                  placeholder="Add a revision note (optional)…"
-                  id={card.noteId}
-                />
-
-                <button
-                  className="a-cc-btn-ghost"
-                  onClick={() =>
-                    requestRevision(card.num, card.title, card.noteId)
-                  }
-                >
-                  Request revision
-                </button>
-
-                <button
-                  className="a-cc-btn-primary"
-                  style={card.actionStyle}
-                  disabled={card.actionDisabled}
-                  title={card.actionTitle}
-                  onClick={() =>
-                    !card.actionDisabled &&
-                    approveAndPublish(card.num, card.title)
-                  }
-                >
-                  {!card.actionDisabled && (
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                  {card.actionLabel}
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
+      {/* ═══════════ TRACKS & TIERS TAB (static, as requested) ═══════════ */}
       {activeTab === 'tracks' && (
         <div>
           <div className="a-cc-content-table">
-            <div
-              className="a-cc-table-head"
-              style={{
-                gridTemplateColumns: '1fr 100px 110px 80px 80px 80px',
-              }}
-            >
-              <span>Track</span>
-              <span>Tier</span>
-              <span>Price</span>
-              <span>Modules</span>
-              <span>Published</span>
-              <span>Pending</span>
-            </div>
+            <div className="a-cc-table-responsive">
+              <div
+                className="a-cc-table-head"
+                style={{
+                  gridTemplateColumns: '1fr 100px 110px 80px 80px 80px',
+                }}
+              >
+                <span>Track</span>
+                <span>Tier</span>
+                <span>Price</span>
+                <span>Modules</span>
+                <span>Published</span>
+                <span>Pending</span>
+              </div>
 
-            {trackSummary.map((track) => (
+            {dynamicTrackSummary.map((track) => (
               <div
                 key={track.name}
                 className="a-cc-table-row"
@@ -1006,10 +1067,12 @@ export default function ContentPage() {
                 </div>
               </div>
             ))}
+            </div>
           </div>
         </div>
       )}
 
+      {/* ═══════════ ADD/EDIT MODAL ═══════════ */}
       {modalOpen && (
         <div className="a-cc-modal-overlay" onClick={closeModal}>
           <div className="a-cc-modal" onClick={(event) => event.stopPropagation()}>
@@ -1081,20 +1144,28 @@ export default function ContentPage() {
                   <select
                     className="a-cc-form-select"
                     value={form.track}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      const selectedTrack = event.target.value;
+                      let tierVal = 'free';
+                      if (selectedTrack === 'Cultural Intelligence') {
+                        tierVal = 'community';
+                      } else if (selectedTrack && selectedTrack !== 'Emotional Preparation') {
+                        tierVal = 'preparation';
+                      }
                       setForm((current) => ({
                         ...current,
-                        track: event.target.value,
-                      }))
-                    }
+                        track: selectedTrack,
+                        tier: tierVal,
+                      }));
+                    }}
                   >
                     <option value="">Select track…</option>
-                    <option>Orientation</option>
-                    <option>History</option>
-                    <option>Culture</option>
-                    <option>Logistics</option>
-                    <option>Emotional</option>
-                    <option>Citizenship</option>
+                    <option value="Emotional Preparation">Emotional Preparation</option>
+                    <option value="Cultural Intelligence">Cultural Intelligence</option>
+                    <option value="Practical Preparation">Practical Preparation</option>
+                    <option value="Arrival Orientation">Arrival Orientation</option>
+                    <option value="Heritage Journey Experience">Heritage Journey Experience</option>
+                    <option value="Post Journey Experience">Post Journey Experience</option>
                   </select>
                 </div>
 
@@ -1105,12 +1176,8 @@ export default function ContentPage() {
                   <select
                     className="a-cc-form-select"
                     value={form.tier}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        tier: event.target.value,
-                      }))
-                    }
+                    disabled
+                    style={{ background: '#f9fafb', color: '#6b7280', cursor: 'not-allowed' }}
                   >
                     <option value="free">Free</option>
                     <option value="community">Community ($27/mo)</option>
@@ -1138,6 +1205,7 @@ export default function ContentPage() {
                     <option>Interactive</option>
                     <option>Audio</option>
                     <option>Video</option>
+                    <option>PDF</option>
                   </select>
                 </div>
 
@@ -1161,6 +1229,28 @@ export default function ContentPage() {
                   </span>
                 </div>
               </div>
+
+              {['PDF', 'Audio', 'Video'].includes(form.type) && (
+                <div className="a-cc-form-row a-cc-form-row-full">
+                  <div className="a-cc-form-group">
+                    <label className="a-cc-form-label">
+                      Resource URL / File Link ({form.type})
+                    </label>
+                    <input
+                      type="text"
+                      className="a-cc-form-input"
+                      placeholder={`e.g. https://example.com/assets/file.${form.type.toLowerCase() === 'pdf' ? 'pdf' : form.type.toLowerCase() === 'audio' ? 'mp3' : 'mp4'}`}
+                      value={form.resourceUrl}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          resourceUrl: event.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="a-cc-form-row a-cc-form-row-full">
                 <div className="a-cc-form-group">
@@ -1201,25 +1291,20 @@ export default function ContentPage() {
                 </div>
               </div>
 
+              {/* Slug — auto-generated, read-only */}
               <div className="a-cc-form-row a-cc-form-row-full">
                 <div className="a-cc-form-group">
-                  <label className="a-cc-form-label">Slug (URL path)</label>
+                  <label className="a-cc-form-label">Slug (URL path) — auto-generated</label>
                   <input
                     type="text"
                     className="a-cc-form-input"
-                    placeholder="e.g. door-of-no-return-preparation"
                     value={form.slug}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        slug: event.target.value,
-                      }))
-                    }
+                    readOnly
+                    style={{ background: '#f9fafb', color: '#6b7280', cursor: 'not-allowed' }}
                   />
                   <span className="a-cc-form-hint">
-                    This becomes the URL:
-                    {' '}
-                    /modules/door-of-no-return-preparation
+                    This becomes the URL:{' '}
+                    /modules/{form.slug || 'your-module-slug'}
                   </span>
                 </div>
               </div>
@@ -1229,31 +1314,38 @@ export default function ContentPage() {
               <button className="a-cc-btn-ghost" onClick={closeModal}>
                 Cancel
               </button>
-              <button className="a-cc-btn-ghost" onClick={saveDraft}>
-                Save as draft
-              </button>
-              <button className="a-cc-btn-primary" onClick={submitModule}>
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                Submit for review
+              <button
+                className="a-cc-btn-primary"
+                onClick={submitModule}
+                disabled={submitting}
+              >
+                {submitting ? (
+                  'Saving…'
+                ) : (
+                  <>
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {editingId ? 'Save changes' : 'Submit for review'}
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Toast */}
       <div
-        className={`a-cc-toast ${toast ? 'show' : ''} ${
-          toast ? `a-cc-toast-${toast.type}` : ''
-        }`}
+        className={`a-cc-toast ${toast ? 'show' : ''} ${toast ? `a-cc-toast-${toast.type}` : ''
+          }`}
       >
         {toast?.msg ?? ''}
       </div>
@@ -1394,6 +1486,23 @@ export default function ContentPage() {
           color: #92400e;
         }
 
+        .content-page-ref .a-cc-table-responsive {
+          width: 100%;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .content-page-ref .a-cc-table-responsive .a-cc-table-head,
+        .content-page-ref .a-cc-table-responsive .a-cc-table-row,
+        .content-page-ref .a-cc-table-responsive .a-cc-track-header {
+          min-width: 850px;
+        }
+
+        .content-page-ref .a-cc-approval-card-selected {
+          border-color: #c9a14a;
+          box-shadow: 0 0 0 2px rgba(201, 161, 74, 0.15);
+        }
+
         .content-page-ref .a-cc-content-table {
           background: #ffffff;
           border-radius: 8px;
@@ -1453,7 +1562,7 @@ export default function ContentPage() {
 
         .content-page-ref .a-cc-table-head {
           display: grid;
-          grid-template-columns: 48px minmax(0, 1fr) 130px 120px 110px 130px;
+          grid-template-columns: 48px minmax(0, 1fr) 220px 80px 110px 130px;
           padding: 10px 20px;
           background: #f9fafb;
           border-bottom: 1px solid #e5e7eb;
@@ -1508,7 +1617,7 @@ export default function ContentPage() {
 
         .content-page-ref .a-cc-table-row {
           display: grid;
-          grid-template-columns: 48px minmax(0, 1fr) 130px 120px 110px 130px;
+          grid-template-columns: 48px minmax(0, 1fr) 220px 80px 110px 130px;
           align-items: center;
           padding: 13px 20px;
           border-bottom: 1px solid #f3f4f6;
@@ -1670,6 +1779,12 @@ export default function ContentPage() {
           background: #1f2937;
         }
 
+        .content-page-ref .a-cc-btn-primary:disabled,
+        .content-page-ref .a-cc-btn-ghost:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
         .content-page-ref .a-cc-btn-icon {
           background: transparent;
           border: 1.5px solid #e5e7eb;
@@ -1681,6 +1796,11 @@ export default function ContentPage() {
           border-color: #9ca3af;
           color: #374151;
           background: #f9fafb;
+        }
+
+        .content-page-ref .a-cc-btn-icon:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
         .content-page-ref .a-cc-sens-note {
@@ -1994,6 +2114,21 @@ export default function ContentPage() {
           color: #ffffff;
         }
 
+        /* Loading spinner */
+        .content-page-ref .a-cc-loading-spinner {
+          width: 32px;
+          height: 32px;
+          border: 3px solid #e5e7eb;
+          border-top-color: #c9a14a;
+          border-radius: 50%;
+          animation: a-cc-spin 0.8s linear infinite;
+          margin: 0 auto;
+        }
+
+        @keyframes a-cc-spin {
+          to { transform: rotate(360deg); }
+        }
+
         @media (max-width: 1100px) {
           .content-page-ref .a-cc-stats-row {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2001,7 +2136,7 @@ export default function ContentPage() {
 
           .content-page-ref .a-cc-table-head,
           .content-page-ref .a-cc-table-row {
-            grid-template-columns: 60px minmax(0, 1fr) 110px 100px;
+            grid-template-columns: 60px minmax(0, 1fr) 180px 80px;
           }
 
           .content-page-ref .a-cc-table-head span:nth-child(n + 5),

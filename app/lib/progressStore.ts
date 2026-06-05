@@ -16,6 +16,10 @@ export interface Module {
   type: ModuleType;
   warning?: string;
   meta?: string;
+  slug?: string;
+  body?: string;
+  takeaways?: string;
+  resourceUrl?: string;
 }
 
 export interface Stage {
@@ -273,27 +277,33 @@ export function saveProgress(progress: UserProgress): void {
   } catch { /* ignore */ }
 }
 
+export let ACTIVE_STAGES: Stage[] = STAGES;
+
+export function setGlobalStages(stages: Stage[]) {
+  ACTIVE_STAGES = stages;
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 export function getStageById(id: number): Stage | undefined {
-  return STAGES.find(s => s.id === id);
+  return ACTIVE_STAGES.find(s => s.id === id);
 }
 
 export function getModuleById(moduleId: string): { module: Module; stage: Stage } | undefined {
-  for (const stage of STAGES) {
-    const module = stage.modules.find(m => m.id === moduleId);
+  for (const stage of ACTIVE_STAGES) {
+    const module = stage.modules.find(m => m.id === moduleId || m.slug === moduleId || m.meta === moduleId);
     if (module) return { module, stage };
   }
   return undefined;
 }
 
 export function getNextModuleId(currentModuleId: string): string | null {
-  for (let s = 0; s < STAGES.length; s++) {
-    const stage = STAGES[s];
+  for (let s = 0; s < ACTIVE_STAGES.length; s++) {
+    const stage = ACTIVE_STAGES[s];
     for (let m = 0; m < stage.modules.length; m++) {
-      if (stage.modules[m].id === currentModuleId) {
+      if (stage.modules[m].id === currentModuleId || stage.modules[m].slug === currentModuleId || stage.modules[m].meta === currentModuleId) {
         if (m + 1 < stage.modules.length) return stage.modules[m + 1].id;
-        if (s + 1 < STAGES.length) return STAGES[s + 1].modules[0].id;
+        if (s + 1 < ACTIVE_STAGES.length) return ACTIVE_STAGES[s + 1].modules[0].id;
         return null;
       }
     }
@@ -302,13 +312,13 @@ export function getNextModuleId(currentModuleId: string): string | null {
 }
 
 export function getPrevModuleId(currentModuleId: string): string | null {
-  for (let s = 0; s < STAGES.length; s++) {
-    const stage = STAGES[s];
+  for (let s = 0; s < ACTIVE_STAGES.length; s++) {
+    const stage = ACTIVE_STAGES[s];
     for (let m = 0; m < stage.modules.length; m++) {
-      if (stage.modules[m].id === currentModuleId) {
+      if (stage.modules[m].id === currentModuleId || stage.modules[m].slug === currentModuleId || stage.modules[m].meta === currentModuleId) {
         if (m - 1 >= 0) return stage.modules[m - 1].id;
         if (s - 1 >= 0) {
-          const prevStage = STAGES[s - 1];
+          const prevStage = ACTIVE_STAGES[s - 1];
           return prevStage.modules[prevStage.modules.length - 1].id;
         }
         return null;
@@ -346,15 +356,16 @@ export function computeProgress(progress: UserProgress): ComputedProgress {
   const completedSet = new Set(progress.completedModules);
   const currentModuleId = progress.currentModuleId;
 
-  const stageStatuses: StageStatus[] = STAGES.map(stage => {
+  const stageStatuses: StageStatus[] = ACTIVE_STAGES.map(stage => {
     const isUnlocked = progress.unlockedStages.includes(stage.id);
     const completedCount = stage.modules.filter(m => completedSet.has(m.id)).length;
     const isCompleted = completedCount === stage.modules.length;
     const isCurrent = isUnlocked && !isCompleted;
 
     const moduleStatuses: ModuleStatus[] = stage.modules.map(mod => {
+      const isMatch = mod.id === currentModuleId || mod.meta === currentModuleId;
       if (completedSet.has(mod.id)) return { ...mod, status: 'completed' as const };
-      if (mod.id === currentModuleId && isUnlocked) return { ...mod, status: 'in-progress' as const };
+      if (isMatch && isUnlocked) return { ...mod, status: 'in-progress' as const };
       if (isUnlocked) {
         // Unlock sequentially: module unlocks when all previous ones are done
         const modIndex = stage.modules.findIndex(m => m.id === mod.id);
@@ -371,7 +382,7 @@ export function computeProgress(progress: UserProgress): ComputedProgress {
       isUnlocked,
       isCompleted,
       isCurrent,
-      progressPercent: Math.round((completedCount / stage.modules.length) * 100),
+      progressPercent: Math.round((completedCount / (stage.modules.length || 1)) * 100),
       moduleStatuses,
     };
   });
@@ -381,12 +392,13 @@ export function computeProgress(progress: UserProgress): ComputedProgress {
     stageStatuses.find(s => s.isUnlocked) ||
     stageStatuses[0];
 
-  const currentModuleInfo = currentStage.moduleStatuses.find(m => m.id === currentModuleId) ||
+  const currentModuleInfo = currentStage.moduleStatuses.find(m => m.id === currentModuleId || m.meta === currentModuleId) ||
     currentStage.moduleStatuses.find(m => m.status === 'in-progress') ||
     null;
 
   const completedModulesCount = completedSet.size;
-  const overallPercent = Math.round((completedModulesCount / TOTAL_MODULES) * 100);
+  const totalModulesCount = ACTIVE_STAGES.reduce((sum, s) => sum + s.modules.length, 0);
+  const overallPercent = Math.round((completedModulesCount / (totalModulesCount || 1)) * 100);
 
   return { stageStatuses, currentStage, currentModule: currentModuleInfo, completedModulesCount, overallPercent };
 }

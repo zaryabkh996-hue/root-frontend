@@ -22,7 +22,7 @@ export default function Login() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
-      
+
       const response = await fetch(`${apiUrl}/auth/magic-link/signin`, {
         method: 'POST',
         headers: {
@@ -31,7 +31,7 @@ export default function Login() {
         body: JSON.stringify({ email })
       });
       console.log(response);
-      
+
 
       const data = await response.json();
 
@@ -70,7 +70,7 @@ export default function Login() {
   return (
     <div className="bg-forest-deepest min-h-screen text-cream">
       <div className="max-w-md mx-auto px-8 py-16">
-        
+
         {stage === 'form' ? (
           <>
             {/* Header */}
@@ -119,7 +119,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="amara@example.com"
-                  className="field-dark w-full"
+                  className=" w-full"
                   required
                 />
               </div>
@@ -158,7 +158,7 @@ export default function Login() {
               </div>
 
               <h2 className="display text-3xl font-light mb-3">Account not found</h2>
-              
+
               <p className="text-cream/70 mb-8 leading-relaxed">
                 No account registered with <strong className="text-brass-light">{email}</strong>
               </p>
@@ -181,7 +181,7 @@ export default function Login() {
                 <div className="scard-dark p-6 text-left border-l-2 border-brass">
                   <h3 className="text-brass-light font-semibold text-sm mb-2">🔑 If you're a Custodian/Admin</h3>
                   <p className="text-cream/80 text-sm mb-4">{guidance?.custodian}</p>
-                 
+
                 </div>
               </div>
 
@@ -204,7 +204,7 @@ export default function Login() {
               </div>
 
               <h2 className="display text-3xl font-light mb-3">Check your email</h2>
-              
+
               <p className="text-cream/70 mb-8 leading-relaxed">
                 We've sent a magic link to <strong className="text-brass-light">{email}</strong>
               </p>
