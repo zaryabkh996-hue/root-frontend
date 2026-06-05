@@ -48,7 +48,7 @@ export default function ReviewPage() {
         amount_charged_usd: parseFloat(sessionPrice),
       };
 
-      const response = await fetch(`${backendUrl}/api/bookings`, {
+      const response = await fetch(`${backendUrl}/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

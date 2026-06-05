@@ -58,7 +58,7 @@ export default function AdminUsers() {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const headers = AuthService.getAuthHeaders();
 
-      const response = await fetch(`${backendUrl}/api/admin/users?${queryParams}`, {
+      const response = await fetch(`${backendUrl}/admin/users?${queryParams}`, {
         method: 'GET',
         headers,
       });

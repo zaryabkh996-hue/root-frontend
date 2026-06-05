@@ -65,7 +65,7 @@ export default function CustodianProfile() {
       const storedUser = JSON.parse(userDataStr);
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
-      const response = await fetch(`${backendUrl}/api/admin/custodians/${storedUser.id}`, {
+      const response = await fetch(`${backendUrl}/admin/custodians/${storedUser.id}`, {
         headers: AuthService.getAuthHeaders(),
       });
 
@@ -110,7 +110,7 @@ export default function CustodianProfile() {
       setSubmitting(true);
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
-      const response = await fetch(`${backendUrl}/api/admin/custodians/${user.id}`, {
+      const response = await fetch(`${backendUrl}/admin/custodians/${user.id}`, {
         method: 'PUT',
         headers: AuthService.getAuthHeaders(),
         body: JSON.stringify(formData),

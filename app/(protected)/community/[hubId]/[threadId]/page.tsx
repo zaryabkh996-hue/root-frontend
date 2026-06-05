@@ -55,7 +55,7 @@ export default function ThreadDetailPage() {
 
         // Fetch thread details
         const threadResponse = await fetch(
-          `${backendUrl}/api/community/threads/${threadId}`,
+          `${backendUrl}/community/threads/${threadId}`,
           {
             method: 'GET',
             headers: AuthService.getAuthHeaders(),
@@ -86,7 +86,7 @@ export default function ThreadDetailPage() {
 
         // Fetch replies for this thread
         const repliesResponse = await fetch(
-          `${backendUrl}/api/community/threads/${threadId}/replies`,
+          `${backendUrl}/community/threads/${threadId}/replies`,
           {
             method: 'GET',
             headers: AuthService.getAuthHeaders(),
@@ -128,7 +128,7 @@ export default function ThreadDetailPage() {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
       const response = await fetch(
-        `${backendUrl}/api/community/replies`,
+        `${backendUrl}/community/replies`,
         {
           method: 'POST',
           headers: AuthService.getAuthHeaders(),
@@ -143,7 +143,7 @@ export default function ThreadDetailPage() {
         setReplyText('');
         // Optionally refetch replies to show the new one
         const repliesResponse = await fetch(
-          `${backendUrl}/api/community/threads/${threadId}/replies`,
+          `${backendUrl}/community/threads/${threadId}/replies`,
           {
             method: 'GET',
             headers: AuthService.getAuthHeaders(),
@@ -188,7 +188,7 @@ export default function ThreadDetailPage() {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(
-        `${backendUrl}/api/community/reports`,
+        `${backendUrl}/community/reports`,
         {
           method: 'POST',
           headers: AuthService.getAuthHeaders(),

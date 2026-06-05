@@ -119,7 +119,7 @@ export default function HubDetailPage() {
 
         // Fetch hub details
         const hubResponse = await fetch(
-          `${backendUrl}/api/community/hubs/${hubId}`,
+          `${backendUrl}/community/hubs/${hubId}`,
           {
             method: 'GET',
             headers: AuthService.getAuthHeaders(),
@@ -135,7 +135,7 @@ export default function HubDetailPage() {
 
         // Fetch threads for this hub
         const threadsResponse = await fetch(
-          `${backendUrl}/api/community/hubs/${hubId}/threads`,
+          `${backendUrl}/community/hubs/${hubId}/threads`,
           {
             method: 'GET',
             headers: AuthService.getAuthHeaders(),
@@ -166,7 +166,7 @@ export default function HubDetailPage() {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
       const response = await fetch(
-        `${backendUrl}/api/community/hubs/${hub.id}/join`,
+        `${backendUrl}/community/hubs/${hub.id}/join`,
         {
           method: 'POST',
           headers: AuthService.getAuthHeaders(),
@@ -209,7 +209,7 @@ export default function HubDetailPage() {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
       const response = await fetch(
-        `${backendUrl}/api/community/threads`,
+        `${backendUrl}/community/threads`,
         {
           method: 'POST',
           headers: AuthService.getAuthHeaders(),
@@ -235,7 +235,7 @@ export default function HubDetailPage() {
 
         // Refresh threads
         const threadsResponse = await fetch(
-          `${backendUrl}/api/community/hubs/${hubId}/threads`,
+          `${backendUrl}/community/hubs/${hubId}/threads`,
           {
             method: 'GET',
             headers: AuthService.getAuthHeaders(),
@@ -275,7 +275,7 @@ export default function HubDetailPage() {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
       const response = await fetch(
-        `${backendUrl}/api/community/hubs/${hub.id}/join`,
+        `${backendUrl}/community/hubs/${hub.id}/join`,
         {
           method: 'POST',
           headers: AuthService.getAuthHeaders(),

@@ -43,7 +43,7 @@ export default function CustodiansPage() {
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
         const response = await fetch(
-          `${backendUrl}/api/custodians?page=1&limit=100&country=${selectedCountry === 'All countries' ? '' : selectedCountry}&specialty=${selectedSpecialty === 'All specialties' ? '' : selectedSpecialty}&search=${searchTerm}`,
+          `${backendUrl}/custodians?page=1&limit=100&country=${selectedCountry === 'All countries' ? '' : selectedCountry}&specialty=${selectedSpecialty === 'All specialties' ? '' : selectedSpecialty}&search=${searchTerm}`,
           {
             method: 'GET',
             headers: AuthService.getAuthHeaders(),

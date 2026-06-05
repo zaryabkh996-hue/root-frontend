@@ -23,7 +23,7 @@ export default function AdminConduct() {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(
-        `${backendUrl}/api/admin/community/reports`,
+        `${backendUrl}/admin/community/reports`,
         {
           method: 'GET',
           headers: AuthService.getAuthHeaders(),
@@ -59,7 +59,7 @@ export default function AdminConduct() {
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
         const response = await fetch(
-          `${backendUrl}/api/admin/community/reports/${reportId}/dismiss`,
+          `${backendUrl}/admin/community/reports/${reportId}/dismiss`,
           {
             method: 'POST',
             headers: AuthService.getAuthHeaders(),
@@ -79,7 +79,7 @@ export default function AdminConduct() {
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
         const response = await fetch(
-          `${backendUrl}/api/admin/community/reports/${reportId}/ban`,
+          `${backendUrl}/admin/community/reports/${reportId}/ban`,
           {
             method: 'POST',
             headers: AuthService.getAuthHeaders(),
@@ -110,7 +110,7 @@ export default function AdminConduct() {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(
-        `${backendUrl}/api/admin/community/reports/${selectedReportId}/warn`,
+        `${backendUrl}/admin/community/reports/${selectedReportId}/warn`,
         {
           method: 'POST',
           headers: AuthService.getAuthHeaders(),

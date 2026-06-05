@@ -52,7 +52,7 @@ export default function CustodianLounge() {
     try {
       setLoading(true);
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-      const response = await fetch(`${backendUrl}/api/lounge/posts?page=${page}`, {
+      const response = await fetch(`${backendUrl}/lounge/posts?page=${page}`, {
         headers: AuthService.getAuthHeaders(),
       });
 
@@ -73,7 +73,7 @@ export default function CustodianLounge() {
   const fetchStats = useCallback(async () => {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-      const response = await fetch(`${backendUrl}/api/lounge/stats`, {
+      const response = await fetch(`${backendUrl}/lounge/stats`, {
         headers: AuthService.getAuthHeaders(),
       });
 
@@ -98,7 +98,7 @@ export default function CustodianLounge() {
   const toggleLike = async (postId: number) => {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-      const response = await fetch(`${backendUrl}/api/lounge/posts/${postId}/like`, {
+      const response = await fetch(`${backendUrl}/lounge/posts/${postId}/like`, {
         method: 'POST',
         headers: AuthService.getAuthHeaders(),
       });
@@ -127,7 +127,7 @@ export default function CustodianLounge() {
     try {
       setSubmittingReply(true);
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-      const response = await fetch(`${backendUrl}/api/lounge/posts/${postId}/replies`, {
+      const response = await fetch(`${backendUrl}/lounge/posts/${postId}/replies`, {
         method: 'POST',
         headers: AuthService.getAuthHeaders(),
         body: JSON.stringify({ content: replyText }),
@@ -166,7 +166,7 @@ export default function CustodianLounge() {
     try {
       setSubmitting(true);
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-      const response = await fetch(`${backendUrl}/api/lounge/posts`, {
+      const response = await fetch(`${backendUrl}/lounge/posts`, {
         method: 'POST',
         headers: AuthService.getAuthHeaders(),
         body: JSON.stringify({

@@ -132,7 +132,7 @@ export default function CustodianProfilePage() {
     const fetchCustodian = async () => {
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-        const response = await fetch(`${backendUrl}/api/custodians/${id}`, {
+        const response = await fetch(`${backendUrl}/custodians/${id}`, {
           method: 'GET',
           headers: AuthService.getAuthHeaders(),
         });

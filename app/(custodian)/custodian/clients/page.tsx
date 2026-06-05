@@ -57,7 +57,7 @@ export default function CustodianClients() {
         setLoading(true);
         const headers = AuthService.getAuthHeaders();
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-        const response = await fetch(`${backendUrl}/api/bookings/custodian-calendar`, { headers });
+        const response = await fetch(`${backendUrl}/bookings/custodian-calendar`, { headers });
 
         if (!response.ok) throw new Error('Failed to fetch bookings');
 
@@ -130,7 +130,8 @@ export default function CustodianClients() {
     try {
       setConfirmingId(bookingId);
       const headers = AuthService.getAuthHeaders();
-      const response = await fetch(` /bookings/${bookingId}`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+      const response = await fetch(`${backendUrl}/bookings/${bookingId}`, {
         method: 'PUT',
         headers: {
           ...headers,

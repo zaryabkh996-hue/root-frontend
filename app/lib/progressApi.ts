@@ -31,6 +31,13 @@ export async function fetchRemoteProgress(): Promise<RemoteProgress | null> {
     const res = await fetch(`${API_BASE_URL}/progress`, {
       headers: authHeaders(),
     });
+    if (res.status === 401) {
+      AuthService.logout();
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      return null;
+    }
     if (!res.ok) return null;
     const json = await res.json();
     return json.data as RemoteProgress | null;
@@ -42,11 +49,17 @@ export async function fetchRemoteProgress(): Promise<RemoteProgress | null> {
 // ── Full progress sync (used on initial save and periodically) ──────────────
 export async function syncProgressToServer(payload: Partial<RemoteProgress>): Promise<void> {
   try {
-    await fetch(`${API_BASE_URL}/progress`, {
+    const res = await fetch(`${API_BASE_URL}/progress`, {
       method: 'PUT',
       headers: authHeaders(),
       body: JSON.stringify(payload),
     });
+    if (res.status === 401) {
+      AuthService.logout();
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    }
   } catch {
     // Offline — localStorage already has the data, will sync next session
   }

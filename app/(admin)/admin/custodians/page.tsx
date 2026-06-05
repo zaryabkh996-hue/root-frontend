@@ -112,7 +112,7 @@ export default function AdminCustodians() {
       });
 
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-      const response = await fetch(`${backendUrl}/api/admin/custodians?${queryParams}`, {
+      const response = await fetch(`${backendUrl}/admin/custodians?${queryParams}`, {
         method: 'GET',
         headers: AuthService.getAuthHeaders(),
       });
@@ -165,7 +165,7 @@ export default function AdminCustodians() {
     // Fetch full custodian data from backend
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-      const response = await fetch(`${backendUrl}/api/admin/custodians/${custodian.id}`, {
+      const response = await fetch(`${backendUrl}/admin/custodians/${custodian.id}`, {
         method: 'GET',
         headers: AuthService.getAuthHeaders(),
       });
@@ -251,7 +251,7 @@ export default function AdminCustodians() {
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-      const response = await fetch(`${backendUrl}/api/admin/custodians/${id}`, {
+      const response = await fetch(`${backendUrl}/admin/custodians/${id}`, {
         method: 'DELETE',
         headers: AuthService.getAuthHeaders(),
       });
@@ -281,8 +281,8 @@ export default function AdminCustodians() {
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const url = editingCustodian
-        ? `${backendUrl}/api/admin/custodians/${editingCustodian.id}`
-        : `${backendUrl}/api/admin/custodians`;
+        ? `${backendUrl}/admin/custodians/${editingCustodian.id}`
+        : `${backendUrl}/admin/custodians`;
 
       const method = editingCustodian ? 'PUT' : 'POST';
 

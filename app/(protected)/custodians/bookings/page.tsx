@@ -41,7 +41,7 @@ export default function CustodianBookingsPage() {
     try {
       setLoading(true);
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-      const response = await fetch(`${backendUrl}/api/bookings/custodian-calendar`, {
+      const response = await fetch(`${backendUrl}/bookings/custodian-calendar`, {
         headers: AuthService.getAuthHeaders() as HeadersInit,
       });
 
@@ -68,7 +68,7 @@ export default function CustodianBookingsPage() {
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-      const response = await fetch(`${backendUrl}/api/bookings/${bookingId}/cancel`, {
+      const response = await fetch(`${backendUrl}/bookings/${bookingId}/cancel`, {
         method: 'POST',
         headers: AuthService.getAuthHeaders() as HeadersInit,
       });

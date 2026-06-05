@@ -139,7 +139,7 @@ export default function Home() {
     const fetchFeaturedCustodians = async () => {
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-        const apiUrl = `${backendUrl}/api/custodians?page=1&limit=3`;
+        const apiUrl = `${backendUrl}/custodians?page=1&limit=3`;
 
 
         const response = await fetch(apiUrl, {
@@ -269,7 +269,7 @@ export default function Home() {
       const backendUrl =
         process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
-      const response = await fetch(`${backendUrl}/api/custodians/apply`, {
+      const response = await fetch(`${backendUrl}/custodians/apply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

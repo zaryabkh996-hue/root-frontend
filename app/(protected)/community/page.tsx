@@ -51,7 +51,7 @@ export default function CommunityPage() {
 
         // Fetch hubs
         const hubsResponse = await fetch(
-          `${backendUrl}/api/community/hubs`,
+          `${backendUrl}/community/hubs`,
           {
             method: 'GET',
             headers: AuthService.getAuthHeaders(),
@@ -66,7 +66,7 @@ export default function CommunityPage() {
         // Fetch threads from first hub (The Love Hub)
         setLoadingThreads(true);
         const threadsResponse = await fetch(
-          `${backendUrl}/api/community/hubs/${hubsData.data[0]?.id}/threads`,
+          `${backendUrl}/community/hubs/${hubsData.data[0]?.id}/threads`,
           {
             method: 'GET',
             headers: AuthService.getAuthHeaders(),
@@ -116,7 +116,7 @@ export default function CommunityPage() {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
       const response = await fetch(
-        `${backendUrl}/api/community/hubs/${selectedHub.id}/join`,
+        `${backendUrl}/community/hubs/${selectedHub.id}/join`,
         {
           method: 'POST',
           headers: AuthService.getAuthHeaders(),
