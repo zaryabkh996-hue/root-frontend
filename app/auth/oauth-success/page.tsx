@@ -77,9 +77,9 @@ export default function OAuthSuccess() {
         return;
       }
 
-      // Fallback: call /api/auth/user if cookies were missing
+      // Fallback: call /fe-api/auth/user if cookies were missing
       try {
-        const response = await fetch('/api/auth/user');
+        const response = await fetch('/fe-api/auth/user');
 
         if (!response.ok) {
           setError('Authentication failed. Please try signing in again.');

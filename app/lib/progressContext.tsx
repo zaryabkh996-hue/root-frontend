@@ -157,7 +157,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
     setIsSyncing(true);
 
     // Fetch published modules from API first, build dynamic stages, and update store
-    fetch('/api/content')
+    fetch('/fe-api/content')
       .then(res => res.json())
       .then(result => {
         if (cancelled) return;

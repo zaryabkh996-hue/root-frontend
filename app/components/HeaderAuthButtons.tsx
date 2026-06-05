@@ -19,7 +19,7 @@ export default function HeaderAuthButtons() {
       }
       // Check Auth0 session (OAuth users) without throwing 401 errors in console
       try {
-        const res = await fetch('/api/auth/check-session');
+        const res = await fetch('/fe-api/auth/check-session');
         if (res.ok) {
           const data = await res.json();
           if (data.session?.user) {

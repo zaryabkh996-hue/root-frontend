@@ -254,7 +254,7 @@ export default function ContentPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch('/api/admin/content');
+      const res = await fetch('/fe-api/admin/content');
       const data = await res.json();
       if (data.success) {
         setModules(data.data ?? []);
@@ -397,7 +397,7 @@ export default function ContentPage() {
 
       if (editingId) {
         // Update existing
-        const res = await fetch(`/api/admin/content/${encodeURIComponent(editingId)}`, {
+        const res = await fetch(`/fe-api/admin/content/${encodeURIComponent(editingId)}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -407,7 +407,7 @@ export default function ContentPage() {
         showToast(`Module updated · "${form.title}"`, 'success');
       } else {
         // Create new
-        const res = await fetch('/api/admin/content', {
+        const res = await fetch('/fe-api/admin/content', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -433,7 +433,7 @@ export default function ContentPage() {
 
     setActionLoading(mod._id);
     try {
-      const res = await fetch(`/api/admin/content/${encodeURIComponent(mod._id)}`, {
+      const res = await fetch(`/fe-api/admin/content/${encodeURIComponent(mod._id)}`, {
         method: 'DELETE',
       });
       const data = await res.json();
@@ -452,7 +452,7 @@ export default function ContentPage() {
     setActionLoading(mod._id);
     try {
       const res = await fetch(
-        `/api/admin/content/${encodeURIComponent(mod._id)}/approve`,
+        `/fe-api/admin/content/${encodeURIComponent(mod._id)}/approve`,
         { method: 'POST' },
       );
       const data = await res.json();
@@ -476,7 +476,7 @@ export default function ContentPage() {
 
     setActionLoading(mod._id);
     try {
-      const res = await fetch(`/api/admin/content/${encodeURIComponent(mod._id)}`, {
+      const res = await fetch(`/fe-api/admin/content/${encodeURIComponent(mod._id)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ approvalStep: currentStep + 1 }),
@@ -500,7 +500,7 @@ export default function ContentPage() {
     setActionLoading(mod._id);
     try {
       const res = await fetch(
-        `/api/admin/content/${encodeURIComponent(mod._id)}/revision`,
+        `/fe-api/admin/content/${encodeURIComponent(mod._id)}/revision`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -40,7 +40,7 @@ const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children }) => {
 
       // Check Auth0 session via API (OAuth users)
       try {
-        const response = await fetch('/api/auth/user');
+        const response = await fetch('/fe-api/auth/user');
         if (response.ok) {
           const data = await response.json();
           if (data.user) {

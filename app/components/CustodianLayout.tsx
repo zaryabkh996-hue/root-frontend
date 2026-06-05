@@ -38,7 +38,7 @@ const CustodianLayout: React.FC<CustodianLayoutProps> = ({ children }) => {
 
       // Try Auth0 session
       try {
-        const res = await fetch('/api/auth/user');
+        const res = await fetch('/fe-api/auth/user');
         if (res.ok) {
           const data = await res.json();
           if (data.user) {
