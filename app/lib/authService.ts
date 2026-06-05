@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
 export interface LoginCredentials {
   email: string;
@@ -113,7 +113,7 @@ export class AuthService {
     localStorage.removeItem('user');
 
     localStorage.removeItem('token');
- 
+
     localStorage.removeItem('oauth_user');
     localStorage.removeItem('userRole');
     localStorage.removeItem('ourroots_progress');

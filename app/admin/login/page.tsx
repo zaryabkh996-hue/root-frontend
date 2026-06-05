@@ -17,7 +17,7 @@ export default function AdminLogin() {
     setIsSubmitting(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
       const response = await fetch(`${apiUrl}/auth/admin/login`, {
         method: 'POST',
@@ -39,7 +39,7 @@ export default function AdminLogin() {
       if (data.token) {
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('userRole',data.user.role);
+        localStorage.setItem('userRole', data.user.role);
       }
 
       // Redirect to admin dashboard

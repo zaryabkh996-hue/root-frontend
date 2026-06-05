@@ -51,8 +51,8 @@ export default function ThreadDetailPage() {
   useEffect(() => {
     const fetchThreadData = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
-        
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+
         // Fetch thread details
         const threadResponse = await fetch(
           `${backendUrl}/api/community/threads/${threadId}`,
@@ -68,12 +68,12 @@ export default function ThreadDetailPage() {
 
         const threadData = await threadResponse.json();
         const threadItem = threadData.data;
-        
+
         // Parse content if it's a string
-        const contentArray = typeof threadItem.content === 'string' 
-          ? [threadItem.content] 
-          : Array.isArray(threadItem.content) 
-            ? threadItem.content 
+        const contentArray = typeof threadItem.content === 'string'
+          ? [threadItem.content]
+          : Array.isArray(threadItem.content)
+            ? threadItem.content
             : [threadItem.content];
 
         setThread({
@@ -122,11 +122,11 @@ export default function ThreadDetailPage() {
 
   const handlePostReply = async () => {
     if (!replyText.trim()) return;
-    
+
     setIsSubmitting(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
-      
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+
       const response = await fetch(
         `${backendUrl}/api/community/replies`,
         {
@@ -186,7 +186,7 @@ export default function ThreadDetailPage() {
     const { type, id } = reportTarget;
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(
         `${backendUrl}/api/community/reports`,
         {
@@ -244,7 +244,7 @@ export default function ThreadDetailPage() {
     return (
       <div className="text-center py-16">
         <p className="text-cream/70 mb-4">Thread not found</p>
-        <button 
+        <button
           onClick={() => router.back()}
           className="btn-primary"
         >
@@ -259,7 +259,7 @@ export default function ThreadDetailPage() {
   return (
     <>
       {/* Back Button */}
-      <button 
+      <button
         onClick={() => router.back()}
         className="text-cream/60 hover:text-cream text-sm mb-6 flex items-center gap-2"
       >
@@ -273,7 +273,7 @@ export default function ThreadDetailPage() {
       <div className="scard-dark p-5 mb-6" style={{ borderLeft: '3px solid var(--brass)' }}>
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-start gap-3">
-            <div 
+            <div
               className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold text-brass flex-shrink-0"
               style={{ background: 'rgba(201,161,74,0.2)' }}
             >
@@ -281,7 +281,7 @@ export default function ThreadDetailPage() {
             </div>
             <div>
               <div className="text-sm font-medium">
-                {thread.author} 
+                {thread.author}
                 <span className="text-cream/40 text-xs mono" style={{ marginLeft: '8px' }}>
                   · {thread.time_ago} · {thread.location}
                 </span>
@@ -290,7 +290,7 @@ export default function ThreadDetailPage() {
             </div>
           </div>
           {currentUser && String(currentUser.id) !== String(thread.user_id) && (
-            <button 
+            <button
               onClick={() => triggerReportConfirm('thread', thread.id)}
               title="Report this post"
               className="text-cream/40 hover:text-red-500 transition-colors p-1"
@@ -334,7 +334,7 @@ export default function ThreadDetailPage() {
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 flex-1">
-                <div 
+                <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
                   style={{
                     background: reply.is_custodian ? 'rgba(31,90,61,0.3)' : reply.avatarBg,
@@ -358,9 +358,9 @@ export default function ThreadDetailPage() {
                   <p className="text-sm text-cream/70 leading-relaxed">{reply.content}</p>
                 </div>
               </div>
-              
+
               {currentUser && String(currentUser.id) !== String(reply.user_id) && (
-                <button 
+                <button
                   onClick={() => triggerReportConfirm('reply', reply.id)}
                   title="Report this message"
                   className="text-cream/30 hover:text-red-500 transition-colors p-1"
@@ -379,7 +379,7 @@ export default function ThreadDetailPage() {
       {/* Reply Box */}
       <div className="scard-dark p-4">
         <label className="text-xs text-cream/50 block mb-2">Write a reply</label>
-        <textarea 
+        <textarea
           value={replyText}
           onChange={(e) => setReplyText(e.target.value)}
           className="w-full p-3 rounded-sm text-sm"
@@ -394,7 +394,7 @@ export default function ThreadDetailPage() {
           placeholder="Share your experience or ask a follow-up..."
         />
         <div className="flex justify-end mt-3">
-          <button 
+          <button
             onClick={handlePostReply}
             disabled={isSubmitting || !replyText.trim()}
             className="btn-primary text-xs"
@@ -441,14 +441,14 @@ export default function ThreadDetailPage() {
               Are you sure you want to report this message for guidelines violations?
             </p>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-              <button 
+              <button
                 onClick={() => { setConfirmModalOpen(false); setReportTarget(null); }}
                 className="btn-ghost text-xs"
                 style={{ padding: '8px 16px', background: 'rgba(243,237,224,0.05)', border: '1px solid rgba(243,237,224,0.1)' }}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleConfirmReport}
                 className="btn-primary text-xs"
                 style={{ padding: '8px 16px', background: '#b91c1c', border: '1px solid #b91c1c', color: '#fff' }}

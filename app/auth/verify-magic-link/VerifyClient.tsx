@@ -23,7 +23,7 @@ export default function VerifyClient() {
       }
 
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
         const response = await fetch(`${apiUrl}/auth/magic-link/verify`, {
           method: 'POST',

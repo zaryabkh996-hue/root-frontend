@@ -41,7 +41,7 @@ export default function CustodiansPage() {
   useEffect(() => {
     const fetchCustodians = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
         const response = await fetch(
           `${backendUrl}/api/custodians?page=1&limit=100&country=${selectedCountry === 'All countries' ? '' : selectedCountry}&specialty=${selectedSpecialty === 'All specialties' ? '' : selectedSpecialty}&search=${searchTerm}`,
           {
@@ -62,7 +62,7 @@ export default function CustodiansPage() {
         // Extract unique countries and specialties
         const uniqueCountries = [...new Set(data.custodians.map((c: Custodian) => c.country))].sort();
         const uniqueSpecialties = [...new Set(data.custodians.map((c: Custodian) => c.specialty))].sort();
-        
+
         setCountries(uniqueCountries as string[]);
         setSpecialties(uniqueSpecialties as string[]);
       } catch (error) {
@@ -238,7 +238,7 @@ export default function CustodiansPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredCustodians.map((custodian) => (
-            
+
             <div
               key={custodian.id}
               className="scard-dark cursor-pointer hover:border-brass/40 transition"
@@ -338,15 +338,14 @@ export default function CustodiansPage() {
                     custodian.tags.map((tag: any, idx: number) => (
                       <span
                         key={idx}
-                        className={`tag ${
-                          typeof tag === 'string'
+                        className={`tag ${typeof tag === 'string'
                             ? 'tag-brass'
                             : tag.color === 'terra'
                               ? 'tag-terra'
                               : tag.color === 'brass'
                                 ? 'tag-brass'
                                 : 'tag-dark'
-                        }`}
+                          }`}
                       >
                         {typeof tag === 'string' ? tag : tag.label}
                       </span>
@@ -400,8 +399,8 @@ export default function CustodiansPage() {
                 </div>
               </div>
             </div>
-       
-     
+
+
           ))}
         </div>
       )}

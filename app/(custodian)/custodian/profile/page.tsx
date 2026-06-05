@@ -19,8 +19,8 @@ const COUNTRY_DATA: Record<string, string[]> = {
 };
 
 const COMMON_LANGUAGES = [
-  'English', 'French', 'Portuguese', 'Arabic', 'Swahili', 'Yoruba', 'Igbo', 
-  'Hausa', 'Zulu', 'Xhosa', 'Shona', 'Amharic', 'Oromo', 'Somali', 
+  'English', 'French', 'Portuguese', 'Arabic', 'Swahili', 'Yoruba', 'Igbo',
+  'Hausa', 'Zulu', 'Xhosa', 'Shona', 'Amharic', 'Oromo', 'Somali',
   'Twi', 'Ga', 'Ewe', 'Fante', 'Wolof', 'Bambara', 'Lingala', 'Kinyarwanda'
 ];
 
@@ -61,19 +61,19 @@ export default function CustodianProfile() {
       setLoading(true);
       const userDataStr = localStorage.getItem('user');
       if (!userDataStr) throw new Error('User not found in storage');
-      
+
       const storedUser = JSON.parse(userDataStr);
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
-      
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+
       const response = await fetch(`${backendUrl}/api/admin/custodians/${storedUser.id}`, {
         headers: AuthService.getAuthHeaders(),
       });
 
       if (!response.ok) throw new Error('Failed to fetch profile');
-      
+
       const result = await response.json();
       const data = result.data;
-      
+
       setUser(data);
       setFormData({
         name: data.name || '',
@@ -108,8 +108,8 @@ export default function CustodianProfile() {
     e.preventDefault();
     try {
       setSubmitting(true);
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
-      
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+
       const response = await fetch(`${backendUrl}/api/admin/custodians/${user.id}`, {
         method: 'PUT',
         headers: AuthService.getAuthHeaders(),
@@ -123,11 +123,11 @@ export default function CustodianProfile() {
 
       const result = await response.json();
       const updatedUser = result.data;
-      
+
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
       showNotification('Profile updated successfully');
-      
+
       // Refresh to update sidebar etc
       window.dispatchEvent(new Event('storage'));
     } catch (error: any) {
@@ -193,14 +193,14 @@ export default function CustodianProfile() {
               <span className="status-ok">✓ {formData.certification || 'Certified'}</span>
               <span className="a-badge-gray">⭐ {user?.review_avg || '5.0'} rating</span>
             </div>
-            
-            <button 
+
+            <button
               onClick={() => {
                 const url = `${window.location.origin}/custodians/${user?.id}`;
                 navigator.clipboard.writeText(url);
                 showNotification('Profile link copied to clipboard');
               }}
-              className="c-btn-ghost" 
+              className="c-btn-ghost"
               style={{ width: '100%' }}
             >
               Share profile
@@ -713,7 +713,7 @@ export default function CustodianProfile() {
                   </div>
                 </div>
               ))}
-              
+
               <button
                 type="button"
                 onClick={() => {
@@ -744,7 +744,7 @@ export default function CustodianProfile() {
                 {formData.availability === 'Available' ? 'Available for bookings' : 'Currently Booked/Busy'}
               </span>
             </div>
-            <button 
+            <button
               type="button"
               onClick={() => setFormData({ ...formData, availability: formData.availability === 'Available' ? 'Booked' : 'Available' })}
               className="c-btn-ghost"

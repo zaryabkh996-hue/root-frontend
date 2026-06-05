@@ -36,7 +36,7 @@ export default function CustodianLounge() {
   const { showNotification } = useNotification();
   const [composeText, setComposeText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'question' | 'tip' | 'discussion'>('question');
-  
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -51,7 +51,7 @@ export default function CustodianLounge() {
   const fetchPosts = useCallback(async (page: number) => {
     try {
       setLoading(true);
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${backendUrl}/api/lounge/posts?page=${page}`, {
         headers: AuthService.getAuthHeaders(),
       });
@@ -72,7 +72,7 @@ export default function CustodianLounge() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${backendUrl}/api/lounge/stats`, {
         headers: AuthService.getAuthHeaders(),
       });
@@ -97,7 +97,7 @@ export default function CustodianLounge() {
 
   const toggleLike = async (postId: number) => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${backendUrl}/api/lounge/posts/${postId}/like`, {
         method: 'POST',
         headers: AuthService.getAuthHeaders(),
@@ -126,7 +126,7 @@ export default function CustodianLounge() {
 
     try {
       setSubmittingReply(true);
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${backendUrl}/api/lounge/posts/${postId}/replies`, {
         method: 'POST',
         headers: AuthService.getAuthHeaders(),
@@ -165,7 +165,7 @@ export default function CustodianLounge() {
 
     try {
       setSubmitting(true);
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${backendUrl}/api/lounge/posts`, {
         method: 'POST',
         headers: AuthService.getAuthHeaders(),
@@ -303,10 +303,10 @@ export default function CustodianLounge() {
               {posts.map((post) => (
                 <div key={post.id} className="c-card c-card-pad" style={{ marginBottom: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                    <div style={{ 
-                      width: '36px', height: '36px', borderRadius: '50%', 
-                      background: post.user?.id % 3 === 0 ? '#2d6a4f' : post.user?.id % 3 === 1 ? '#8a4f2d' : '#4a2d8a', 
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', color: '#f0ebe0', flexShrink: 0 
+                    <div style={{
+                      width: '36px', height: '36px', borderRadius: '50%',
+                      background: post.user?.id % 3 === 0 ? '#2d6a4f' : post.user?.id % 3 === 1 ? '#8a4f2d' : '#4a2d8a',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', color: '#f0ebe0', flexShrink: 0
                     }}>
                       {post.user?.name?.charAt(0) || 'C'}
                     </div>
@@ -316,11 +316,11 @@ export default function CustodianLounge() {
                         <span style={{ fontSize: '10px', fontWeight: 700, color: '#16a34a', padding: '2px 8px', borderRadius: '20px', background: 'rgba(22,163,74,0.1)' }}>
                           ✓ {post.user?.certification || 'Certified Custodian'}
                         </span>
-                        <span style={{ 
-                          fontSize: '10px', padding: '2px 8px', borderRadius: '20px', 
+                        <span style={{
+                          fontSize: '10px', padding: '2px 8px', borderRadius: '20px',
                           background: post.category === 'question' ? '#dbeafe' : post.category === 'tip' ? '#dcfce7' : '#fef9c3',
                           color: post.category === 'question' ? '#1d4ed8' : post.category === 'tip' ? '#16a34a' : '#b45309',
-                          fontWeight: 600 
+                          fontWeight: 600
                         }}>
                           {post.category.charAt(0).toUpperCase() + post.category.slice(1)}
                         </span>
@@ -446,7 +446,7 @@ export default function CustodianLounge() {
 
                   {/* Display Replies */}
                   {post.replies && post.replies.length > 0 && (
-                    <div style={{ marginLeft: '20px', paddingLeft: '15px',borderTop: '1px solid #e8e3d9',paddingTop: '10px' }}>
+                    <div style={{ marginLeft: '20px', paddingLeft: '15px', borderTop: '1px solid #e8e3d9', paddingTop: '10px' }}>
                       {post.replies.map((reply: any, idx: number) => (
                         <div key={idx} style={{ marginBottom: '10px', padding: '10px', background: '#f9f6f0', borderRadius: '8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>

@@ -47,8 +47,8 @@ export default function CommunityPage() {
   useEffect(() => {
     const fetchCommunityData = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
-        
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+
         // Fetch hubs
         const hubsResponse = await fetch(
           `${backendUrl}/api/community/hubs`,
@@ -110,11 +110,11 @@ export default function CommunityPage() {
 
   const handleJoinBeforeThread = async () => {
     if (!selectedHub) return;
-    
+
     setJoiningHub(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
-      
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+
       const response = await fetch(
         `${backendUrl}/api/community/hubs/${selectedHub.id}/join`,
         {
@@ -125,11 +125,11 @@ export default function CommunityPage() {
 
       if (response.ok) {
         // Update hub state to reflect membership
-        const updatedHubs = hubs.map(h => 
+        const updatedHubs = hubs.map(h =>
           h.id === selectedHub.id ? { ...h, user_is_member: true } : h
         );
         setHubs(updatedHubs);
-        
+
         // Close modal and navigate to thread
         setShowJoinBeforeThread(false);
         if (selectedThread) {
@@ -180,11 +180,11 @@ export default function CommunityPage() {
     if (count === 0 || typeof hubId !== 'string' || hubId.length === 0) {
       return [];
     }
-    
+
     const seed = hubId.charCodeAt(0) + hubId.charCodeAt(hubId.length - 1);
-    const names = ['Alex', 'Zara', 'David', 'Sophia', 'James', 'Maya', 'Chris', 'Nina', 'Marcus', 'Lucia','User'];
+    const names = ['Alex', 'Zara', 'David', 'Sophia', 'James', 'Maya', 'Chris', 'Nina', 'Marcus', 'Lucia', 'User'];
     const initials = [];
-    
+
     // Generate avatars for up to 4 members
     for (let i = 0; i < Math.min(count, 4); i++) {
       const index = (seed + i) % names.length;
@@ -192,7 +192,7 @@ export default function CommunityPage() {
       const second = (names[(index + 1) % names.length]?.[0] || 'S').toUpperCase();
       initials.push(first + second);
     }
-    
+
     return initials;
   };
 
@@ -259,8 +259,8 @@ export default function CommunityPage() {
                 <>
                   <div className="member-strip mb-3">
                     {hub.members_count > 0 && generateMemberInitials(hub.id, hub.members_count).map((initials, idx) => (
-                      <div 
-                        key={idx} 
+                      <div
+                        key={idx}
                         className={`avatar ${getAvatarClass(idx)}`}
                         style={{
                           width: '32px',
@@ -326,7 +326,7 @@ export default function CommunityPage() {
           <div className="eyebrow eyebrow-cream mb-1">{hubs.length > 0 ? hubs[0].name : 'Love Hub'} · active threads</div>
           <h2 className="display text-2xl">Sorted by quietness · longest unanswered first</h2>
         </div>
-       
+
       </div>
 
       {/* Threads List */}

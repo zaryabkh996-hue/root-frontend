@@ -40,7 +40,7 @@ export default function CustodianBookingsPage() {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${backendUrl}/api/bookings/custodian-calendar`, {
         headers: AuthService.getAuthHeaders() as HeadersInit,
       });
@@ -67,7 +67,7 @@ export default function CustodianBookingsPage() {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${backendUrl}/api/bookings/${bookingId}/cancel`, {
         method: 'POST',
         headers: AuthService.getAuthHeaders() as HeadersInit,
@@ -84,8 +84,8 @@ export default function CustodianBookingsPage() {
     }
   };
 
-  const filteredBookings = filterStatus === 'all' 
-    ? bookings 
+  const filteredBookings = filterStatus === 'all'
+    ? bookings
     : bookings.filter(b => b.status === filterStatus);
 
   const formatDate = (dateString: string) => {
@@ -163,7 +163,7 @@ export default function CustodianBookingsPage() {
         {filteredBookings.map((booking) => {
           const statusColor = getStatusBadgeColor(booking.status);
           return (
-            <div 
+            <div
               key={booking.id}
               className="scard-dark p-4 hover:border-brass/50 transition-all"
               style={{ borderLeft: '3px solid var(--brass)' }}
@@ -179,7 +179,7 @@ export default function CustodianBookingsPage() {
                       {booking.status}
                     </span>
                   </div>
-                  
+
                   <div className="grid grid-cols-3 gap-4 mb-3 text-xs">
                     <div>
                       <div className="text-cream/40 mb-1">Date &amp; Time</div>
@@ -209,10 +209,10 @@ export default function CustodianBookingsPage() {
                       <div className="text-cream/40 mb-1">Platform Link</div>
                       <div className="font-medium">
                         {booking.platform_link ? (
-                          <a 
-                            href={booking.platform_link.startsWith('http') ? booking.platform_link : `https://${booking.platform_link}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
+                          <a
+                            href={booking.platform_link.startsWith('http') ? booking.platform_link : `https://${booking.platform_link}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="text-brass hover:underline"
                           >
                             Join Session

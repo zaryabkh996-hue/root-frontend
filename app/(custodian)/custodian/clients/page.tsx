@@ -56,36 +56,36 @@ export default function CustodianClients() {
       try {
         setLoading(true);
         const headers = AuthService.getAuthHeaders();
-         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
         const response = await fetch(`${backendUrl}/api/bookings/custodian-calendar`, { headers });
-        
+
         if (!response.ok) throw new Error('Failed to fetch bookings');
-        
+
         const responseData = await response.json();
-        console.log('Raw bookings data:', responseData);  
+        console.log('Raw bookings data:', responseData);
         // Handle both array and wrapped responses
         const data: Booking[] = Array.isArray(responseData) ? responseData : (responseData.data || []);
-        
+
         if (!Array.isArray(data)) {
           throw new Error('Invalid response format from server');
         }
-        
+
         // Separate upcoming and past bookings
         const now = new Date();
         now.setHours(0, 0, 0, 0); // Set to start of today for accurate comparison
         const upcoming: UpcomingSession[] = [];
         const past: PastSession[] = [];
-        
+
         data.forEach(booking => {
           const bookingDateTime = new Date(booking.booking_date);
           bookingDateTime.setHours(0, 0, 0, 0); // Set to start of day
           const clientName = booking.user?.name || 'Anonymous Client';
-          
+
           if (bookingDateTime >= now && booking.status !== 'cancelled') {
             // Upcoming sessions (today or later, not cancelled)
             const dayOfWeek = new Date(booking.booking_date).toLocaleDateString('en-US', { weekday: 'short' });
             const monthDate = new Date(booking.booking_date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
-            
+
             upcoming.push({
               bookingId: booking.id,
               relative: `${clientName} · Ref: ${booking.booking_reference || 'TBA'}`,
@@ -101,7 +101,7 @@ export default function CustodianClients() {
             // Past sessions (before today, regardless of status)
             const location = booking.message || 'Heritage Site';
             const date = new Date(booking.booking_date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
-            
+
             past.push({
               relative: clientName,
               location: `${location} · ${date} May`,
@@ -110,7 +110,7 @@ export default function CustodianClients() {
             });
           }
         });
-        
+
         setUpcomingSessions(upcoming);
         setPastSessions(past);
         setError(null);
@@ -130,7 +130,7 @@ export default function CustodianClients() {
     try {
       setConfirmingId(bookingId);
       const headers = AuthService.getAuthHeaders();
-      const response = await fetch(`https://spectacular-wisdom-production-dfac.up.railway.app/api/bookings/${bookingId}`, {
+      const response = await fetch(` /bookings/${bookingId}`, {
         method: 'PUT',
         headers: {
           ...headers,
@@ -142,10 +142,10 @@ export default function CustodianClients() {
       if (!response.ok) throw new Error('Failed to confirm booking');
 
       // Update the booking status in the upcoming sessions
-      setUpcomingSessions(prev => 
-        prev.map(session => 
-          session.bookingId === bookingId 
-            ? { ...session, status: 'confirmed' } 
+      setUpcomingSessions(prev =>
+        prev.map(session =>
+          session.bookingId === bookingId
+            ? { ...session, status: 'confirmed' }
             : session
         )
       );
@@ -209,8 +209,8 @@ export default function CustodianClients() {
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button className="c-listen-btn">🔊 Brief in Twi</button>
                 {session.status === 'pending' ? (
-                  <button 
-                    className="c-btn-primary" 
+                  <button
+                    className="c-btn-primary"
                     style={{ fontSize: '12px', padding: '7px 14px' }}
                     onClick={() => handleConfirmBooking(session.bookingId)}
                     disabled={confirmingId === session.bookingId}
@@ -223,16 +223,16 @@ export default function CustodianClients() {
                   </span>
                 )}
                 {session.platformLink && (
-                  <a 
+                  <a
                     href={session.platformLink.startsWith('http') ? session.platformLink : `https://${session.platformLink}`}
-                    target="_blank" 
+                    target="_blank"
                     rel="noopener noreferrer"
-                    className="c-btn-primary" 
-                    style={{ 
-                      fontSize: '12px', 
-                      padding: '7px 14px', 
-                      background: '#1f5a3d', 
-                      color: '#ffffff', 
+                    className="c-btn-primary"
+                    style={{
+                      fontSize: '12px',
+                      padding: '7px 14px',
+                      background: '#1f5a3d',
+                      color: '#ffffff',
                       textDecoration: 'none',
                       display: 'inline-flex',
                       alignItems: 'center',

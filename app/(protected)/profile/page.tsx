@@ -90,9 +90,9 @@ export default function ProfilePage() {
         setLoading(true);
         setError(null);
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
         console.log('[Profile Load] Fetching from:', `${apiUrl}/user/profile`);
-        
+
         const response = await fetch(`${apiUrl}/user/profile`, {
           headers: AuthService.getAuthHeaders(),
         });
@@ -102,12 +102,12 @@ export default function ProfilePage() {
         if (response.ok) {
           const profileData = await response.json();
           console.log('[Profile Load] Full response:', profileData);
-          
+
           if (profileData.data) {
             const data = profileData.data;
             console.log('[Profile Load] Profile data:', data);
             console.log('[Profile Load] Picture URL:', data.picture);
-            
+
             setUserProfile(data);
             setFormValues({
               name: data.name,
@@ -146,9 +146,9 @@ export default function ProfilePage() {
   const loadJourneyPhotos = async () => {
     try {
       setPhotosLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       console.log('[Journey Photos Load] Fetching from:', `${apiUrl}/user/journey-photos`);
-      
+
       const response = await fetch(`${apiUrl}/user/journey-photos`, {
         headers: AuthService.getAuthHeaders(),
       });
@@ -159,7 +159,7 @@ export default function ProfilePage() {
         const data = await response.json();
         console.log('[Journey Photos Load] Full response:', data);
         console.log('[Journey Photos Load] Photos array:', data.data);
-        
+
         setJourneyPhotos(data.data || []);
       } else {
         console.log('[Journey Photos Load] Response not OK - using empty array');
@@ -177,7 +177,7 @@ export default function ProfilePage() {
   const loadCertificateInfo = async () => {
     try {
       setCertificateLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${apiUrl}/certificates/info`, {
         headers: AuthService.getAuthHeaders(),
       });
@@ -209,7 +209,7 @@ export default function ProfilePage() {
         [apiFieldName]: formValues[fieldName],
       };
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${apiUrl}/user/profile`, {
         method: 'PUT',
         headers: AuthService.getAuthHeaders(),
@@ -243,7 +243,7 @@ export default function ProfilePage() {
       setSaving(true);
       setError(null);
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${apiUrl}/user/profile`, {
         method: 'PUT',
         headers: AuthService.getAuthHeaders(),
@@ -280,7 +280,7 @@ export default function ProfilePage() {
       const currentIndex = cycle.indexOf(userProfile.bioPrivacy || 'public');
       const nextPrivacy = cycle[(currentIndex + 1) % cycle.length];
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${apiUrl}/user/profile`, {
         method: 'PUT',
         headers: AuthService.getAuthHeaders(),
@@ -301,7 +301,7 @@ export default function ProfilePage() {
   const updateVisibility = async (newVisibility: string) => {
     try {
       setProfileVisibility(newVisibility);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       await fetch(`${apiUrl}/user/profile`, {
         method: 'PUT',
         headers: AuthService.getAuthHeaders(),
@@ -318,7 +318,7 @@ export default function ProfilePage() {
   const updatePhotosDefault = async (newDefault: string) => {
     try {
       setPhotosDefault(newDefault);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       await fetch(`${apiUrl}/user/profile`, {
         method: 'PUT',
         headers: AuthService.getAuthHeaders(),
@@ -357,7 +357,7 @@ export default function ProfilePage() {
       }
 
       console.log('[Profile Picture] 2. Headers:', headers);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       console.log('[Profile Picture] 3. API URL:', apiUrl);
 
       const response = await fetch(`${apiUrl}/user/profile/picture`, {
@@ -373,7 +373,7 @@ export default function ProfilePage() {
       if (response.ok) {
         const pictureUrl = result.data?.picture || file.name;
         console.log('[Profile Picture] 6. Picture URL received:', pictureUrl);
-        
+
         setUserProfile(prev => {
           console.log('[Profile Picture] 7. Setting user profile with picture:', pictureUrl);
           return {
@@ -381,7 +381,7 @@ export default function ProfilePage() {
             picture: pictureUrl,
           };
         });
-        
+
         setSuccess('Profile picture updated successfully!');
         setTimeout(() => setSuccess(null), 3000);
       } else {
@@ -403,7 +403,7 @@ export default function ProfilePage() {
     try {
       setError(null);
       // Refresh certificate info to get latest data
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const infoResponse = await fetch(`${apiUrl}/certificates/info`, {
         headers: AuthService.getAuthHeaders(),
       });
@@ -450,7 +450,7 @@ export default function ProfilePage() {
     setNotifications(prev => ({ ...prev, [key]: newValue }));
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${apiUrl}/user/notifications`, {
         method: 'PUT',
         headers: {
@@ -480,14 +480,14 @@ export default function ProfilePage() {
   const getCompletedStagesCount = () => userProfile.completedStages?.length || 0;
 
   // ── Editable field component ──
-  const EditableField = ({ 
-    label, 
-    fieldName, 
+  const EditableField = ({
+    label,
+    fieldName,
     apiFieldName,
-    value, 
+    value,
     type = 'text',
     multiline = false,
-    maxLength = 255 
+    maxLength = 255
   }: any) => {
     const isEditing = editingField === fieldName;
 
@@ -530,21 +530,21 @@ export default function ProfilePage() {
           </button>
         ) : (
           <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-            <button 
-              className="btn-ghost-dark text-xs" 
+            <button
+              className="btn-ghost-dark text-xs"
               onClick={() => {
                 setEditingField(null);
-                setFormValues(prev => ({ 
-                  ...prev, 
-                  [fieldName]: (userProfile as any)[apiFieldName] 
+                setFormValues(prev => ({
+                  ...prev,
+                  [fieldName]: (userProfile as any)[apiFieldName]
                 }));
               }}
               disabled={saving}
             >
               Cancel
             </button>
-            <button 
-              className="btn-primary text-xs" 
+            <button
+              className="btn-primary text-xs"
               onClick={() => saveField(fieldName, apiFieldName)}
               disabled={saving}
             >
@@ -593,8 +593,8 @@ export default function ProfilePage() {
                   src={userProfile.picture}
                   alt={userProfile.name}
                   className="rounded-full object-cover"
-                  style={{ 
-                    width: '96px', 
+                  style={{
+                    width: '96px',
                     height: '96px',
                     display: 'block',
                   }}
@@ -613,9 +613,9 @@ export default function ProfilePage() {
                 <div
                   className="avatar avatar-xl"
                   id="profile-avatar-initials"
-                  style={{ 
-                    background: 'linear-gradient(135deg,#d47449,#7a2e10)', 
-                    width: '96px', 
+                  style={{
+                    background: 'linear-gradient(135deg,#d47449,#7a2e10)',
+                    width: '96px',
                     height: '96px',
                     display: 'flex',
                     alignItems: 'center',
@@ -629,7 +629,7 @@ export default function ProfilePage() {
                   {getUserName().split(' ').map((n: string) => n[0]).join('') || 'AJ'}
                 </div>
               ) : null}
-              <div 
+              <div
                 className="photo-cam-overlay"
                 onClick={() => document.getElementById('profile-picture-input')?.click()}
                 style={{
@@ -728,8 +728,8 @@ export default function ProfilePage() {
                     {(formValues.bio || '').length} / 280
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button 
-                      className="btn-ghost-dark text-xs" 
+                    <button
+                      className="btn-ghost-dark text-xs"
                       onClick={() => {
                         setEditingField(null);
                         setFormValues(prev => ({ ...prev, bio: userProfile.bio }));
@@ -738,8 +738,8 @@ export default function ProfilePage() {
                     >
                       Cancel
                     </button>
-                    <button 
-                      className="btn-primary text-xs" 
+                    <button
+                      className="btn-primary text-xs"
                       onClick={saveBio}
                       disabled={saving}
                     >
@@ -782,7 +782,7 @@ export default function ProfilePage() {
                 <div className="text-xs text-cream/50 mono mb-1">Diaspora group</div>
                 <div className="text-cream font-medium">{userProfile.diasporaGroup || 'Not set'}</div>
                 <div className="text-xs text-cream/55 leading-relaxed mt-0.5">Shapes the framing of Stage 1, 5, and 6 modules</div>
-                <button 
+                <button
                   className="text-xs text-brass-light/80 hover:text-brass-light underline mt-2"
                   onClick={() => startEdit('diasporaGroup')}
                 >
@@ -796,7 +796,7 @@ export default function ProfilePage() {
                       value={formValues.diasporaGroup || ''}
                       onChange={e => setFormValues(prev => ({ ...prev, diasporaGroup: e.target.value }))}
                     />
-                    <button 
+                    <button
                       className="btn-primary text-xs"
                       onClick={() => saveField('diasporaGroup', 'diasporaGroup')}
                       disabled={saving}
@@ -810,7 +810,7 @@ export default function ProfilePage() {
                 <div className="text-xs text-cream/50 mono mb-1">Learning preference</div>
                 <div className="text-cream font-medium">{userProfile.learningPreference || 'Not set'}</div>
                 <div className="text-xs text-cream/55 leading-relaxed mt-0.5">Audio modules surface first; transcripts always available</div>
-                <button 
+                <button
                   className="text-xs text-brass-light/80 hover:text-brass-light underline mt-2"
                   onClick={() => startEdit('learningPreference')}
                 >
@@ -824,7 +824,7 @@ export default function ProfilePage() {
                       value={formValues.learningPreference || ''}
                       onChange={e => setFormValues(prev => ({ ...prev, learningPreference: e.target.value }))}
                     />
-                    <button 
+                    <button
                       className="btn-primary text-xs"
                       onClick={() => saveField('learningPreference', 'learningPreference')}
                       disabled={saving}
@@ -875,8 +875,8 @@ export default function ProfilePage() {
           <div className="scard-dark p-5 mt-4">
             <div className="flex items-center justify-between mb-1">
               <div className="eyebrow eyebrow-cream">Journey Photos</div>
-              <button 
-                className="text-xs text-brass-light/80 hover:text-brass-light underline" 
+              <button
+                className="text-xs text-brass-light/80 hover:text-brass-light underline"
                 onClick={() => document.getElementById('journey-photo-input')?.click()}
               >
                 + Add photo
@@ -888,14 +888,14 @@ export default function ProfilePage() {
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
-                  
+
                   try {
                     setError(null);
                     console.log('[Journey Photo Upload] 1. Upload started');
                     console.log('[Journey Photo Upload] - File name:', file.name);
                     console.log('[Journey Photo Upload] - File size:', file.size);
                     console.log('[Journey Photo Upload] - File type:', file.type);
-                    
+
                     const formData = new FormData();
                     formData.append('photo', file);
                     formData.append('hub', 'Love Hub');
@@ -909,14 +909,14 @@ export default function ProfilePage() {
                       headers['Authorization'] = `Bearer ${token}`;
                     }
 
-                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+                    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
                     console.log('[Journey Photo Upload] 2. API URL:', apiUrl);
                     console.log('[Journey Photo Upload] 3. Headers:', headers);
                     console.log('[Journey Photo Upload] 4. FormData entries:', {
                       hub: 'Love Hub',
                       visibility: photosDefault,
                     });
-                    
+
                     const response = await fetch(`${apiUrl}/user/journey-photos`, {
                       method: 'POST',
                       headers,
@@ -930,7 +930,7 @@ export default function ProfilePage() {
                     if (response.ok) {
                       console.log('[Journey Photo Upload] 7. Upload successful');
                       console.log('[Journey Photo Upload] 8. Uploaded photo URL:', result.data?.url);
-                      
+
                       setJourneyPhotos([...journeyPhotos, result.data]);
                       setSuccess('Photo uploaded successfully!');
                       setTimeout(() => setSuccess(null), 3000);
@@ -1044,7 +1044,7 @@ export default function ProfilePage() {
                     value={formValues.email || ''}
                     onChange={e => setFormValues(prev => ({ ...prev, email: e.target.value }))}
                   />
-                  <button 
+                  <button
                     className="btn-primary text-xs"
                     onClick={() => saveField('email', 'email')}
                     disabled={saving}
@@ -1071,7 +1071,7 @@ export default function ProfilePage() {
                     onChange={e => setFormValues(prev => ({ ...prev, whatsapp: e.target.value }))}
                     placeholder="+1 234 567 8900"
                   />
-                  <button 
+                  <button
                     className="btn-primary text-xs"
                     onClick={() => saveField('whatsapp', 'whatsapp')}
                     disabled={saving}
@@ -1098,7 +1098,7 @@ export default function ProfilePage() {
                     onChange={e => setFormValues(prev => ({ ...prev, travelDate: e.target.value }))}
                     placeholder="Sept 14 — Sept 28, 2026"
                   />
-                  <button 
+                  <button
                     className="btn-primary text-xs"
                     onClick={() => saveField('travelDate', 'travelDate')}
                     disabled={saving}
@@ -1125,7 +1125,7 @@ export default function ProfilePage() {
                     onChange={e => setFormValues(prev => ({ ...prev, travelLocation: e.target.value }))}
                     placeholder="e.g., Accra, Ghana"
                   />
-                  <button 
+                  <button
                     className="btn-primary text-xs"
                     onClick={() => saveField('travelLocation', 'travelLocation')}
                     disabled={saving}
@@ -1318,7 +1318,7 @@ export default function ProfilePage() {
                   <div className="text-xs text-cream/50 mono mb-3">
                     {certificateInfo?.completedStages || 0} of 6 stages · issued {userProfile.memberSince}
                   </div>
-                  <button 
+                  <button
                     className={`btn-${certificateInfo?.eligible ? 'primary' : 'ghost-dark'} w-full justify-center text-xs`}
                     onClick={downloadCertificate}
                     disabled={!certificateInfo?.eligible}
@@ -1343,7 +1343,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-    
+
     </>
   );
 }

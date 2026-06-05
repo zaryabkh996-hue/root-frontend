@@ -21,7 +21,7 @@ export default function Login() {
     setIsSubmitting(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
       const response = await fetch(`${apiUrl}/auth/magic-link/signin`, {
         method: 'POST',

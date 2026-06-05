@@ -29,7 +29,7 @@ export default function ReviewPage() {
   const handleConfirmBooking = async () => {
     setSubmitting(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
 
       if (!token) {

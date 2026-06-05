@@ -55,7 +55,7 @@ export default function AdminUsers() {
         search: search,
       });
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const headers = AuthService.getAuthHeaders();
 
       const response = await fetch(`${backendUrl}/api/admin/users?${queryParams}`, {
@@ -64,7 +64,7 @@ export default function AdminUsers() {
       });
 
       console.log('Fetch users response:', response.status, response.statusText);
-      
+
       if (!response.ok) {
         if (response.status === 401) {
           console.error('Unauthorized - token may be invalid or expired');

@@ -28,7 +28,7 @@ export const auth0 = new Auth0Client({
     if (session?.user?.sub && session.user.email) {
       try {
         const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL ?? "https://spectacular-wisdom-production-dfac.up.railway.app/api";
+          process.env.NEXT_PUBLIC_BACKEND_URL ?? " ";
 
         const res = await fetch(`${apiUrl}/auth/register-oauth`, {
           method: "POST",

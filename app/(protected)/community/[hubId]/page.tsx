@@ -77,7 +77,7 @@ const getGuidelinesByHubName = (hubName: string): string[] => {
     'The Foodie Hub': 'hub_foodie',
     'The Solo Hub': 'hub_solo',
   };
-  
+
   const key = nameToKey[hubName];
   if (key && HUB_GUIDELINES[key]) {
     return HUB_GUIDELINES[key];
@@ -115,8 +115,8 @@ export default function HubDetailPage() {
   useEffect(() => {
     const fetchHubData = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
-        
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+
         // Fetch hub details
         const hubResponse = await fetch(
           `${backendUrl}/api/community/hubs/${hubId}`,
@@ -160,11 +160,11 @@ export default function HubDetailPage() {
 
   const handleJoinHub = async () => {
     if (!hub) return;
-    
+
     setJoiningHub(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
-      
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+
       const response = await fetch(
         `${backendUrl}/api/community/hubs/${hub.id}/join`,
         {
@@ -206,8 +206,8 @@ export default function HubDetailPage() {
 
     setCreatingThread(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
-      
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+
       const response = await fetch(
         `${backendUrl}/api/community/threads`,
         {
@@ -227,12 +227,12 @@ export default function HubDetailPage() {
       if (response.ok) {
         const newThreadData = await response.json();
         alert('Thread created successfully!');
-        
+
         // Reset form
         setThreadTitle('');
         setThreadContent('');
         setShowCreateThreadModal(false);
-        
+
         // Refresh threads
         const threadsResponse = await fetch(
           `${backendUrl}/api/community/hubs/${hubId}/threads`,
@@ -269,11 +269,11 @@ export default function HubDetailPage() {
 
   const handleJoinBeforeThread = async () => {
     if (!hub) return;
-    
+
     setJoiningForThread(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
-      
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+
       const response = await fetch(
         `${backendUrl}/api/community/hubs/${hub.id}/join`,
         {
@@ -288,7 +288,7 @@ export default function HubDetailPage() {
           ...hub,
           user_is_member: true,
         });
-        
+
         // Close modal and navigate to thread
         setShowJoinBeforeThread(false);
         if (selectedThreadForJoin) {
@@ -364,7 +364,7 @@ export default function HubDetailPage() {
   return (
     <>
       {/* Back Button */}
-      <button 
+      <button
         onClick={() => router.push('/community')}
         className="text-cream/60 hover:text-cream text-sm mb-6 flex items-center gap-2"
       >
@@ -400,7 +400,7 @@ export default function HubDetailPage() {
 
         {/* Action Buttons */}
         <div className="flex gap-3">
-          <button 
+          <button
             onClick={handleJoinHub}
             disabled={joiningHub || hub.user_is_member}
             className="btn-primary text-xs"
@@ -408,7 +408,7 @@ export default function HubDetailPage() {
           >
             {joiningHub ? 'Joining...' : hub.user_is_member ? '✓ Member' : 'Join this hub'}
           </button>
-          <button 
+          <button
             onClick={() => setShowGuidelinesModal(true)}
             className="btn-ghost-dark text-xs"
           >
@@ -430,7 +430,7 @@ export default function HubDetailPage() {
               onClick={() => handleThreadClick(thread)}
             >
               <div className="flex items-start gap-3">
-                <div 
+                <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${getAvatarColor(thread.author_initials)}`}
                   style={getSColor(thread.author_initials) ? { color: getSColor(thread.author_initials) } : {}}
                 >
@@ -438,7 +438,7 @@ export default function HubDetailPage() {
                 </div>
                 <div className="flex-1">
                   <div className="text-sm font-medium mb-1">
-                    {thread.author} 
+                    {thread.author}
                     {thread.isCustodian && <span className="tag tag-brass" style={{ fontSize: '8px', padding: '1px 5px', marginLeft: '4px' }}>Custodian</span>}
                     <span className="text-cream/40 text-xs mono" style={{ marginLeft: '8px' }}>· {thread.time_ago}</span>
                   </div>
@@ -456,12 +456,12 @@ export default function HubDetailPage() {
       ) : (
         <div className="scard-dark p-8 text-center mb-8">
           <p className="text-cream/70 mb-4">No threads yet in this hub</p>
-        
+
         </div>
       )}
 
       {/* New Thread Button */}
-      <button 
+      <button
         onClick={handleNewThread}
         className="btn-ghost-dark w-full justify-center"
       >

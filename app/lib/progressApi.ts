@@ -4,7 +4,7 @@
 
 import { AuthService } from './authService';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
 function authHeaders(): HeadersInit {
   return AuthService.getAuthHeaders();

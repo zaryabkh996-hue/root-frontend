@@ -98,12 +98,12 @@ export default function CustodianProfilePage() {
     const days = [];
     const today = new Date();
     const startDate = new Date(today.getTime() + calendarOffset * 7 * 24 * 60 * 60 * 1000); // Add weeks offset
-    
+
     for (let i = 0; i < 14; i++) {
       const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
       const dayOfWeek = date.getDay();
       const isDisabled = dayOfWeek === 0; // Sunday is disabled (0 = Sunday)
-      
+
       days.push({
         date,
         dayOfMonth: date.getDate(),
@@ -116,7 +116,7 @@ export default function CustodianProfilePage() {
   };
 
   const calendarDays = getNext14Days();
-  
+
   // Auto-select first available day if none selected
   useEffect(() => {
     if (!selectedCalendarDay && calendarDays.length > 0) {
@@ -131,7 +131,7 @@ export default function CustodianProfilePage() {
     if (!id) return;
     const fetchCustodian = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
         const response = await fetch(`${backendUrl}/api/custodians/${id}`, {
           method: 'GET',
           headers: AuthService.getAuthHeaders(),
@@ -292,8 +292,8 @@ export default function CustodianProfilePage() {
                 const serviceDuration = (service as any).duration || (service.name.includes('15') ? 15 : (service.name.includes('45') ? 45 : (service.name.includes('60') ? 60 : 60)));
                 const isSelected = selectedService.name === service.name;
                 return (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={idx}
                     onClick={() => setSelectedService({
                       name: service.name,
                       price: service.price,
@@ -519,8 +519,8 @@ export default function CustodianProfilePage() {
 
             <div style={{ paddingTop: '20px', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
               <div className="flex flex-col gap-3">
-                <button 
-                  className="btn-primary w-full" 
+                <button
+                  className="btn-primary w-full"
                   onClick={() => {
                     if (!selectedCalendarDay) return;
                     const formattedDate = selectedCalendarDay.date.toISOString().split('T')[0]; // YYYY-MM-DD format

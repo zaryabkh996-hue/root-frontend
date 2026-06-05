@@ -21,8 +21,8 @@ const COUNTRY_DATA: Record<string, string[]> = {
 };
 
 const COMMON_LANGUAGES = [
-  'English', 'French', 'Portuguese', 'Arabic', 'Swahili', 'Yoruba', 'Igbo', 
-  'Hausa', 'Zulu', 'Xhosa', 'Shona', 'Amharic', 'Oromo', 'Somali', 
+  'English', 'French', 'Portuguese', 'Arabic', 'Swahili', 'Yoruba', 'Igbo',
+  'Hausa', 'Zulu', 'Xhosa', 'Shona', 'Amharic', 'Oromo', 'Somali',
   'Twi', 'Ga', 'Ewe', 'Fante', 'Wolof', 'Bambara', 'Lingala', 'Kinyarwanda'
 ];
 
@@ -111,7 +111,7 @@ export default function AdminCustodians() {
         search: search,
       });
 
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${backendUrl}/api/admin/custodians?${queryParams}`, {
         method: 'GET',
         headers: AuthService.getAuthHeaders(),
@@ -161,10 +161,10 @@ export default function AdminCustodians() {
   // Handle edit custodian
   const handleEditCustodian = async (custodian: Custodian) => {
     setEditingCustodian(custodian);
-    
+
     // Fetch full custodian data from backend
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${backendUrl}/api/admin/custodians/${custodian.id}`, {
         method: 'GET',
         headers: AuthService.getAuthHeaders(),
@@ -173,7 +173,7 @@ export default function AdminCustodians() {
       if (response.ok) {
         const result = await response.json();
         const fullData = result.data || result; // Handle both wrapped and unwrapped responses
-        
+
         setFormData({
           name: fullData.name || '',
           email: fullData.email || '',
@@ -233,7 +233,7 @@ export default function AdminCustodians() {
         ],
       });
     }
-    
+
     setShowModal(true);
   };
 
@@ -250,7 +250,7 @@ export default function AdminCustodians() {
     }
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(`${backendUrl}/api/admin/custodians/${id}`, {
         method: 'DELETE',
         headers: AuthService.getAuthHeaders(),
@@ -262,7 +262,7 @@ export default function AdminCustodians() {
       }
 
       showNotification('Custodian deleted successfully');
-      
+
       // If we're on a page that now has no items, go back a page
       if (custodians.length === 1 && currentPage > 1) {
         fetchCustodians(currentPage - 1, searchQuery);
@@ -279,11 +279,11 @@ export default function AdminCustodians() {
   const handleAddCustodian = async () => {
     setSubmitting(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const url = editingCustodian
         ? `${backendUrl}/api/admin/custodians/${editingCustodian.id}`
         : `${backendUrl}/api/admin/custodians`;
-      
+
       const method = editingCustodian ? 'PUT' : 'POST';
 
       // Clean form data
@@ -516,16 +516,16 @@ export default function AdminCustodians() {
                     fontSize: '11px',
                     fontWeight: 600,
                     textTransform: 'capitalize',
-                    background: 
+                    background:
                       custodian.status === 'active' ? '#dcfce7' :
-                      custodian.status === 'inactive' ? '#fee2e2' :
-                      custodian.status === 'suspended' ? '#fef3c7' :
-                      custodian.status === 'pending' ? '#dbeafe' : '#f3f4f6',
+                        custodian.status === 'inactive' ? '#fee2e2' :
+                          custodian.status === 'suspended' ? '#fef3c7' :
+                            custodian.status === 'pending' ? '#dbeafe' : '#f3f4f6',
                     color:
                       custodian.status === 'active' ? '#166534' :
-                      custodian.status === 'inactive' ? '#991b1b' :
-                      custodian.status === 'suspended' ? '#92400e' :
-                      custodian.status === 'pending' ? '#1e40af' : '#374151',
+                        custodian.status === 'inactive' ? '#991b1b' :
+                          custodian.status === 'suspended' ? '#92400e' :
+                            custodian.status === 'pending' ? '#1e40af' : '#374151',
                   }}
                 >
                   {custodian.status || 'active'}
@@ -731,8 +731,8 @@ export default function AdminCustodians() {
                     value={formData.country}
                     onChange={(e) => {
                       const newCountry = e.target.value;
-                      setFormData({ 
-                        ...formData, 
+                      setFormData({
+                        ...formData,
                         country: newCountry,
                         location: '' // Reset location when country changes
                       });

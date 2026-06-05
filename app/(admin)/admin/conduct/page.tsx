@@ -21,7 +21,7 @@ export default function AdminConduct() {
 
   const fetchReports = async () => {
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(
         `${backendUrl}/api/admin/community/reports`,
         {
@@ -57,7 +57,7 @@ export default function AdminConduct() {
 
     if (type === 'dismiss') {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
         const response = await fetch(
           `${backendUrl}/api/admin/community/reports/${reportId}/dismiss`,
           {
@@ -77,7 +77,7 @@ export default function AdminConduct() {
       }
     } else if (type === 'ban') {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
         const response = await fetch(
           `${backendUrl}/api/admin/community/reports/${reportId}/ban`,
           {
@@ -108,7 +108,7 @@ export default function AdminConduct() {
     if (!warningMessage.trim() || selectedReportId === null) return;
     setIsSubmittingWarning(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const response = await fetch(
         `${backendUrl}/api/admin/community/reports/${selectedReportId}/warn`,
         {
@@ -230,7 +230,7 @@ export default function AdminConduct() {
         <div style={{ marginBottom: '24px' }}>
           {reports.map((report) => {
             const isActioned = report.status !== 'pending';
-            
+
             let statusBadge = null;
             if (report.status === 'dismissed') {
               statusBadge = <span className="a-badge-ok">✓ Dismissed</span>;
@@ -258,7 +258,7 @@ export default function AdminConduct() {
                 <div className="a-alert-quote" style={{ fontStyle: 'italic', marginBottom: '10px' }}>
                   "{report.item_content}"
                 </div>
-                
+
                 {report.status === 'warned' && report.warning_message && (
                   <div style={{ fontSize: '12px', background: '#fef3c7', color: '#92400e', padding: '8px 12px', borderRadius: '4px', borderLeft: '3px solid #d97706', marginBottom: '14px' }}>
                     <strong>Warning Sent:</strong> {report.warning_message}
@@ -271,8 +271,8 @@ export default function AdminConduct() {
                       ✓ Formal warning sent
                     </span>
                   ) : (
-                    <button 
-                      className="a-btn-primary" 
+                    <button
+                      className="a-btn-primary"
                       disabled={isActioned}
                       onClick={() => openWarningModal(report.id)}
                       style={{ opacity: isActioned ? 0.5 : 1, cursor: isActioned ? 'not-allowed' : 'pointer' }}
@@ -280,16 +280,16 @@ export default function AdminConduct() {
                       Issue formal warning
                     </button>
                   )}
-                  <button 
-                    className="a-btn-danger" 
+                  <button
+                    className="a-btn-danger"
                     disabled={isActioned}
                     onClick={() => triggerConfirm('ban', report.id)}
                     style={{ opacity: isActioned ? 0.5 : 1, cursor: isActioned ? 'not-allowed' : 'pointer' }}
                   >
                     Permanent ban
                   </button>
-                  <button 
-                    className="a-btn-ghost" 
+                  <button
+                    className="a-btn-ghost"
                     disabled={isActioned}
                     onClick={() => triggerConfirm('dismiss', report.id)}
                     style={{ opacity: isActioned ? 0.5 : 1, cursor: isActioned ? 'not-allowed' : 'pointer' }}
@@ -394,16 +394,16 @@ export default function AdminConduct() {
               }}
             />
             <div style={{ display: 'flex', justifyContent: 'end', gap: '10px' }}>
-              <button 
-                className="a-btn-ghost" 
+              <button
+                className="a-btn-ghost"
                 onClick={() => setWarningModalOpen(false)}
                 disabled={isSubmittingWarning}
                 style={{ padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}
               >
                 Cancel
               </button>
-              <button 
-                className="a-btn-primary" 
+              <button
+                className="a-btn-primary"
                 onClick={handleSendWarning}
                 disabled={isSubmittingWarning || !warningMessage.trim()}
                 style={{ padding: '8px 16px', fontSize: '13px', cursor: (isSubmittingWarning || !warningMessage.trim()) ? 'not-allowed' : 'pointer' }}
@@ -448,20 +448,20 @@ export default function AdminConduct() {
               {confirmAction.type === 'ban' ? 'Confirm Permanent Ban' : 'Confirm Dismiss Report'}
             </h3>
             <p style={{ fontSize: '13px', color: '#4b5563', marginBottom: '20px', lineHeight: '1.5' }}>
-              {confirmAction.type === 'ban' 
-                ? 'Are you sure you want to permanently ban this member? This will update their account status to suspended.' 
+              {confirmAction.type === 'ban'
+                ? 'Are you sure you want to permanently ban this member? This will update their account status to suspended.'
                 : 'Are you sure you want to dismiss this report? This action will ignore the warning and mark the report as resolved.'}
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
-              <button 
-                className="a-btn-ghost" 
+              <button
+                className="a-btn-ghost"
                 onClick={() => { setConfirmModalOpen(false); setConfirmAction(null); }}
                 style={{ padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}
               >
                 Cancel
               </button>
-              <button 
-                className={confirmAction.type === 'ban' ? 'a-btn-danger' : 'a-btn-primary'} 
+              <button
+                className={confirmAction.type === 'ban' ? 'a-btn-danger' : 'a-btn-primary'}
                 onClick={handleExecuteConfirm}
                 style={{ padding: '8px 16px', fontSize: '13px', cursor: 'pointer', background: confirmAction.type === 'ban' ? '#b91c1c' : '#c9a14a', color: '#fff', border: 'none', borderRadius: '4px' }}
               >

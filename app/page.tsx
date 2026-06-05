@@ -138,7 +138,7 @@ export default function Home() {
   useEffect(() => {
     const fetchFeaturedCustodians = async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
         const apiUrl = `${backendUrl}/api/custodians?page=1&limit=3`;
 
 
@@ -267,7 +267,7 @@ export default function Home() {
     try {
       setSubmitting(true);
       const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL || 'https://spectacular-wisdom-production-dfac.up.railway.app';
+        process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
       const response = await fetch(`${backendUrl}/api/custodians/apply`, {
         method: 'POST',
