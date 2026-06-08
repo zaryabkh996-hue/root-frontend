@@ -25,7 +25,7 @@ export default function Journey() {
           return (
             <div
               key={stage.id}
-              onClick={() => router.push(`/journey/${stage.id}`)}
+              onClick={() => router.push(`/modules/${stage.id}`)}
               className="scard-dark p-7 cursor-pointer hover:border-brass/40 transition"
               style={{
                 opacity: !stage.isUnlocked ? 0.85 : 1,

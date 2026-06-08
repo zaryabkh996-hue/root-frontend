@@ -19,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OurRoots Africa - Connect with Your Heritage",
+  title: "OurRoots.Africa - Connect with Your Heritage",
   description: "Explore and celebrate African cultural heritage through audio, video, and interactive content",
 };
 

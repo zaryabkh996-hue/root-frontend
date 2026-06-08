@@ -161,8 +161,9 @@ export default function LibraryPage() {
       setGuidanceModalOpen(true);
     } else {
       const info = getModuleById(item.moduleId);
-      const slugOrId = info?.module.slug || item.moduleId;
-      router.push(`/journey/module?id=${slugOrId}`);
+      const slug = info?.module.slug || item.moduleId;
+      const stageId = info?.stage.id || item.stage;
+      router.push(`/modules/${stageId}/${slug}`);
     }
   };
 
@@ -553,7 +554,7 @@ export default function LibraryPage() {
                 className="btn-primary"
                 onClick={() => {
                   setGuidanceModalOpen(false);
-                  router.push('/journey');
+                  router.push('/modules');
                 }}
               >
                 Go to Journey Dashboard

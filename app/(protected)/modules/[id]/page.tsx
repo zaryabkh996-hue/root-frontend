@@ -36,7 +36,7 @@ export default function ViewJourneyPage() {
   return (
     <>
       <button
-        onClick={() => router.push('/journey')}
+        onClick={() => router.push('/modules')}
         className="text-cream/60 hover:text-cream text-sm mb-6 flex items-center gap-2"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -67,7 +67,7 @@ export default function ViewJourneyPage() {
             key={module.id}
             onClick={() => {
               if (module.status !== 'locked') {
-                router.push(`/journey/module?id=${module.slug || module.meta || module.id}`);
+                router.push(`/modules/${stageId}/${module.slug || module.meta || module.id}`);
               }
             }}
             className={`module-row ${module.status !== 'locked' ? 'cursor-pointer' : 'opacity-70'}`}
@@ -85,7 +85,6 @@ export default function ViewJourneyPage() {
                 {module.warning && <span className="tag tag-rose">{module.warning}</span>}
                 {module.status === 'completed' && <span className="tag tag-emerald">Completed</span>}
                 {module.status === 'in-progress' && <span className="tag tag-brass">In progress</span>}
-                {/* {module.meta && <span className="tag tag-brass">{module.meta}</span>} */}
               </div>
             </div>
             <div>{renderStatusBadge(module.status)}</div>

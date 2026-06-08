@@ -100,7 +100,7 @@ export default function DashboardPage() {
               Stage {currentStage.id} of 6 · {currentStage.progressPercent}% complete
             </div>
           </div>
-          <button className="btn-ghost-dark" onClick={() => router.push('/journey')}>
+          <button className="btn-ghost-dark" onClick={() => router.push('/modules')}>
             View full journey →
           </button>
         </div>
@@ -154,7 +154,7 @@ export default function DashboardPage() {
                 <Fragment key={stage.id}>
                   <div
                     style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flexShrink: 0, cursor: stage.isUnlocked ? 'pointer' : 'default' }}
-                    onClick={() => stage.isUnlocked && router.push(`/journey/${stage.id}`)}
+                    onClick={() => stage.isUnlocked && router.push(`/modules/${stage.id}`)}
                   >
                     <div className={`stage-dot ${stage.isCompleted ? 'done' : stage.isCurrent ? 'current' : 'locked'}`}>
                       {stage.isCompleted ? (
@@ -185,7 +185,13 @@ export default function DashboardPage() {
         {/* Continue card */}
         <div
           className="scard-dark p-6 cursor-pointer hover:border-brass/40 transition"
-          onClick={() => currentModule && router.push(`/journey/module?id=${currentModule.slug || currentModule.meta || currentModule.id}`)}
+          onClick={() => {
+            if (currentModule) {
+              const stageId = currentModule.id.split('.')[0];
+              const slug = currentModule.slug || currentModule.meta || currentModule.id;
+              router.push(`/modules/${stageId}/${slug}`);
+            }
+          }}
         >
           <div className="eyebrow eyebrow-cream mb-3">
             Continue · Module {currentModule?.id ?? '—'}
@@ -253,7 +259,11 @@ export default function DashboardPage() {
               <div
                 key={mod.id}
                 className="flex items-start gap-3 p-4 scard-dark cursor-pointer hover:border-brass/40 transition"
-                onClick={() => router.push(`/journey/module?id=${mod.slug || mod.meta || mod.id}`)}
+                onClick={() => {
+                  const stageId = mod.id.split('.')[0];
+                  const slug = mod.slug || mod.meta || mod.id;
+                  router.push(`/modules/${stageId}/${slug}`);
+                }}
               >
                 <div className="w-9 h-9 rounded-full bg-brass/15 flex items-center justify-center flex-shrink-0 text-brass-light text-xs mono">
                   {mod.id}

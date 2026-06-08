@@ -27,6 +27,9 @@ const Sidebar: React.FC = () => {
     if (page === 'dashboard') {
       return pathname === '/' || pathname === '/dashboard';
     }
+    if (page === 'modules') {
+      return pathname.startsWith('/modules');
+    }
     return pathname === `/${page}`;
   };
 
@@ -86,7 +89,7 @@ const Sidebar: React.FC = () => {
               </svg>
               Dashboard
             </div>
-            <div className={`nav-item ${isActive('journey') ? 'active' : ''}`} onClick={() => goto('journey')}>
+            <div className={`nav-item ${isActive('modules') ? 'active' : ''}`} onClick={() => goto('modules')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M3 12c0-5 4-9 9-9s9 4 9 9-4 9-9 9-9-4-9-9z"></path>
                 <path d="M9 12l2 2 4-4"></path>
@@ -107,7 +110,7 @@ const Sidebar: React.FC = () => {
               </svg>
               Custodians
             </div>
-            <div className={`nav-item ${isActive('amen') ? 'active' : ''}`} onClick={() => goto('amen')}>
+            <div className={`nav-item ${isActive('amen') ? 'active' : ''}`} onClick={() => goto('amenai')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path>
               </svg>

@@ -1,10 +1,10 @@
 'use client';
 
 import { Suspense, useState, useRef, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useProgress } from '../../../lib/progressContext';
-import { getModuleById, getNextModuleId, getPrevModuleId } from '../../../lib/progressStore';
-import { getModuleContent } from '../../../lib/moduleContent';
+import { useRouter, useParams } from 'next/navigation';
+import { useProgress } from '../../../../lib/progressContext';
+import { getModuleById, getNextModuleId, getPrevModuleId } from '../../../../lib/progressStore';
+import { getModuleContent } from '../../../../lib/moduleContent';
 
 function AudioPlayerCard({ url, duration, title }: { url: string; duration: string; title: string }) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -178,18 +178,15 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
 
   const stageStatus = computed.stageStatuses.find(s => s.id === stage.id);
 
-  const getSlugOrId = (id: string | null) => {
-    if (!id) return '';
-    const info = getModuleById(id);
-    return info?.module.slug || id;
-  };
-
   const handleComplete = () => {
     completeModule(resolvedId);
     if (nextId) {
-      router.push(`/journey/module?id=${getSlugOrId(nextId)}`);
+      const nextInfo = getModuleById(nextId);
+      const nextSlug = nextInfo?.module.slug || nextId;
+      const nextStageId = nextInfo?.stage.id || stage.id;
+      router.push(`/modules/${nextStageId}/${nextSlug}`);
     } else {
-      router.push(`/journey/${stage.id}`);
+      router.push(`/modules/${stage.id}`);
     }
   };
 
@@ -203,8 +200,6 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
     setSelectedFeedback(key);
     saveFeedback(resolvedId, key);
   };
-
-  const prevModule = prevId ? getModuleById(prevId) : null;
 
   // Split content body into paragraphs or fallback to static paragraphs
   const paragraphs = module.body
@@ -233,7 +228,7 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
   return (
     <>
       <button
-        onClick={() => router.push(`/journey/${stage.id}`)}
+        onClick={() => router.push(`/modules/${stage.id}`)}
         className="text-cream/60 hover:text-cream text-sm mb-6 flex items-center gap-2"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -266,19 +261,18 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
 
           {renderMediaPlayer()}
 
-        {module.takeaways && (
-  <div className="display text-xl leading-relaxed text-cream mb-5 italic">
-    {module.takeaways
-      .split('\n')
-      .filter(t => t.trim())
-      .map((t, idx) => (
-        <p key={idx}>"
-          {t.trim().replace(/^[-*]\s*/, '')}"
-        </p>
-      ))}
-  </div>
-)}
-       
+          {module.takeaways && (
+            <div className="display text-xl leading-relaxed text-cream mb-5 italic">
+              {module.takeaways
+                .split('\n')
+                .filter(t => t.trim())
+                .map((t, idx) => (
+                  <p key={idx}>"
+                    {t.trim().replace(/^[-*]\s*/, '')}"
+                  </p>
+                ))}
+            </div>
+          )}
 
           <div className="prose-invert max-w-none">
             {paragraphs.map((para, idx) => (
@@ -344,7 +338,7 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
           <div className="flex items-center justify-between mt-10 pt-6 border-t border-brass/15">
             <button
               className="btn-ghost-dark"
-              onClick={() => router.push(`/journey/${stage.id}`)}
+              onClick={() => router.push(`/modules/${stage.id}`)}
             >
               ← Back to Stage {stage.id}
             </button>
@@ -364,7 +358,7 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
                 <div
                   key={m.id}
                   className="flex items-center gap-2 cursor-pointer hover:text-brass-light transition"
-                  onClick={() => m.status !== 'locked' && router.push(`/journey/module?id=${m.slug || m.meta || m.id}`)}
+                  onClick={() => m.status !== 'locked' && router.push(`/modules/${stage.id}/${m.slug || m.meta || m.id}`)}
                   style={{
                     color: m.id === resolvedId
                       ? 'var(--brass-light)'
@@ -394,8 +388,8 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
 }
 
 function ModuleContentWrapper() {
-  const searchParams = useSearchParams();
-  const moduleId = searchParams.get('id') || '1.1';
+  const params = useParams();
+  const moduleId = (params?.slug as string) || '1.1';
   return <ModuleContent key={moduleId} moduleId={moduleId} />;
 }
 
