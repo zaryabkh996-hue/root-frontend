@@ -94,8 +94,34 @@ export default function CommunityPage() {
     fetchCommunityData();
   }, []);
 
-  const handleHubClick = (hubId: string) => {
-    router.push(`/community/${hubId}`);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [modalCurrentTier, setModalCurrentTier] = useState('free');
+  const [modalRequiredTier, setModalRequiredTier] = useState('community');
+
+  const handleHubClick = (hub: Hub) => {
+    const user = AuthService.getUser();
+    const userTier = user?.subscription_tier || 'free';
+
+    let isHubAllowed = false;
+    let requiredTiersLabel = '';
+
+    if (hub.access_level === 'free') {
+      isHubAllowed = true;
+    } else if (hub.access_level === 'community') {
+      isHubAllowed = (userTier === 'community' || userTier === 'preparation');
+      requiredTiersLabel = 'Community or Preparation';
+    } else if (hub.access_level === 'preparation') {
+      isHubAllowed = (userTier === 'preparation');
+      requiredTiersLabel = 'Preparation';
+    }
+
+    if (!isHubAllowed) {
+      setModalCurrentTier(userTier);
+      setModalRequiredTier(requiredTiersLabel);
+      setShowUpgradeModal(true);
+    } else {
+      router.push(`/community/${hub.id}`);
+    }
   };
 
   const handleThreadClick = (thread: Thread, hub: Hub) => {
@@ -238,7 +264,7 @@ export default function CommunityPage() {
               key={hub.id}
               className="scard-dark p-5 cursor-pointer hover:border-brass/40 transition"
               style={hub.border_color ? { borderLeft: `3px solid ${hub.border_color}` } : {}}
-              onClick={() => handleHubClick(hub.id)}
+              onClick={() => handleHubClick(hub)}
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-2">
@@ -421,6 +447,63 @@ export default function CommunityPage() {
                 style={{ opacity: joiningHub ? 0.6 : 1 }}
               >
                 {joiningHub ? 'Joining...' : 'Join hub'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(10, 24, 16, 0.78)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+          }}
+          onClick={() => setShowUpgradeModal(false)}
+        >
+          <div
+            className="scard-dark p-8 w-full mx-4 text-center"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '480px',
+              border: '1px solid var(--brass)',
+              background: 'var(--forest-deep)',
+            }}
+          >
+            <div className="w-12 h-12 rounded-full bg-brass/10 border border-brass/30 flex items-center justify-center mx-auto mb-4 text-brass">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" />
+                <path d="M7 11V7a5 5 0 0110 0v4" />
+              </svg>
+            </div>
+            
+            <div className="eyebrow eyebrow-cream mb-2">Hub Locked</div>
+            <h2 className="display text-2xl text-cream mb-3">Upgrade Tier Required</h2>
+            <p className="text-sm text-cream/70 leading-relaxed mb-6">
+              You are currently on the <span className="text-brass-light font-semibold capitalize">{modalCurrentTier}</span> tier. Please upgrade to the <span className="text-brass-light font-semibold">{modalRequiredTier}</span> tier to access this community hub.
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowUpgradeModal(false)}
+                className="btn-ghost-dark text-xs flex-1"
+              >
+                Maybe later
+              </button>
+              <button
+                onClick={() => {
+                  setShowUpgradeModal(false);
+                  router.push('/#pricing');
+                }}
+                className="btn-primary text-xs flex-1"
+              >
+                Upgrade
               </button>
             </div>
           </div>

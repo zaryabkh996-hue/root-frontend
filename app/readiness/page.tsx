@@ -46,7 +46,7 @@ const getTierDescription = (tier: string): string => {
   return 'Immersive Preparation';
 };
 
-export default function Report() {
+export default function Readiness() {
   const router = useRouter();
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,84 +93,84 @@ export default function Report() {
       <div className="max-w-5xl mx-auto px-8 py-12">
         {/* Registration Gate */}
         {showRegistrationGate && (
-        <div
-          className="rounded-lg p-7 md:p-8 mb-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
-          style={{ background: '#1a2e1f', color: '#f3ede0' }}
-        >
-          <div>
-            <div
-              className="mb-3"
-              style={{
-                fontSize: '10px',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                color: '#c9a14a',
-                fontFamily: "'JetBrains Mono', monospace"
-              }}
-            >
-              Your Afrofeast Score is ready
+          <div
+            className="rounded-lg p-7 md:p-8 mb-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
+            style={{ background: '#1a2e1f', color: '#f3ede0' }}
+          >
+            <div>
+              <div
+                className="mb-3"
+                style={{
+                  fontSize: '10px',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: '#c9a14a',
+                  fontFamily: "'JetBrains Mono', monospace"
+                }}
+              >
+                Your Afrofeast Score is ready
+              </div>
+              <div
+                className="mb-2"
+                style={{
+                  fontFamily: "'Fraunces', Georgia, serif",
+                  fontSize: '22px',
+                  fontWeight: '400',
+                  color: '#f3ede0'
+                }}
+              >
+                You scored <strong style={{ color: '#c9a14a' }}>{reportData.totalScore}</strong> — {reportData.persona} ·{' '}
+                {getTierDescription(reportData.tier)}
+              </div>
+              <p
+                className="leading-relaxed max-w-md"
+                style={{
+                  fontSize: '13px',
+                  color: 'rgba(243,237,224,0.65)',
+                  lineHeight: '1.5'
+                }}
+              >
+                This is a preview. To unlock your full Readiness Report, Amen AI guidance, and the six-stage preparation
+                curriculum, create your free account. Only enrolled members have scores registered on the platform.
+              </p>
             </div>
-            <div
-              className="mb-2"
-              style={{
-                fontFamily: "'Fraunces', Georgia, serif",
-                fontSize: '22px',
-                fontWeight: '400',
-                color: '#f3ede0'
-              }}
-            >
-              You scored <strong style={{ color: '#c9a14a' }}>{reportData.totalScore}</strong> — {reportData.persona} ·{' '}
-              {getTierDescription(reportData.tier)}
+            <div className="flex flex-col gap-3 w-full md:w-auto md:flex-shrink-0">
+              <button
+                onClick={() => router.push('/register')}
+                className="whitespace-nowrap"
+                style={{
+                  background: '#c9a14a',
+                  color: '#1a2e1f',
+                  border: 'none',
+                  padding: '12px 24px',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  fontFamily: "'Instrument Sans', sans-serif"
+                }}
+              >
+                Create free account →
+              </button>
+              <button
+                onClick={() => setShowRegistrationGate(false)}
+                className="whitespace-nowrap"
+                style={{
+                  background: 'transparent',
+                  color: 'rgba(243,237,224,0.5)',
+                  border: '1px solid rgba(243,237,224,0.2)',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  textAlign: 'center'
+                }}
+              >
+                View preview only
+              </button>
             </div>
-            <p
-              className="leading-relaxed max-w-md"
-              style={{
-                fontSize: '13px',
-                color: 'rgba(243,237,224,0.65)',
-                lineHeight: '1.5'
-              }}
-            >
-              This is a preview. To unlock your full Readiness Report, Amen AI guidance, and the six-stage preparation
-              curriculum, create your free account. Only enrolled members have scores registered on the platform.
-            </p>
           </div>
-          <div className="flex flex-col gap-3 w-full md:w-auto md:flex-shrink-0">
-            <button
-              onClick={() => router.push('/register')}
-              className="whitespace-nowrap"
-              style={{
-                background: '#c9a14a',
-                color: '#1a2e1f',
-                border: 'none',
-                padding: '12px 24px',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                fontFamily: "'Instrument Sans', sans-serif"
-              }}
-            >
-              Create free account →
-            </button>
-            <button
-              onClick={() => setShowRegistrationGate(false)}
-              className="whitespace-nowrap"
-              style={{
-                background: 'transparent',
-                color: 'rgba(243,237,224,0.5)',
-                border: '1px solid rgba(243,237,224,0.2)',
-                padding: '8px 16px',
-                borderRadius: '6px',
-                fontSize: '12px',
-                cursor: 'pointer',
-                fontFamily: "'JetBrains Mono', monospace",
-                textAlign: 'center'
-              }}
-            >
-              View preview only
-            </button>
-          </div>
-        </div>
         )}
 
         {/* Header */}

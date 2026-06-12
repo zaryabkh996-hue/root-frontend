@@ -357,7 +357,24 @@ export function computeProgress(progress: UserProgress): ComputedProgress {
   const currentModuleId = progress.currentModuleId;
 
   const stageStatuses: StageStatus[] = ACTIVE_STAGES.map(stage => {
-    const isUnlocked = progress.unlockedStages.includes(stage.id);
+    let userTier = 'free';
+    if (typeof window !== 'undefined') {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        userTier = user?.subscription_tier || 'free';
+      } catch { /* ignore */ }
+    }
+
+    let isTierAllowed = false;
+    if (stage.id === 1) {
+      isTierAllowed = true;
+    } else if (stage.id === 2) {
+      isTierAllowed = (userTier === 'community' || userTier === 'preparation');
+    } else {
+      isTierAllowed = (userTier === 'preparation');
+    }
+
+    const isUnlocked = progress.unlockedStages.includes(stage.id) && isTierAllowed;
     const completedCount = stage.modules.filter(m => completedSet.has(m.id)).length;
     const isCompleted = completedCount === stage.modules.length;
     const isCurrent = isUnlocked && !isCompleted;

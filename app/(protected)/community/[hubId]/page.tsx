@@ -112,6 +112,9 @@ export default function HubDetailPage() {
   const [selectedThreadForJoin, setSelectedThreadForJoin] = useState<Thread | null>(null);
   const [joiningForThread, setJoiningForThread] = useState(false);
 
+  const [isLockedByTier, setIsLockedByTier] = useState(false);
+  const [requiredTier, setRequiredTier] = useState('');
+
   useEffect(() => {
     const fetchHubData = async () => {
       try {
@@ -131,7 +134,27 @@ export default function HubDetailPage() {
         }
 
         const hubData = await hubResponse.json();
-        setHub(hubData.data);
+        const fetchedHub = hubData.data;
+
+        // Perform access check
+        const user = AuthService.getUser();
+        const userTier = user?.subscription_tier || 'free';
+
+        let isHubAllowed = false;
+        if (fetchedHub.access_level === 'free') {
+          isHubAllowed = true;
+        } else if (fetchedHub.access_level === 'community') {
+          isHubAllowed = (userTier === 'community' || userTier === 'preparation');
+        } else if (fetchedHub.access_level === 'preparation') {
+          isHubAllowed = (userTier === 'preparation');
+        }
+
+        if (!isHubAllowed) {
+          setIsLockedByTier(true);
+          setRequiredTier(fetchedHub.access_level === 'preparation' ? 'Preparation' : 'Community or Preparation');
+        }
+
+        setHub(fetchedHub);
 
         // Fetch threads for this hub
         const threadsResponse = await fetch(
@@ -357,6 +380,57 @@ export default function HubDetailPage() {
         <Link href="/community" className="btn-primary">
           Back to Community
         </Link>
+      </div>
+    );
+  }
+
+  if (isLockedByTier) {
+    const user = AuthService.getUser();
+    const userTier = user?.subscription_tier || 'free';
+
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
+        <div className="w-full text-left max-w-lg mb-8">
+          <button
+            onClick={() => router.push('/community')}
+            className="text-cream/60 hover:text-cream text-sm flex items-center gap-2"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5m6 7-7-7 7-7"></path>
+            </svg>
+            All Hubs
+          </button>
+        </div>
+
+        <div className="scard-dark p-10 max-w-lg w-full" style={{ border: '1px solid var(--brass)', background: 'var(--forest-deep)' }}>
+          <div className="w-16 h-16 rounded-full bg-brass/10 border border-brass/30 flex items-center justify-center mx-auto mb-6 text-brass">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0110 0v4" />
+            </svg>
+          </div>
+
+          <div className="eyebrow eyebrow-cream mb-2">{hub?.name || 'Community Hub'}</div>
+          <h2 className="display text-3xl text-cream mb-4">Hub Locked</h2>
+          <p className="text-sm text-cream/70 leading-relaxed mb-8">
+            This hub requires the <span className="text-brass-light font-semibold">{requiredTier}</span> tier. You are currently on the <span className="text-brass-light font-semibold capitalize">{userTier}</span> tier.
+          </p>
+
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => router.push('/#pricing')}
+              className="btn-primary w-full py-3 text-sm"
+            >
+              Upgrade Tier
+            </button>
+            <button
+              onClick={() => router.push('/community')}
+              className="btn-ghost-dark w-full py-3 text-sm"
+            >
+              Back to Community
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

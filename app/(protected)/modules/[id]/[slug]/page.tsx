@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useProgress } from '../../../../lib/progressContext';
 import { getModuleById, getNextModuleId, getPrevModuleId } from '../../../../lib/progressStore';
 import { getModuleContent } from '../../../../lib/moduleContent';
+import { AuthService } from '@/app/lib/authService';
 
 function AudioPlayerCard({ url, duration, title }: { url: string; duration: string; title: string }) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -184,7 +185,25 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
       const nextInfo = getModuleById(nextId);
       const nextSlug = nextInfo?.module.slug || nextId;
       const nextStageId = nextInfo?.stage.id || stage.id;
-      router.push(`/modules/${nextStageId}/${nextSlug}`);
+
+      // Check tier permission for nextStageId
+      const user = AuthService.getUser();
+      const userTier = user?.subscription_tier || 'free';
+
+      let isTierAllowed = false;
+      if (nextStageId === 1) {
+        isTierAllowed = true;
+      } else if (nextStageId === 2) {
+        isTierAllowed = (userTier === 'community' || userTier === 'preparation');
+      } else {
+        isTierAllowed = (userTier === 'preparation');
+      }
+
+      if (!isTierAllowed) {
+        router.push(`/modules?upgrade=1&stageId=${nextStageId}`);
+      } else {
+        router.push(`/modules/${nextStageId}/${nextSlug}`);
+      }
     } else {
       router.push(`/modules/${stage.id}`);
     }
@@ -378,7 +397,7 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
             </div>
             <div className="mt-5 pt-5 border-t border-brass/10">
               <div className="eyebrow eyebrow-cream mb-2">Need support?</div>
-              <button onClick={() => router.push('/amen')} className="btn-ghost-dark w-full justify-center text-xs">Talk to Amen AI</button>
+              <button onClick={() => router.push('/amenai')} className="btn-ghost-dark w-full justify-center text-xs">Talk to Amen AI</button>
             </div>
           </div>
         </div>

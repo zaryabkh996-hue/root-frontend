@@ -10,6 +10,7 @@ interface UserProfile {
   name?: string;
   email?: string;
   whatsapp?: string;
+  subscriptionTier?: string;
   picture?: string;
   bio?: string;
   bioPrivacy?: string;
@@ -679,7 +680,9 @@ export default function ProfilePage() {
             <h2 className="display text-3xl mb-1">{getUserName()}</h2>
             <div className="eyebrow eyebrow-cream mb-3">{userProfile.userPersona || 'Heritage Seeker'} · {userProfile.travelLocation || 'Global'}</div>
             <div className="flex items-center justify-center gap-2">
-              <span className="tag tag-brass">Preparation tier</span>
+              <span className="tag tag-brass" style={{ textTransform: 'capitalize' }}>
+                {userProfile.subscriptionTier || 'Free'} tier
+              </span>
               <span className="tag tag-emerald">Active</span>
             </div>
             <div className="text-xs text-cream/50 mono mt-3">Member since {userProfile.memberSince || 'N/A'}</div>
@@ -1107,7 +1110,7 @@ export default function ProfilePage() {
                   </button>
                 </div>
               )}
-              <div className="border-t border-brass/10 pt-4 flex items-center justify-between">
+              {/* <div className="border-t border-brass/10 pt-4 flex items-center justify-between">
                 <div>
                   <div className="text-sm text-cream font-medium">Travel location</div>
                   <div className="text-xs text-cream/50 mt-1">{userProfile.travelLocation || 'Not set'}</div>
@@ -1115,7 +1118,7 @@ export default function ProfilePage() {
                 <button className="btn-ghost-dark text-xs" onClick={() => startEdit('travelLocation')}>
                   Edit
                 </button>
-              </div>
+              </div> */}
               {editingField === 'travelLocation' && (
                 <div className="flex gap-2 mt-2">
                   <input

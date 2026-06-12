@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useProgress } from '../../../lib/progressContext';
 import { getStageById } from '../../../lib/progressStore';
 
-export default function ViewJourneyPage() {
+export default function ViewModulePage() {
   const router = useRouter();
   const params = useParams();
   const stageId = Number(params?.id ?? 1);

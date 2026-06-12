@@ -176,10 +176,7 @@ export default function LibraryPage() {
 
   return (
     <>
-      {/* SOS Button */}
-      <button className="crisis-btn" onClick={() => alert('SOS modal')}>
-        SOS
-      </button>
+   
 
       {/* Header */}
       <div className="mb-8">
@@ -528,10 +525,7 @@ export default function LibraryPage() {
         </div>
       )}
 
-      {/* Amen Bubble */}
-      <button className="amen-bubble" onClick={() => router.push('/amen')}>
-        Ask Amen AI
-      </button>
+     
 
       {/* Guidance Modal */}
       {guidanceModalOpen && guidanceModalItem && (

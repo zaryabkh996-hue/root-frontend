@@ -246,17 +246,17 @@ export default function Quiz() {
     // Remove the last response
     const newResponses = quiz.responses.slice(0, -1);
     const lastQuestion = QUESTION_BANK.find(q => q.id === quiz.asked[quiz.asked.length - 2]);
-    
+
     // Recalculate theta values
     const newThetaByDim = { identity: 0, emotional: 0, authenticity: 0, protocol: 0, community: 0 };
     newResponses.forEach(response => {
       const norm = (response.value - 2.5) / 1.5;
-      newThetaByDim[response.dim as DimensionKey] = 
+      newThetaByDim[response.dim as DimensionKey] =
         (newThetaByDim[response.dim as DimensionKey] + norm) / 2;
     });
 
     const newAsked = quiz.asked.slice(0, -1);
-    
+
     setQuiz({
       responses: newResponses,
       thetaByDim: newThetaByDim,
@@ -335,7 +335,7 @@ export default function Quiz() {
     };
 
     sessionStorage.setItem('quizReport', JSON.stringify(reportData));
-    setTimeout(() => router.push('/report'), 600);
+    setTimeout(() => router.push('/readiness'), 600);
   };
 
   return (

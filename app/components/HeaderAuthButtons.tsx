@@ -56,7 +56,7 @@ export default function HeaderAuthButtons() {
         Login →
       </a>
       <a
-        href="/quiz"
+        href="/onboarding"
         className="btn-primary inline-flex"
         style={{ padding: '8px 14px', fontSize: '13px', whiteSpace: 'nowrap' }}
       >

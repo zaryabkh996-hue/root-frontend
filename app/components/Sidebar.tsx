@@ -110,7 +110,7 @@ const Sidebar: React.FC = () => {
               </svg>
               Custodians
             </div>
-            <div className={`nav-item ${isActive('amen') ? 'active' : ''}`} onClick={() => goto('amenai')}>
+            <div className={`nav-item ${isActive('amenai') ? 'active' : ''}`} onClick={() => goto('amenai')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path>
               </svg>

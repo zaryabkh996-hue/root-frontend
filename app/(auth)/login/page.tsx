@@ -142,7 +142,7 @@ export default function Login() {
 
             {/* Sign Up Link */}
             <p className="text-xs text-cream/50 text-center">
-              Don't have an account? <button onClick={() => router.push('/quiz')} className="text-brass-light hover:text-brass underline">Create one</button>
+              Don't have an account? <button onClick={() => router.push('/onboarding')} className="text-brass-light hover:text-brass underline">Create one</button>
             </p>
           </>
         ) : stage === 'not-found' ? (
@@ -170,7 +170,7 @@ export default function Login() {
                   <h3 className="text-brass-light font-semibold text-sm mb-2">👥 If you're a Customer</h3>
                   <p className="text-cream/80 text-sm mb-4">{guidance?.customer}</p>
                   <button
-                    onClick={() => router.push('/quiz')}
+                    onClick={() => router.push('/onboarding')}
                     className="btn-primary-small"
                   >
                     Start the Quiz

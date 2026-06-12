@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
 import { ProgressProvider } from '../lib/progressContext';
 import { useNotification } from '../lib/NotificationContext';
+import CommandPalette from './CommandPalette';
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
@@ -15,6 +16,19 @@ const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children }) => {
   const { notification, hideNotification } = useNotification();
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Shortcut listener for Cmd+K and Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const checkAuthentication = async () => {
@@ -69,6 +83,12 @@ const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children }) => {
             }
 
             // For customer or no role - allow access to protected layout
+            const finalUser = data.backendUser ?? data.user;
+            if (finalUser && !finalUser.onboarded) {
+              router.push('/onboarding');
+              return;
+            }
+
             setIsAuthenticated(true);
             return;
           }
@@ -140,17 +160,72 @@ const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children }) => {
         </div>
       )}
 
-      <div className="app-shell">
+       <div className="app-shell">
         <Sidebar />
         <main className="app-main">
+          {/* Desktop Search Toggle */}
+          <button 
+            onClick={() => setIsSearchOpen(true)}
+            className="hidden md:block"
+            style={{
+              position: 'fixed',
+              top: '30px',
+              right: '220px',
+              zIndex: 90,
+              background: 'rgba(10, 24, 16, 0.9)',
+              color: 'var(--cream)',
+              border: '1px solid rgba(201, 161, 74, 0.3)',
+              borderRadius: '30px',
+              padding: '6px 14px',
+              fontSize: '10.5px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              fontFamily: "'JetBrains Mono', monospace",
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              transition: 'all 0.2s',
+            }}
+          >
+            🔍 Search <kbd style={{ marginLeft: '4px', fontSize: '9px', opacity: 0.6 }}>⌘K</kbd>
+          </button>
+          
+          {/* Mobile Search Toggle */}
+          <button 
+            onClick={() => setIsSearchOpen(true)}
+            className="md:hidden"
+            style={{
+              position: 'fixed',
+              top: '40px',
+              right: '180px',
+              zIndex: 90,
+              background: 'rgba(10, 24, 16, 0.9)',
+              color: 'var(--cream)',
+              border: '1px solid rgba(201, 161, 74, 0.3)',
+              borderRadius: '30px',
+              padding: '5px 12px',
+              fontSize: '9.5px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              fontFamily: "'JetBrains Mono', monospace",
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              transition: 'all 0.2s',
+            }}
+          >
+            🔍 Search
+          </button>
+
           <button className="crisis-btn">SOS · Talk to a human</button>
           {children}
-          <button onClick={() => router.push('/amen')} className="amen-bubble">
+          
+          <button onClick={() => router.push('/amenai')} className="amen-bubble">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="12" cy="12" r="10"></circle>
             </svg>
             Ask Amen AI
           </button>
+
+          <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
         </main>
       </div>
     </ProgressProvider>

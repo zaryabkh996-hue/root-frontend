@@ -90,6 +90,11 @@ export default function Home() {
   const [custodiansLoading, setCustodiansLoading] = useState(true);
   const [totalCustodians, setTotalCustodians] = useState(0);
 
+  const [activeUpgradeModal, setActiveUpgradeModal] = useState<'community' | 'stage3' | 'preparation' | 'stage5' | 'stage6' | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalTier, setSuccessModalTier] = useState<string>('');
+  const [isUpgrading, setIsUpgrading] = useState(false);
+
   const defaultServices = useMemo(
     () => [
       { name: 'Free 15-min introduction', price: 0, description: 'Video call · meet, ask anything, no commitment' },
@@ -260,6 +265,52 @@ export default function Home() {
     }
   };
 
+  const handleUpgradeConfirm = async (tier: 'free' | 'community' | 'preparation') => {
+    if (!AuthService.isAuthenticated()) {
+      router.push('/onboarding');
+      return;
+    }
+
+    try {
+      setIsUpgrading(true);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+      const token = AuthService.getToken();
+      
+      const response = await fetch(`${backendUrl}/user/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          subscriptionTier: tier
+        })
+      });
+
+      if (response.ok) {
+        // Update user object in local storage
+        const userRaw = localStorage.getItem('user');
+        if (userRaw) {
+          const user = JSON.parse(userRaw);
+          user.subscription_tier = tier;
+          localStorage.setItem('user', JSON.stringify(user));
+        }
+        setActiveUpgradeModal(null);
+        setSuccessModalTier(tier);
+        setShowSuccessModal(true);
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        alert(errData.message || 'Failed to update subscription tier.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred while upgrading.');
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
   const handleCustodianApply = async () => {
     setSubmitError(null);
     setSubmitSuccess(null);
@@ -352,7 +403,7 @@ export default function Home() {
             {/* Mobile Actions: Always show primary CTA outside drawer */}
             <div className="flex md:hidden items-center gap-2">
               <a
-                href="/quiz"
+                href="/onboarding"
                 className="navbar-cta-primary flex items-center justify-center font-semibold transition-colors"
                 style={{
                   fontFamily: "'Instrument Sans', sans-serif",
@@ -421,7 +472,7 @@ export default function Home() {
                   Login
                 </a>
                 <a
-                  href="/quiz"
+                  href="/onboarding"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full py-3 text-center bg-brass hover:bg-brass-light text-forest-deepest font-semibold rounded"
                 >
@@ -445,7 +496,7 @@ export default function Home() {
               OurRoots.Africa is a digital sanctuary — not a travel app. We prepare relatives of the African diaspora — emotionally, culturally, and practically — to return home.
             </p>
             <div className="flex flex-wrap gap-3 fade-up d4">
-              <a href="/quiz" className="btn-primary inline-flex">
+              <a href="/onboarding" className="btn-primary inline-flex">
                 Discover your Travel DNA
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14m-6-6 6 6-6 6"></path></svg>
               </a>
@@ -496,7 +547,7 @@ export default function Home() {
               <p className="text-sm text-ink-dim leading-relaxed mb-4">Mindset, expectations, and emotional readiness. Learn that "returning home" is a journey, not a destination — and that Ghana is not Wakanda.</p>
               <div className="text-xs mono text-ink-dim">5 modules · 50 min · audio + video</div>
             </div>
-            <a href="#modal-stage2" className="block">
+            <a href="#" onClick={(e) => { e.preventDefault(); setActiveUpgradeModal('community'); }} className="block">
               <div className="scard p-7">
                 <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">2</div><span className="tag tag-brass">Community+</span></div>
                 <h3 className="display text-2xl mb-2">Cultural Intelligence</h3>
@@ -504,7 +555,7 @@ export default function Home() {
                 <div className="text-xs mono text-ink-dim">8 modules · 2h 30min</div>
               </div>
             </a>
-            <a href="#modal-stage3" className="block">
+            <a href="#" onClick={(e) => { e.preventDefault(); setActiveUpgradeModal('stage3'); }} className="block">
               <div className="scard p-7">
                 <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">3</div><span className="tag tag-brass">Preparation+</span></div>
                 <h3 className="display text-2xl mb-2">Practical Preparation</h3>
@@ -512,7 +563,7 @@ export default function Home() {
                 <div className="text-xs mono text-ink-dim">6 modules · 2h · checklists + PDFs</div>
               </div>
             </a>
-            <a href="#modal-stage4" className="block">
+            <a href="#" onClick={(e) => { e.preventDefault(); setActiveUpgradeModal('preparation'); }} className="block">
               <div className="scard p-7">
                 <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">4</div><span className="tag tag-brass">Preparation+</span></div>
                 <h3 className="display text-2xl mb-2">Arrival Orientation</h3>
@@ -520,7 +571,7 @@ export default function Home() {
                 <div className="text-xs mono text-ink-dim">4 modules · 1h 20min</div>
               </div>
             </a>
-            <a href="#modal-stage5" className="block">
+            <a href="#" onClick={(e) => { e.preventDefault(); setActiveUpgradeModal('stage5'); }} className="block">
               <div className="scard p-7">
                 <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">5</div><span className="tag tag-brass">Preparation+</span></div>
                 <h3 className="display text-2xl mb-2">Heritage Journey</h3>
@@ -528,7 +579,7 @@ export default function Home() {
                 <div className="text-xs mono text-ink-dim">7 modules · live support</div>
               </div>
             </a>
-            <a href="#modal-stage6" className="block">
+            <a href="#" onClick={(e) => { e.preventDefault(); setActiveUpgradeModal('stage6'); }} className="block">
               <div className="scard p-7">
                 <div className="flex items-center justify-between mb-5"><div className="stage-dot locked">6</div><span className="tag tag-brass">Preparation+</span></div>
                 <h3 className="display text-2xl mb-2">Post-Journey Integration</h3>
@@ -684,7 +735,7 @@ export default function Home() {
                 <li className="flex gap-2"><span className="text-brass">✓</span> Browse Custodians</li>
                 <li className="flex gap-2 text-ink-faint"><span>—</span> Stages 2–6 locked</li>
               </ul>
-              <a href="/quiz" className="btn-ghost w-full justify-center">Begin free</a>
+              <button onClick={() => handleUpgradeConfirm('free')} className="btn-ghost w-full justify-center">Begin free</button>
             </div>
             {/* Community */}
             <div className="scard p-7 flex flex-col">
@@ -701,7 +752,7 @@ export default function Home() {
                 <li className="flex gap-2"><span className="text-brass">✓</span> Library · 5 audio guides</li>
                 <li className="flex gap-2"><span className="text-brass">✓</span> Custodian profiles · view</li>
               </ul>
-              <a href="#modal-community" className="btn-ghost w-full justify-center">Choose Community</a>
+              <button onClick={() => setActiveUpgradeModal('community')} className="btn-ghost w-full justify-center">Choose Community</button>
             </div>
             {/* Preparation */}
             <div className="scard-dark p-7 flex flex-col relative" style={{ background: 'var(--forest-deepest)' }}>
@@ -721,7 +772,7 @@ export default function Home() {
                 <li className="flex gap-2"><span className="text-brass">✓</span> Day Name &amp; Stage certificates</li>
                 <li className="flex gap-2"><span className="text-brass">✓</span> Post-journey integration</li>
               </ul>
-              <a href="#modal-preparation" className="btn-primary w-full justify-center">Choose Preparation</a>
+              <button onClick={() => setActiveUpgradeModal('stage3')} className="btn-primary w-full justify-center">Choose Preparation</button>
             </div>
           </div>
           <p className="text-center text-sm text-ink-faint mt-10">For the rare Experiential Execution tier (score 85–100): trauma-informed 1-on-1 coaching coming Q3 2026. For now, Preparation tier delivers the full self-guided journey.</p>
@@ -768,7 +819,7 @@ export default function Home() {
           <div className="ornament eyebrow eyebrow-cream mb-6 inline-flex">Begin</div>
           <h2 className="display text-5xl font-light leading-tight mb-6">Take the Travel DNA Quiz.</h2>
           <p className="text-cream/75 text-lg mb-10">Five minutes. No card required. Save your result and unlock Stage 1 immediately.</p>
-          <a href="/quiz" className="btn-primary text-base inline-flex !px-8 !py-4">
+          <a href="/onboarding" className="btn-primary text-base inline-flex !px-8 !py-4">
             Begin your journey
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14m-6-6 6 6-6 6"></path></svg>
           </a>
@@ -1168,128 +1219,175 @@ export default function Home() {
 
 
       {/* Stage 2 Modal */}
-      <div id="modal-community" className="modal-overlay">
-        <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)' }}>
-          <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 2 · Cultural Intelligence</div>
-          <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
-          <p className="text-sm text-cream/70 leading-relaxed mb-6">Greetings, protocols, elder etiquette, market language, sacred space behaviour.</p>
-          <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
-            <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Community tier</div><div className="display text-3xl text-brass-light">$27<span className="text-sm text-cream/60">/mo</span></div></div>
-            <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+      {activeUpgradeModal === 'community' && (
+        <div className="modal-overlay" style={{ display: 'flex' }} onClick={() => setActiveUpgradeModal(null)}>
+          <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)', textAlign: 'left' }} onClick={(e) => e.stopPropagation()}>
+            <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 2 · Cultural Intelligence</div>
+            <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
+            <p className="text-sm text-cream/70 leading-relaxed mb-6">Greetings, protocols, elder etiquette, market language, sacred space behaviour.</p>
+            <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
+              <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Community tier</div><div className="display text-3xl text-brass-light">$27<span className="text-sm text-cream/60">/mo</span></div></div>
+              <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+            </div>
+            <div className="space-y-2 mb-6 text-sm text-cream/85">
+              <div className="flex gap-2"><span className="text-brass">✓</span> Stage 2 (8 modules)</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Stage 1 + 2</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI 75 messages / 30 days</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => handleUpgradeConfirm('community')} className="btn-primary flex-1" disabled={isUpgrading}>
+                {isUpgrading ? 'Upgrading...' : 'Pay $27 / month'}
+              </button>
+              <button onClick={() => setActiveUpgradeModal(null)} className="btn-ghost-dark">Maybe later</button>
+            </div>
+            <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
           </div>
-          <div className="space-y-2 mb-6 text-sm text-cream/85">
-            <div className="flex gap-2"><span className="text-brass">✓</span> Stage 2 (8 modules)</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Stage 1 + 2</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI 75 messages / 30 days</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
-          </div>
-          <div className="flex gap-3">
-            <button className="btn-primary flex-1">Pay $27 / month</button>
-            <a href="#" className="btn-ghost-dark">Maybe later</a>
-          </div>
-          <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
         </div>
-      </div>
+      )}
 
       {/* Stage 3 Modal */}
-      <div id="modal-stage3" className="modal-overlay">
-        <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)' }}>
-          <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 3 · Practical Preparation</div>
-          <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
-          <p className="text-sm text-cream/70 leading-relaxed mb-6">Visa paperwork, health, packing, money, transport, accommodation.</p>
-          <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
-            <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
-            <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+      {activeUpgradeModal === 'stage3' && (
+        <div className="modal-overlay" style={{ display: 'flex' }} onClick={() => setActiveUpgradeModal(null)}>
+          <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)', textAlign: 'left' }} onClick={(e) => e.stopPropagation()}>
+            <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 3 · Practical Preparation</div>
+            <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
+            <p className="text-sm text-cream/70 leading-relaxed mb-6">Visa paperwork, health, packing, money, transport, accommodation.</p>
+            <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
+              <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
+              <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+            </div>
+            <div className="space-y-2 mb-6 text-sm text-cream/85">
+              <div className="flex gap-2"><span className="text-brass">✓</span> Stage 3 (6 modules)</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> All Stages 1–6 unlocked</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI unlimited</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Custodian Marketplace · book + pay</div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => handleUpgradeConfirm('preparation')} className="btn-primary flex-1" disabled={isUpgrading}>
+                {isUpgrading ? 'Upgrading...' : 'Pay $67 / month'}
+              </button>
+              <button onClick={() => setActiveUpgradeModal(null)} className="btn-ghost-dark">Maybe later</button>
+            </div>
+            <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
           </div>
-          <div className="space-y-2 mb-6 text-sm text-cream/85">
-            <div className="flex gap-2"><span className="text-brass">✓</span> Stage 3 (6 modules)</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> All Stages 1–6 unlocked</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI unlimited</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Custodian Marketplace · book + pay</div>
-          </div>
-          <div className="flex gap-3">
-            <button className="btn-primary flex-1">Pay $67 / month</button>
-            <a href="#" className="btn-ghost-dark">Maybe later</a>
-          </div>
-          <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
         </div>
-      </div>
+      )}
 
       {/* Stage 4 Modal */}
-      <div id="modal-preparation" className="modal-overlay">
-        <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)' }}>
-          <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 4 · Arrival Orientation</div>
-          <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
-          <p className="text-sm text-cream/70 leading-relaxed mb-6">First 72 hours. Airport handover, host family meeting, jet-lag protocol, the chief's blessing if a Day Name awaits you.</p>
-          <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
-            <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
-            <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+      {activeUpgradeModal === 'preparation' && (
+        <div className="modal-overlay" style={{ display: 'flex' }} onClick={() => setActiveUpgradeModal(null)}>
+          <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)', textAlign: 'left' }} onClick={(e) => e.stopPropagation()}>
+            <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 4 · Arrival Orientation</div>
+            <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
+            <p className="text-sm text-cream/70 leading-relaxed mb-6">First 72 hours. Airport handover, host family meeting, jet-lag protocol, the chief's blessing if a Day Name awaits you.</p>
+            <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
+              <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
+              <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+            </div>
+            <div className="space-y-2 mb-6 text-sm text-cream/85">
+              <div className="flex gap-2"><span className="text-brass">✓</span> Stage 4 (4 modules)</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> All Stages 1–6 unlocked</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI unlimited</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Custodian Marketplace · book + pay</div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => handleUpgradeConfirm('preparation')} className="btn-primary flex-1" disabled={isUpgrading}>
+                {isUpgrading ? 'Upgrading...' : 'Pay $67 / month'}
+              </button>
+              <button onClick={() => setActiveUpgradeModal(null)} className="btn-ghost-dark">Maybe later</button>
+            </div>
+            <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
           </div>
-          <div className="space-y-2 mb-6 text-sm text-cream/85">
-            <div className="flex gap-2"><span className="text-brass">✓</span> Stage 4 (4 modules)</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> All Stages 1–6 unlocked</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI unlimited</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Custodian Marketplace · book + pay</div>
-          </div>
-          <div className="flex gap-3">
-            <button className="btn-primary flex-1">Pay $67 / month</button>
-            <a href="#" className="btn-ghost-dark">Maybe later</a>
-          </div>
-          <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
         </div>
-      </div>
+      )}
 
       {/* Stage 5 Modal */}
-      <div id="modal-stage5" className="modal-overlay">
-        <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)' }}>
-          <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 5 · Heritage Journey</div>
-          <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
-          <p className="text-sm text-cream/70 leading-relaxed mb-6">The deepest part. Cape Coast Castle. The Door of No Return. Real-time emotional support via Amen AI on WhatsApp throughout your in-country experience.</p>
-          <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
-            <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
-            <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+      {activeUpgradeModal === 'stage5' && (
+        <div className="modal-overlay" style={{ display: 'flex' }} onClick={() => setActiveUpgradeModal(null)}>
+          <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)', textAlign: 'left' }} onClick={(e) => e.stopPropagation()}>
+            <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 5 · Heritage Journey</div>
+            <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
+            <p className="text-sm text-cream/70 leading-relaxed mb-6">The deepest part. Cape Coast Castle. The Door of No Return. Real-time emotional support via Amen AI on WhatsApp throughout your in-country experience.</p>
+            <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
+              <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
+              <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+            </div>
+            <div className="space-y-2 mb-6 text-sm text-cream/85">
+              <div className="flex gap-2"><span className="text-brass">✓</span> Stage 5 (7 modules)</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> All Stages 1–6 unlocked</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI unlimited</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Custodian Marketplace · book + pay</div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => handleUpgradeConfirm('preparation')} className="btn-primary flex-1" disabled={isUpgrading}>
+                {isUpgrading ? 'Upgrading...' : 'Pay $67 / month'}
+              </button>
+              <button onClick={() => setActiveUpgradeModal(null)} className="btn-ghost-dark">Maybe later</button>
+            </div>
+            <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
           </div>
-          <div className="space-y-2 mb-6 text-sm text-cream/85">
-            <div className="flex gap-2"><span className="text-brass">✓</span> Stage 5 (7 modules)</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> All Stages 1–6 unlocked</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI unlimited</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Custodian Marketplace · book + pay</div>
-          </div>
-          <div className="flex gap-3">
-            <button className="btn-primary flex-1">Pay $67 / month</button>
-            <a href="#" className="btn-ghost-dark">Maybe later</a>
-          </div>
-          <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
         </div>
-      </div>
+      )}
 
       {/* Stage 6 Modal */}
-      <div id="modal-stage6" className="modal-overlay">
-        <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)' }}>
-          <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 6 · Post-Journey Integration</div>
-          <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
-          <p className="text-sm text-cream/70 leading-relaxed mb-6">Re-entry is its own journey. The Love Hub community, debrief sessions, the question of whether — and how — you carry Africa home with you.</p>
-          <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
-            <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
-            <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+      {activeUpgradeModal === 'stage6' && (
+        <div className="modal-overlay" style={{ display: 'flex' }} onClick={() => setActiveUpgradeModal(null)}>
+          <div className="modal-card scard-dark p-9" style={{ maxWidth: '520px', background: 'var(--forest-deep)', border: '1px solid var(--brass)', textAlign: 'left' }} onClick={(e) => e.stopPropagation()}>
+            <div className="eyebrow eyebrow-cream mb-3">Unlock Stage 6 · Post-Journey Integration</div>
+            <h2 className="display text-3xl mb-3 text-cream">Continue your journey</h2>
+            <p className="text-sm text-cream/70 leading-relaxed mb-6">Re-entry is its own journey. The Love Hub community, debrief sessions, the question of whether — and how — you carry Africa home with you.</p>
+            <div className="scard-warm p-5 mb-5" style={{ background: 'rgba(201,161,74,0.08)', borderLeft: '3px solid var(--brass)' }}>
+              <div className="flex items-center justify-between mb-2"><div className="text-cream font-medium">Preparation tier</div><div className="display text-3xl text-brass-light">$67<span className="text-sm text-cream/60">/mo</span></div></div>
+              <div className="text-xs text-cream/65 leading-relaxed">Cancel any time. Your progress is preserved. Most relatives stay subscribed for 3–6 months.</div>
+            </div>
+            <div className="space-y-2 mb-6 text-sm text-cream/85">
+              <div className="flex gap-2"><span className="text-brass">✓</span> Stage 6 (5 modules)</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> All Stages 1–6 unlocked</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI unlimited</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
+              <div className="flex gap-2"><span className="text-brass">✓</span> Custodian Marketplace · book + pay</div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => handleUpgradeConfirm('preparation')} className="btn-primary flex-1" disabled={isUpgrading}>
+                {isUpgrading ? 'Upgrading...' : 'Pay $67 / month'}
+              </button>
+              <button onClick={() => setActiveUpgradeModal(null)} className="btn-ghost-dark">Maybe later</button>
+            </div>
+            <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
           </div>
-          <div className="space-y-2 mb-6 text-sm text-cream/85">
-            <div className="flex gap-2"><span className="text-brass">✓</span> Stage 6 (5 modules)</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> All Stages 1–6 unlocked</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Amen AI unlimited</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Full Community Hubs participation</div>
-            <div className="flex gap-2"><span className="text-brass">✓</span> Custodian Marketplace · book + pay</div>
-          </div>
-          <div className="flex gap-3">
-            <button className="btn-primary flex-1">Pay $67 / month</button>
-            <a href="#" className="btn-ghost-dark">Maybe later</a>
-          </div>
-          <div className="text-xs text-cream/50 mt-5 text-center">Secure checkout via Stripe · Paystack also accepted in NGN, ZAR, GHS</div>
         </div>
-      </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="modal-overlay" style={{ display: 'flex' }} onClick={() => setShowSuccessModal(false)}>
+          <div className="modal-card scard-dark p-9" style={{ maxWidth: '480px', background: 'var(--forest-deep)', border: '2px solid var(--brass)', borderRadius: '8px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+            <div className="w-16 h-16 bg-brass/10 border border-brass/40 rounded-full flex items-center justify-center text-brass text-3xl mx-auto mb-6">
+              ✓
+            </div>
+            <div className="eyebrow eyebrow-cream mb-2">Upgrade Successful</div>
+            <h2 className="display text-3xl mb-4 text-cream">Welcome, Relative</h2>
+            <p className="text-sm text-cream/80 leading-relaxed mb-6">
+              Your subscription has been successfully updated to the <strong className="text-brass-light capitalize">{successModalTier}</strong> tier. Your digital sanctuary is ready.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button 
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  router.push('/modules');
+                }} 
+                className="btn-primary w-full justify-center"
+              >
+                Go to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
