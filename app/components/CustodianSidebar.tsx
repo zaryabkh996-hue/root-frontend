@@ -93,6 +93,7 @@ const CustodianSidebar: React.FC = () => {
           </div>
           <div>
             <div className="cust-user-name">{user?.name || 'Custodian'}</div>
+            
             <div className="cust-cert-badge">{user?.certification || 'Afrofeast Certified'}</div>
           </div>
         </div>

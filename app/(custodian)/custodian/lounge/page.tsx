@@ -30,10 +30,31 @@ interface LoungeStats {
     replies: number;
     likes_received: number;
   };
+  hotTopics?: Array<{
+    id: number;
+    content: string;
+    category: 'question' | 'tip' | 'discussion';
+    replies_count: number;
+  }>;
 }
 
 export default function CustodianLounge() {
   const { showNotification } = useNotification();
+
+  const getCategoryEmoji = (category: string) => {
+    switch (category) {
+      case 'question': return '❓';
+      case 'tip': return '💡';
+      case 'discussion': return '💬';
+      default: return '📝';
+    }
+  };
+
+  const truncateContent = (text: string, length: number = 32) => {
+    if (!text) return '';
+    if (text.length <= length) return text;
+    return text.substring(0, length) + '...';
+  };
   const [composeText, setComposeText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'question' | 'tip' | 'discussion'>('question');
 
@@ -139,7 +160,7 @@ export default function CustodianLounge() {
           if (post.id === postId) {
             return {
               ...post,
-              replies_count: post.replies_count + 1,
+              replies_count: data.replies_count !== undefined ? data.replies_count : (Number(post.replies_count) || 0) + 1,
               replies: [...(post.replies || []), data.reply]
             };
           }
@@ -301,7 +322,7 @@ export default function CustodianLounge() {
           ) : (
             <>
               {posts.map((post) => (
-                <div key={post.id} className="c-card c-card-pad" style={{ marginBottom: '12px' }}>
+                <div key={post.id} id={`post-${post.id}`} className="c-card c-card-pad" style={{ marginBottom: '12px', transition: 'all 0.3s ease' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                     <div style={{
                       width: '36px', height: '36px', borderRadius: '50%',
@@ -352,7 +373,7 @@ export default function CustodianLounge() {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill={post.isLiked ? '#c9a14a' : 'none'} stroke={post.isLiked ? '#c9a14a' : '#8a7f72'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
                       </svg>
-                      {post.likes_count}
+                      {post.likes_count ?? 0}
                     </button>
                     <button
                       onClick={() => setReplyingTo(replyingTo === post.id ? null : post.id)}
@@ -371,7 +392,7 @@ export default function CustodianLounge() {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={replyingTo === post.id ? '#c9a14a' : '#8a7f72'} strokeWidth="2">
                         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                       </svg>
-                      Reply ({post.replies_count})
+                      Reply ({post.replies_count ?? 0})
                     </button>
                     <button
                       style={{
@@ -510,26 +531,51 @@ export default function CustodianLounge() {
               Hot Topics
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {[
-                '🔥 Managing emotional breakthroughs',
-                '📚 Best Knowledge Bank formats',
-                '📅 Diaspora visits & festival timing',
-                '💰 Earnings optimisation'
-              ].map((topic, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    fontSize: '12px',
-                    color: '#374151',
-                    padding: '8px',
-                    background: '#f9f6f0',
-                    borderRadius: '6px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {topic}
+              {stats?.hotTopics && stats.hotTopics.length > 0 ? (
+                stats.hotTopics.map((topic) => (
+                  <div
+                    key={topic.id}
+                    style={{
+                      fontSize: '12px',
+                      color: '#374151',
+                      padding: '8px',
+                      background: '#f9f6f0',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    onClick={() => {
+                      const element = document.getElementById(`post-${topic.id}`);
+                      if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        const originalBg = element.style.background;
+                        element.style.background = '#fffbeb';
+                        element.style.border = '1px solid #f59e0b';
+                        setTimeout(() => {
+                          element.style.background = originalBg;
+                          element.style.border = '';
+                        }, 2000);
+                      } else {
+                        showNotification('Post is on another page. Use navigation to locate it.', 'info');
+                      }
+                    }}
+                  >
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                      {getCategoryEmoji(topic.category)} {truncateContent(topic.content)}
+                    </span>
+                    <span style={{ fontSize: '10px', color: '#c9a14a', fontWeight: 600, background: 'rgba(201,161,74,0.1)', padding: '2px 6px', borderRadius: '10px', flexShrink: 0 }}>
+                      💬 {topic.replies_count ?? 0}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div style={{ fontSize: '11px', color: '#8a7f72', fontStyle: 'italic', padding: '4px' }}>
+                  No hot topics yet.
                 </div>
-              ))}
+              )}
             </div>
           </div>
 

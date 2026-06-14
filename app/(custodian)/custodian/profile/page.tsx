@@ -62,10 +62,9 @@ export default function CustodianProfile() {
       const userDataStr = localStorage.getItem('user');
       if (!userDataStr) throw new Error('User not found in storage');
 
-      const storedUser = JSON.parse(userDataStr);
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
-      const response = await fetch(`${backendUrl}/admin/custodians/${storedUser.id}`, {
+      const response = await fetch(`${backendUrl}/custodian/profile`, {
         headers: AuthService.getAuthHeaders(),
       });
 
@@ -110,7 +109,7 @@ export default function CustodianProfile() {
       setSubmitting(true);
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
-      const response = await fetch(`${backendUrl}/admin/custodians/${user.id}`, {
+      const response = await fetch(`${backendUrl}/custodian/profile`, {
         method: 'PUT',
         headers: AuthService.getAuthHeaders(),
         body: JSON.stringify(formData),
@@ -523,7 +522,8 @@ export default function CustodianProfile() {
                     border: '1.5px solid #e8e3d9',
                     borderRadius: '5px',
                     fontSize: '14px',
-                    background: 'white'
+                    background: 'white',
+                    color: '#1a1a1a',
                   }}
                   value=""
                   onChange={(e) => {
@@ -566,6 +566,8 @@ export default function CustodianProfile() {
                   borderRadius: '5px',
                   fontSize: '14px',
                   boxSizing: 'border-box',
+                  color: '#1a1a1a',
+                  background: 'white',
                 }}
                 value={formData.whatsapp}
                 onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
@@ -586,6 +588,8 @@ export default function CustodianProfile() {
                     borderRadius: '5px',
                     fontSize: '14px',
                     boxSizing: 'border-box',
+                    color: '#1a1a1a',
+                    background: 'white',
                   }}
                   value={formData.instagram}
                   onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
@@ -604,6 +608,8 @@ export default function CustodianProfile() {
                     borderRadius: '5px',
                     fontSize: '14px',
                     boxSizing: 'border-box',
+                    color: '#1a1a1a',
+                    background: 'white',
                   }}
                   value={formData.linkedin}
                   onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
@@ -661,6 +667,8 @@ export default function CustodianProfile() {
                           borderRadius: '4px',
                           fontSize: '13px',
                           fontFamily: 'inherit',
+                          color: '#1a1a1a',
+                          background: 'white',
                         }}
                       />
                     </div>
@@ -684,6 +692,8 @@ export default function CustodianProfile() {
                           borderRadius: '4px',
                           fontSize: '13px',
                           fontFamily: 'inherit',
+                          color: '#1a1a1a',
+                          background: 'white',
                         }}
                       />
                     </div>
@@ -708,6 +718,8 @@ export default function CustodianProfile() {
                         borderRadius: '4px',
                         fontSize: '13px',
                         fontFamily: 'inherit',
+                        color: '#1a1a1a',
+                        background: 'white',
                       }}
                     />
                   </div>

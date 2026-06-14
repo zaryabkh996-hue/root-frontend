@@ -1149,12 +1149,22 @@ export default function ProfilePage() {
                   <div className="display text-xl text-cream">Preparation · $67/mo</div>
                   <div className="text-xs text-cream/50 mt-1">Renews 12 June 2026 · cancel any time</div>
                 </div>
-                <button className="btn-ghost-dark text-xs">Manage</button>
+                <button 
+                  className="btn-ghost-dark text-xs"
+                  onClick={() => router.push('/#pricing')}
+                >
+                  Manage
+                </button>
               </div>
               <div className="text-xs text-cream/60 leading-relaxed">
                 Most relatives stay subscribed for 3–6 months. Your trip is in 4 months. The 6-month $347 package saves $55.
               </div>
-              <button className="btn-primary mt-4 text-xs">Switch to 6-month · save $55</button>
+              <button 
+                className="btn-primary mt-4 text-xs"
+                onClick={() => router.push('/#pricing')}
+              >
+                Switch to 6-month · save $55
+              </button>
             </div>
           </div>
 
