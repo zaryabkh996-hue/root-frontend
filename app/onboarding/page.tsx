@@ -12,6 +12,20 @@ export default function Onboarding() {
     whatBroughtYouHere: '',
     travelTimeline: '',
   });
+  const [quizToken, setQuizToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tokenFromUrl = searchParams.get('quiz_token');
+      if (tokenFromUrl) {
+        setQuizToken(tokenFromUrl);
+        sessionStorage.setItem('quizToken', tokenFromUrl);
+      } else {
+        setQuizToken(sessionStorage.getItem('quizToken'));
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -24,7 +38,7 @@ export default function Onboarding() {
         try {
           const user = JSON.parse(userRaw);
           if (user && user.onboarded) {
-            router.push('/quiz');
+            router.push('/dashboard');
             return;
           }
         } catch (e) {
@@ -45,13 +59,32 @@ export default function Onboarding() {
     setStep('saving');
 
     const tokenToUse = authToken || (typeof window !== 'undefined' ? localStorage.getItem('authToken') : null);
+    const tokenVal = quizToken || (typeof window !== 'undefined' ? sessionStorage.getItem('quizToken') : null);
 
     if (!tokenToUse) {
-      // Guest Mode: Store in sessionStorage and redirect to quiz
+      // Guest Mode: Store in sessionStorage and redirect to readiness report
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('onboardingAnswers', JSON.stringify(updated));
+
+        // Save onboarding answers to backend cache using quizToken
+        if (tokenVal) {
+          try {
+            const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+            await fetch(`${apiUrl}/quiz/onboarding`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                quiz_token: tokenVal,
+                onboarding_answers: updated
+              })
+            });
+          } catch (e) {
+            console.error('Error saving onboardingAnswers to backend cache:', e);
+          }
+        }
       }
-      setTimeout(() => router.push('/quiz'), 800);
+      const tokenQuery = tokenVal ? `?quiz_token=${tokenVal}` : '';
+      setTimeout(() => router.push(`/register${tokenQuery}`), 800);
       return;
     }
 
@@ -77,15 +110,15 @@ export default function Onboarding() {
         if (resData.success && resData.data?.user) {
           localStorage.setItem('user', JSON.stringify(resData.data.user));
         }
-        setTimeout(() => router.push('/quiz'), 800);
+        setTimeout(() => router.push('/dashboard'), 800);
       } else {
         console.error('Failed to save onboarding data:', await res.text());
-        // Proceed to quiz page anyway to avoid blocking the user
-        setTimeout(() => router.push('/quiz'), 1000);
+        // Proceed to dashboard page anyway to avoid blocking the user
+        setTimeout(() => router.push('/dashboard'), 1000);
       }
     } catch (err) {
       console.error('Network error during onboarding save:', err);
-      setTimeout(() => router.push('/quiz'), 1000);
+      setTimeout(() => router.push('/dashboard'), 1000);
     }
   };
 

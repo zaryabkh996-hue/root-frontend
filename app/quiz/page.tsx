@@ -144,7 +144,10 @@ const pickNext = (currentQuiz: QuizState): Question | null => {
     community: 0
   };
   currentQuiz.responses.forEach(r => dimCounts[r.dim]++);
-  const sorted = Object.entries(dimCounts).sort((a, b) => a[1] - b[1]);
+  const sorted = Object.entries(dimCounts).sort((a, b) => {
+    if (a[1] !== b[1]) return a[1] - b[1];
+    return Math.random() - 0.5; // random tiebreak when counts are equal
+  });
   for (const [dim] of sorted) {
     const cands = QUESTION_BANK.filter(q => q.dimension === dim && !currentQuiz.asked.includes(q.id));
     if (!cands.length) continue;
@@ -159,6 +162,15 @@ const shouldTerminate = (currentQuiz: QuizState) => {
   const dims = new Set(currentQuiz.responses.map(r => r.dim));
   return currentQuiz.responses.length >= 8 && dims.size === 5;
 };
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 interface QuizState {
   responses: { id: number; dim: string; value: number }[];
@@ -318,24 +330,24 @@ export default function Quiz() {
     }
   };
 
-  const handleSubmit = (finalResponses: { id: number; dim: string; value: number }[]) => {
-    const scores = calculateScores(finalResponses);
-    const totalScore = Math.round(
-      (scores.identity + scores.emotional + scores.authenticity + scores.protocol + scores.community) / 5
-    );
-    const tierInfo = getTierAndPersona(totalScore);
-
-    const reportData = {
-      name,
-      totalScore,
-      scores,
-      tier: tierInfo.tier,
-      persona: tierInfo.persona,
-      tier_display: tierInfo.tier_display
-    };
-
-    sessionStorage.setItem('quizReport', JSON.stringify(reportData));
-    setTimeout(() => router.push('/readiness'), 600);
+  const handleSubmit = async (finalResponses: { id: number; dim: string; value: number }[]) => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+      const res = await fetch(`${apiUrl}/quiz/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, responses: finalResponses }),
+      });
+      const data = await res.json();
+      if (res.ok && data.quiz_token) {
+        sessionStorage.setItem('quizToken', data.quiz_token);
+        setTimeout(() => router.push(`/onboarding?quiz_token=${data.quiz_token}`), 600);
+      } else {
+        console.error('Quiz submit failed:', data.message);
+      }
+    } catch (err) {
+      console.error('Quiz submit error:', err);
+    }
   };
 
   return (
@@ -431,9 +443,9 @@ export default function Quiz() {
 
             {/* Options */}
             <div className="space-y-3 mb-10" id="quiz-options">
-              {currentQuestion.options.map((option, idx) => (
+              {shuffle(currentQuestion.options).map((option) => (
                 <button
-                  key={idx}
+                  key={option.key}
                   onClick={() => handleSelectOption(option.value)}
                   className={`quiz-option w-full p-4 text-left rounded-md border-2 transition-all border-line hover:border-brass/30`}
                   data-v={option.value}

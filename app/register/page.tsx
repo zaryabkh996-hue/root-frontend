@@ -10,21 +10,33 @@ export default function Register() {
   const [whatsapp, setWhatsapp] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stage, setStage] = useState<'form' | 'sent'>('form');
-  const [quizData, setQuizData] = useState<any>(null);
   const [error, setError] = useState('');
+  const [quizToken, setQuizToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Retrieve name and quiz data from sessionStorage
-    const reportData = sessionStorage.getItem('quizReport');
-    if (reportData) {
-      try {
-        const data = JSON.parse(reportData);
-        setName(data.name || '');
-        setQuizData(data);
-      } catch (e) {
-        console.error('Error parsing report data:', e);
+    const fetchReport = async () => {
+      if (typeof window !== 'undefined') {
+        const searchParams = new URLSearchParams(window.location.search);
+        const token = searchParams.get('quiz_token') || sessionStorage.getItem('quizToken');
+        if (token) {
+          setQuizToken(token);
+          sessionStorage.setItem('pending_quiz_token', token);
+          try {
+            const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+            const res = await fetch(`${apiUrl}/quiz/report/${token}`);
+            if (res.ok) {
+              const resData = await res.json();
+              if (resData.success && resData.data) {
+                setName(resData.data.name || '');
+              }
+            }
+          } catch (e) {
+            console.error('Error fetching quiz report on register:', e);
+          }
+        }
       }
-    }
+    };
+    fetchReport();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,7 +57,7 @@ export default function Register() {
           email,
           name,
           whatsapp: whatsapp || null,
-          quiz_data: quizData
+          quiz_token: quizToken
         })
       });
 
@@ -83,6 +95,12 @@ export default function Register() {
           <>
             {/* Header */}
             <div className="text-center mb-10">
+              {quizToken && (
+                <div className="mb-6 p-4 bg-brass/10 border border-brass/30 rounded-sm text-center">
+                  <p className="text-brass-light font-medium text-sm">✨ Your Travel DNA result is ready.</p>
+                  <p className="text-xs text-cream/80 mt-1">Create a free account to unlock it — takes 30 seconds.</p>
+                </div>
+              )}
               <div className="eyebrow eyebrow-cream mb-3 ornament">Save your result</div>
               <h1 className="display text-4xl font-light leading-tight mb-3">
                 Welcome home, <em className="italic text-brass-light">{name || 'friend'}</em>.

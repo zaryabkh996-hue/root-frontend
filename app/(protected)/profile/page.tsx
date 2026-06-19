@@ -476,6 +476,34 @@ export default function ProfilePage() {
     }
   };
 
+  const [managingSubscription, setManagingSubscription] = useState(false);
+
+  const handleManageBilling = async () => {
+    try {
+      setManagingSubscription(true);
+      setError(null);
+      
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+      const response = await fetch(`${apiUrl}/stripe/portal`, {
+        method: 'POST',
+        headers: AuthService.getAuthHeaders(),
+      });
+      
+      const data = await response.json().catch(() => ({}));
+      
+      if (response.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setError(data.message || 'Failed to open billing management portal.');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('An error occurred while opening the billing portal.');
+    } finally {
+      setManagingSubscription(false);
+    }
+  };
+
   const getUserName = () => userProfile.name || 'Loading...';
   const getAfroScore = () => userProfile.afroScore || progress?.afroScore || 84;
   const getCompletedStagesCount = () => userProfile.completedStages?.length || 0;
@@ -1144,27 +1172,52 @@ export default function ProfilePage() {
           <div>
             <div className="eyebrow eyebrow-cream mb-3">Subscription</div>
             <div className="scard-dark p-6">
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-brass/10">
-                <div>
-                  <div className="display text-xl text-cream">Preparation · $67/mo</div>
-                  <div className="text-xs text-cream/50 mt-1">Renews 12 June 2026 · cancel any time</div>
-                </div>
-                <button 
-                  className="btn-ghost-dark text-xs"
-                  onClick={() => router.push('/#pricing')}
-                >
-                  Manage
-                </button>
-              </div>
-              <div className="text-xs text-cream/60 leading-relaxed">
-                Most relatives stay subscribed for 3–6 months. Your trip is in 4 months. The 6-month $347 package saves $55.
-              </div>
-              <button 
-                className="btn-primary mt-4 text-xs"
-                onClick={() => router.push('/#pricing')}
-              >
-                Switch to 6-month · save $55
-              </button>
+              {userProfile.subscriptionTier && userProfile.subscriptionTier !== 'free' ? (
+                <>
+                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-brass/10">
+                    <div>
+                      <div className="display text-xl text-cream font-serif capitalize">
+                        {userProfile.subscriptionTier} tier
+                      </div>
+                      <div className="text-xs text-cream/50 mt-1">Manage billing, upgrades, or cancellation</div>
+                    </div>
+                    <button 
+                      className="btn-primary text-xs"
+                      onClick={handleManageBilling}
+                      disabled={managingSubscription}
+                    >
+                      {managingSubscription ? 'Opening...' : 'Manage'}
+                    </button>
+                  </div>
+                  <div className="text-xs text-cream/60 leading-relaxed">
+                    You are currently subscribed to the <strong className="text-brass-light capitalize font-serif font-semibold">{userProfile.subscriptionTier}</strong> tier. You can update your payment method or cancel your subscription at any time via the Stripe billing portal.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-brass/10">
+                    <div>
+                      <div className="display text-xl text-cream font-serif">Free tier</div>
+                      <div className="text-xs text-cream/50 mt-1">Limited modules and features</div>
+                    </div>
+                    <button 
+                      className="btn-primary text-xs"
+                      onClick={() => router.push('/#pricing')}
+                    >
+                      Upgrade
+                    </button>
+                  </div>
+                  <div className="text-xs text-cream/60 leading-relaxed mb-4">
+                    Upgrade to unlock all 6 stages of preparation, gain unlimited Amen AI access on WhatsApp, and book cultural Custodians.
+                  </div>
+                  <button 
+                    className="btn-ghost-dark w-full justify-center text-xs"
+                    onClick={() => router.push('/#pricing')}
+                  >
+                    View Premium Tiers
+                  </button>
+                </>
+              )}
             </div>
           </div>
 

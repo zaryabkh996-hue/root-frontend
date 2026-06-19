@@ -22,15 +22,15 @@ export default function OAuthSuccess() {
 
   useEffect(() => {
     const sync = async () => {
-      // Get quiz data from sessionStorage before processing OAuth
-      let quizData = null;
+      // Get quiz token from query params or sessionStorage
+      let quizToken = null;
       try {
-        const quizDataRaw = sessionStorage.getItem('quizReport');
-        if (quizDataRaw) {
-          quizData = JSON.parse(quizDataRaw);
+        if (typeof window !== 'undefined') {
+          const searchParams = new URLSearchParams(window.location.search);
+          quizToken = searchParams.get('quiz_token') || sessionStorage.getItem('quizToken');
         }
       } catch (e) {
-        console.error('Error parsing quiz data:', e);
+        console.error('Error reading quiz token:', e);
       }
 
       // Primary path: read handoff cookies set by onCallback in lib/auth0.ts
@@ -48,13 +48,15 @@ export default function OAuthSuccess() {
         localStorage.setItem('authToken', backendToken);
         localStorage.setItem('user', JSON.stringify(backendUser ?? {}));
         localStorage.setItem('oauth_user', 'true');
-        localStorage.setItem('quizData', JSON.stringify(quizData ?? {}));
+        if (quizToken) {
+          localStorage.setItem('quizToken', quizToken);
+        }
 
         deleteCookie('_oauth_bt');
         deleteCookie('_oauth_bu');
 
-        // Save quiz data if it exists
-        if (quizData && backendUser && typeof backendUser === 'object' && 'id' in backendUser) {
+        // Save quiz data if token exists
+        if (quizToken && backendUser && typeof backendUser === 'object' && 'id' in backendUser) {
           try {
             const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
             await fetch(`${apiUrl}/auth/save-quiz-data`, {
@@ -62,18 +64,22 @@ export default function OAuthSuccess() {
               headers: AuthService.getAuthHeaders(),
               body: JSON.stringify({
                 user_id: (backendUser as Record<string, any>).id,
-                quiz_data: quizData
+                quiz_token: quizToken
               })
             });
-            // Clear quiz data from sessionStorage after saving
-            sessionStorage.removeItem('quizReport');
+            // Clear quiz token from sessionStorage after saving
+            sessionStorage.removeItem('quizToken');
           } catch (err) {
             console.error('Error saving quiz data:', err);
             // Continue anyway - quiz data save failure shouldn't block login
           }
         }
 
-        router.push('/dashboard');
+        if (quizToken) {
+          router.push('/readiness');
+        } else {
+          router.push('/dashboard');
+        }
         return;
       }
 
@@ -99,8 +105,8 @@ export default function OAuthSuccess() {
           localStorage.setItem('oauth_user', 'true');
           localStorage.setItem('userRole', data.user.role);
 
-          // Save quiz data if it exists
-          if (quizData && data.backendUser?.id) {
+          // Save quiz data if token exists
+          if (quizToken && data.backendUser?.id) {
             try {
               const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
               await fetch(`${apiUrl}/auth/save-quiz-data`, {
@@ -108,11 +114,11 @@ export default function OAuthSuccess() {
                 headers: AuthService.getAuthHeaders(),
                 body: JSON.stringify({
                   user_id: data.backendUser.id,
-                  quiz_data: quizData
+                  quiz_token: quizToken
                 })
               });
-              // Clear quiz data from sessionStorage after saving
-              sessionStorage.removeItem('quizReport');
+              // Clear quiz token from sessionStorage after saving
+              sessionStorage.removeItem('quizToken');
             } catch (err) {
               console.error('Error saving quiz data:', err);
               // Continue anyway - quiz data save failure shouldn't block login
@@ -120,7 +126,11 @@ export default function OAuthSuccess() {
           }
         }
 
-        router.push('/dashboard');
+        if (quizToken) {
+          router.push('/readiness');
+        } else {
+          router.push('/dashboard');
+        }
       } catch (err) {
         console.error('[oauth-success] fallback error:', err);
         setError('Network error. Please try again.');

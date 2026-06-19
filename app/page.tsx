@@ -267,7 +267,7 @@ export default function Home() {
 
   const handleUpgradeConfirm = async (tier: 'free' | 'community' | 'preparation') => {
     if (!AuthService.isAuthenticated()) {
-      router.push('/onboarding');
+      router.push('/quiz');
       return;
     }
 
@@ -276,32 +276,56 @@ export default function Home() {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       const token = AuthService.getToken();
       
-      const response = await fetch(`${backendUrl}/user/profile`, {
-        method: 'PUT',
+      if (tier === 'free') {
+        const response = await fetch(`${backendUrl}/user/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            subscriptionTier: tier
+          })
+        });
+
+        if (response.ok) {
+          // Update user object in local storage
+          const userRaw = localStorage.getItem('user');
+          if (userRaw) {
+            const user = JSON.parse(userRaw);
+            user.subscription_tier = tier;
+            localStorage.setItem('user', JSON.stringify(user));
+          }
+          setActiveUpgradeModal(null);
+          setSuccessModalTier(tier);
+          setShowSuccessModal(true);
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          alert(errData.message || 'Failed to update subscription tier.');
+        }
+        return;
+      }
+
+      // Paid tiers: Redirect to Stripe Checkout Session
+      const response = await fetch(`${backendUrl}/stripe/checkout`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          subscriptionTier: tier
+          tier: tier
         })
       });
 
-      if (response.ok) {
-        // Update user object in local storage
-        const userRaw = localStorage.getItem('user');
-        if (userRaw) {
-          const user = JSON.parse(userRaw);
-          user.subscription_tier = tier;
-          localStorage.setItem('user', JSON.stringify(user));
-        }
-        setActiveUpgradeModal(null);
-        setSuccessModalTier(tier);
-        setShowSuccessModal(true);
+      const data = await response.json().catch(() => ({}));
+
+      if (response.ok && data.url) {
+        window.location.href = data.url;
       } else {
-        const errData = await response.json().catch(() => ({}));
-        alert(errData.message || 'Failed to update subscription tier.');
+        alert(data.message || 'Failed to initiate Stripe checkout.');
       }
     } catch (err) {
       console.error(err);
@@ -403,7 +427,7 @@ export default function Home() {
             {/* Mobile Actions: Always show primary CTA outside drawer */}
             <div className="flex md:hidden items-center gap-2">
               <a
-                href="/onboarding"
+                href="/quiz"
                 className="navbar-cta-primary flex items-center justify-center font-semibold transition-colors"
                 style={{
                   fontFamily: "'Instrument Sans', sans-serif",
@@ -472,7 +496,7 @@ export default function Home() {
                   Login
                 </a>
                 <a
-                  href="/onboarding"
+                  href="/quiz"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full py-3 text-center bg-brass hover:bg-brass-light text-forest-deepest font-semibold rounded"
                 >
@@ -496,7 +520,7 @@ export default function Home() {
               OurRoots.Africa is a digital sanctuary — not a travel app. We prepare relatives of the African diaspora — emotionally, culturally, and practically — to return home.
             </p>
             <div className="flex flex-wrap gap-3 fade-up d4">
-              <a href="/onboarding" className="btn-primary inline-flex">
+              <a href="/quiz" className="btn-primary inline-flex">
                 Discover your Travel DNA
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14m-6-6 6 6-6 6"></path></svg>
               </a>

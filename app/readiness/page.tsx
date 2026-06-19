@@ -33,8 +33,16 @@ const getDimensionTag = (value: number): string => {
   return 'tag-terra';
 };
 
-const getRationale = (totalScore: number): string => {
-  return 'Your responses show emerging readiness with room to grow in protocol mastery. We routed you to Community because the structured cultural fluency materials will support you most at this stage.';
+const getRationale = (scores: ReportData['scores']): string => {
+  const weakest = Object.entries(scores).sort((a, b) => a[1] - b[1])[0][0];
+  const map: Record<string, string> = {
+    identity: 'Your sense of African identity is still deepening. The Foundation materials will anchor you before you arrive.',
+    emotional: 'Your emotional readiness is the area with the most room to grow. The guided audio preparation will help most.',
+    authenticity: 'Your authenticity scores show you are still finding your footing around cultural expectations. The protocol modules will help.',
+    protocol: 'Cultural protocol is your highest-leverage growth area. We routed you to Community because the fluency materials will support you.',
+    community: 'Deepening your diaspora connections is where the work is. Community tier gives you the tools and the people.',
+  };
+  return map[weakest] ?? map.protocol;
 };
 
 const getTierDescription = (tier: string): string => {
@@ -50,15 +58,40 @@ export default function Readiness() {
   const router = useRouter();
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showRegistrationGate, setShowRegistrationGate] = useState(true);
 
   useEffect(() => {
-    const data = sessionStorage.getItem('quizReport');
-    if (data) {
-      setReportData(JSON.parse(data));
-    }
-    setLoading(false);
-  }, []);
+    const fetchReport = async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      if (!token) {
+        router.push('/quiz');
+        return;
+      }
+
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+        const res = await fetch(`${apiUrl}/user/quiz-report`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const report = await res.json();
+          setReportData(report);
+        } else {
+          router.push('/quiz');
+        }
+      } catch (err) {
+        console.error('Error fetching quiz report:', err);
+        router.push('/quiz');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReport();
+  }, [router]);
 
   if (loading) {
     return (
@@ -84,94 +117,46 @@ export default function Readiness() {
     );
   }
 
-  const rationale = getRationale(reportData.totalScore);
+  const handleChooseTier = async (tier: string) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    if (token) {
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+        const res = await fetch(`${backendUrl}/user/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            subscriptionTier: tier.toLowerCase()
+          })
+        });
+        if (res.ok) {
+          const userRaw = localStorage.getItem('user');
+          if (userRaw) {
+            try {
+              const user = JSON.parse(userRaw);
+              user.subscription_tier = tier.toLowerCase();
+              localStorage.setItem('user', JSON.stringify(user));
+            } catch (_) {}
+          }
+        }
+      } catch (err) {
+        console.error('Failed to update subscription tier:', err);
+      }
+    }
+    router.push('/dashboard');
+  };
+
+  const rationale = getRationale(reportData.scores);
   const ringProgress = (reportData.totalScore / 100) * 552.9;
   const ringOffset = 552.9 - ringProgress;
 
   return (
     <div className="bg-cream min-h-screen pb-20">
       <div className="max-w-5xl mx-auto px-8 py-12">
-        {/* Registration Gate */}
-        {showRegistrationGate && (
-          <div
-            className="rounded-lg p-7 md:p-8 mb-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
-            style={{ background: '#1a2e1f', color: '#f3ede0' }}
-          >
-            <div>
-              <div
-                className="mb-3"
-                style={{
-                  fontSize: '10px',
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color: '#c9a14a',
-                  fontFamily: "'JetBrains Mono', monospace"
-                }}
-              >
-                Your Afrofeast Score is ready
-              </div>
-              <div
-                className="mb-2"
-                style={{
-                  fontFamily: "'Fraunces', Georgia, serif",
-                  fontSize: '22px',
-                  fontWeight: '400',
-                  color: '#f3ede0'
-                }}
-              >
-                You scored <strong style={{ color: '#c9a14a' }}>{reportData.totalScore}</strong> — {reportData.persona} ·{' '}
-                {getTierDescription(reportData.tier)}
-              </div>
-              <p
-                className="leading-relaxed max-w-md"
-                style={{
-                  fontSize: '13px',
-                  color: 'rgba(243,237,224,0.65)',
-                  lineHeight: '1.5'
-                }}
-              >
-                This is a preview. To unlock your full Readiness Report, Amen AI guidance, and the six-stage preparation
-                curriculum, create your free account. Only enrolled members have scores registered on the platform.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 w-full md:w-auto md:flex-shrink-0">
-              <button
-                onClick={() => router.push('/register')}
-                className="whitespace-nowrap"
-                style={{
-                  background: '#c9a14a',
-                  color: '#1a2e1f',
-                  border: 'none',
-                  padding: '12px 24px',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  fontFamily: "'Instrument Sans', sans-serif"
-                }}
-              >
-                Create free account →
-              </button>
-              <button
-                onClick={() => setShowRegistrationGate(false)}
-                className="whitespace-nowrap"
-                style={{
-                  background: 'transparent',
-                  color: 'rgba(243,237,224,0.5)',
-                  border: '1px solid rgba(243,237,224,0.2)',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  fontFamily: "'JetBrains Mono', monospace",
-                  textAlign: 'center'
-                }}
-              >
-                View preview only
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Header */}
         <div className="text-center mb-12">
@@ -343,8 +328,8 @@ export default function Readiness() {
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <button onClick={() => router.push('/register')} className="btn-primary justify-center">Save my result & continue</button>
-              <button onClick={() => router.push('/register')} className="btn-secondary justify-center">Stay free · Stage 1 only</button>
+              <button onClick={() => handleChooseTier(reportData.tier_display || 'community')} className="btn-primary justify-center">Save my result & continue</button>
+              <button onClick={() => handleChooseTier('free')} className="btn-secondary justify-center">Stay free · Stage 1 only</button>
             </div>
           </div>
         </div>

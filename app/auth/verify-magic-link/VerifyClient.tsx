@@ -49,11 +49,23 @@ export default function VerifyClient() {
         }
 
         setState('success');
-        setMessage('Registration successful! Redirecting to dashboard...');
+        
+        const hasQuizData = data.user && data.user.quiz_data;
+        const pendingQuizToken = typeof window !== 'undefined'
+          ? (sessionStorage.getItem('pending_quiz_token') || sessionStorage.getItem('quizToken'))
+          : null;
 
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 1000);
+        if (pendingQuizToken || hasQuizData) {
+          setMessage('Registration successful! Redirecting to your readiness report...');
+          setTimeout(() => {
+            router.push('/readiness');
+          }, 1000);
+        } else {
+          setMessage('Registration successful! Redirecting to dashboard...');
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 1000);
+        }
 
       } catch (err) {
         setState('error');
