@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Instrument_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -20,7 +20,13 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "OurRoots.Africa - Connect with Your Heritage",
-  description: "Explore and celebrate African cultural heritage through audio, video, and interactive content",
+  description:
+    "Explore and celebrate African cultural heritage through audio, video, and interactive content",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -33,7 +39,9 @@ export default function RootLayout({
       lang="en"
       className={`${fraunces.variable} ${instrumentSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+      </body>
     </html>
   );
 }
