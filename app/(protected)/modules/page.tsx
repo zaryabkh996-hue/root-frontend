@@ -65,7 +65,7 @@ export default function Modules() {
   return (
     <>
       <div className="mb-10">
-        <div className="eyebrow eyebrow-cream mb-3">Your learning path · v6 · Sanctuary Edition</div>
+        <div className="eyebrow eyebrow-cream mb-3">Your learning path</div>
         <h1 className="display text-5xl font-light leading-tight mb-3">Six stages, one homecoming.</h1>
         <p className="text-cream/70 max-w-2xl">
           A trauma-informed framework. Each stage builds on the last. Stage 1 is free for everyone, forever. Stages 2–6 unlock with Community or Preparation.

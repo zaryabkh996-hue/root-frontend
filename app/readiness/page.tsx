@@ -140,7 +140,7 @@ export default function Readiness() {
               const user = JSON.parse(userRaw);
               user.subscription_tier = tier.toLowerCase();
               localStorage.setItem('user', JSON.stringify(user));
-            } catch (_) {}
+            } catch (_) { }
           }
         }
       } catch (err) {
@@ -157,6 +157,8 @@ export default function Readiness() {
   return (
     <div className="bg-cream min-h-screen pb-20">
       <div className="max-w-5xl mx-auto px-8 py-12">
+
+       
 
         {/* Header */}
         <div className="text-center mb-12">
@@ -328,7 +330,7 @@ export default function Readiness() {
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <button onClick={() => handleChooseTier(reportData.tier_display || 'community')} className="btn-primary justify-center">Save my result & continue</button>
+              <button onClick={() => handleChooseTier(reportData.tier_display || 'community')} className="btn-primary justify-center">Continue</button>
               <button onClick={() => handleChooseTier('free')} className="btn-secondary justify-center">Stay free · Stage 1 only</button>
             </div>
           </div>
@@ -336,7 +338,7 @@ export default function Readiness() {
 
         {/* Lifecycle Note */}
         <p className="text-center text-xs text-ink-faint mono">
-          Your readiness profile is saved when you create an account. We do not show this score to anyone.
+          Your readiness profile is saved. We do not show this score to anyone.
         </p>
       </div>
 

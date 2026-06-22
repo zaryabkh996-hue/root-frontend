@@ -216,7 +216,7 @@ export default function Onboarding() {
             </div>
             <h2 className="display text-3xl font-light mb-3">Aligning your journey map...</h2>
             <p className="text-cream/70 max-w-sm mx-auto leading-relaxed">
-              Saving your responses and taking you to the Travel DNA Quiz.
+              Saving your responses.
             </p>
           </div>
         )}

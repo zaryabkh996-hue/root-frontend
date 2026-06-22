@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { AuthService } from '../lib/authService';
 
 const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,6 +13,17 @@ const Sidebar: React.FC = () => {
     
     setIsOpen(false); // Close mobile menu after navigation
   };
+
+  const [userTier, setUserTier] = useState<string>('free');
+
+  useEffect(() => {
+    const user = AuthService.getUser();
+    if (user && user.subscription_tier) {
+      setUserTier(user.subscription_tier);
+    } else {
+      setUserTier('free');
+    }
+  }, [pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
@@ -89,6 +101,16 @@ const Sidebar: React.FC = () => {
               </svg>
               Dashboard
             </div>
+              <div className={`nav-item ${isActive('readiness') ? 'active' : ''}`} onClick={() => goto('readiness')}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              Readiness
+            </div>
             <div className={`nav-item ${isActive('modules') ? 'active' : ''}`} onClick={() => goto('modules')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path d="M3 12c0-5 4-9 9-9s9 4 9 9-4 9-9 9-9-4-9-9z"></path>
@@ -130,14 +152,31 @@ const Sidebar: React.FC = () => {
               </svg>
               Profile
             </div>
+          
           </nav>
 
           {/* Footer */}
           <div className="mt-10 pt-6 border-t border-brass/10 px-3">
             <div className="eyebrow eyebrow-cream mb-2" style={{fontSize: '9px'}}>Tier</div>
-            <div className="text-sm font-medium text-cream mb-1">Preparation</div>
-            <div className="text-xs text-cream/50 mono mb-4">Active · renews 12 Jun · access until period end</div>
-            <button className="text-xs text-brass-light/80 hover:text-brass-light underline mb-4">Manage subscription</button>
+            <div className="text-sm font-medium text-cream mb-1 capitalize">{userTier}</div>
+            <div className="text-xs text-cream/50 mono mb-4">
+              {userTier === 'free' ? 'Basic Access · Stage 1 only' : 'Active · access until period end'}
+            </div>
+            {userTier === 'free' ? (
+              <button 
+                onClick={() => router.push('/#pricing')} 
+                className="text-xs text-brass-light/80 hover:text-brass-light underline mb-4 text-left block"
+              >
+                Upgrade subscription
+              </button>
+            ) : (
+              <button 
+                onClick={() => router.push('/profile')} 
+                className="text-xs text-brass-light/80 hover:text-brass-light underline mb-4 text-left block"
+              >
+                Manage subscription
+              </button>
+            )}
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-red-900 bg-opacity-30 text-red-300 hover:bg-red-900 hover:bg-opacity-50 transition-all duration-300 font-semibold"
