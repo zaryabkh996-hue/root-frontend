@@ -75,7 +75,8 @@ export default function OAuthSuccess() {
           }
         }
 
-        if (quizToken) {
+        const isNewUser = backendUser && (backendUser as any).is_new_user;
+        if (isNewUser && quizToken) {
           router.push('/readiness');
         } else {
           router.push('/dashboard');
@@ -126,7 +127,8 @@ export default function OAuthSuccess() {
           }
         }
 
-        if (quizToken) {
+        const isNewUser = data.backendUser && data.backendUser.is_new_user;
+        if (isNewUser && quizToken) {
           router.push('/readiness');
         } else {
           router.push('/dashboard');

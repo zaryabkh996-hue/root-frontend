@@ -50,18 +50,19 @@ export default function VerifyClient() {
 
         setState('success');
         
+        const isNewUser = data.user && data.user.is_new_user;
         const hasQuizData = data.user && data.user.quiz_data;
         const pendingQuizToken = typeof window !== 'undefined'
           ? (sessionStorage.getItem('pending_quiz_token') || sessionStorage.getItem('quizToken'))
           : null;
 
-        if (pendingQuizToken || hasQuizData) {
+        if (isNewUser && (pendingQuizToken || hasQuizData)) {
           setMessage('Registration successful! Redirecting to your readiness report...');
           setTimeout(() => {
             router.push('/readiness');
           }, 1000);
         } else {
-          setMessage('Registration successful! Redirecting to dashboard...');
+          setMessage('Sign in successful! Redirecting to dashboard...');
           setTimeout(() => {
             router.push('/dashboard');
           }, 1000);
