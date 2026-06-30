@@ -168,6 +168,15 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
     }
   }, [resolvedId, progress.journalEntries, progress.feedbackEntries]);
 
+  const stageId = moduleInfo?.stage?.id;
+  const stageStatus = computed.stageStatuses.find(s => s.id === stageId);
+
+  useEffect(() => {
+    if (stageId && stageStatus && !stageStatus.isUnlocked) {
+      router.push(`/modules?upgrade=1&stageId=${stageId}`);
+    }
+  }, [stageStatus, stageId, router]);
+
   if (!moduleInfo) {
     return <div className="text-cream/60 p-8">Loading module...</div>;
   }
@@ -176,8 +185,6 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
   const nextId = getNextModuleId(resolvedId);
   const prevId = getPrevModuleId(resolvedId);
   const isCompleted = progress.completedModules.includes(resolvedId);
-
-  const stageStatus = computed.stageStatuses.find(s => s.id === stage.id);
 
   const handleComplete = () => {
     completeModule(resolvedId);

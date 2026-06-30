@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 type DimensionKey = 'identity' | 'emotional' | 'authenticity' | 'protocol' | 'community';
@@ -294,39 +294,6 @@ export default function Quiz() {
           current: first
         });
       }
-    }
-  };
-
-  const calculateScores = (finalResponses: { id: number; dim: string; value: number }[]) => {
-    const dimensions: { [key: string]: number[] } = {
-      identity: [],
-      emotional: [],
-      authenticity: [],
-      protocol: [],
-      community: []
-    };
-
-    finalResponses.forEach(response => {
-      dimensions[response.dim].push(response.value);
-    });
-
-    const avgScores: { [key: string]: number } = {};
-    Object.keys(dimensions).forEach(key => {
-      const scores = dimensions[key];
-      const avgValue = scores.length > 0 ? scores.reduce((a, b) => a + b) / scores.length : 0;
-      avgScores[key] = Math.round((avgValue / 4) * 100);
-    });
-
-    return avgScores;
-  };
-
-  const getTierAndPersona = (totalScore: number) => {
-    if (totalScore < 40) {
-      return { tier: 'Latent', persona: 'Foundation Seeker', tier_display: 'Free' };
-    } else if (totalScore < 60) {
-      return { tier: 'Active', persona: 'Cultural Explorer', tier_display: 'Community' };
-    } else {
-      return { tier: 'Immersive', persona: 'Heritage Seeker', tier_display: 'Preparation' };
     }
   };
 

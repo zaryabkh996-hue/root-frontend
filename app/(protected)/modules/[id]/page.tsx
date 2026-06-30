@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useProgress } from '../../../lib/progressContext';
 import { getStageById } from '../../../lib/progressStore';
@@ -12,6 +13,12 @@ export default function ViewModulePage() {
   const { progress, computed } = useProgress();
   const stage = getStageById(stageId);
   const stageStatus = computed.stageStatuses.find(s => s.id === stageId);
+
+  useEffect(() => {
+    if (stageStatus && !stageStatus.isUnlocked) {
+      router.push(`/modules?upgrade=1&stageId=${stageId}`);
+    }
+  }, [stageStatus, stageId, router]);
 
   if (!stage || !stageStatus) {
     return (

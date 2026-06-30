@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProgress } from '../../lib/progressContext';
+import { STAGES } from '../../lib/progressStore';
 import { AuthService } from '@/app/lib/authService';
 
 interface UserProfile {
@@ -870,36 +871,41 @@ export default function ProfilePage() {
 
           {/* Adinkra Badges */}
           <div className="scard-dark p-5 mt-4">
-            <div className="eyebrow eyebrow-cream mb-3">Adinkra badges · 1 of 7</div>
-            <div className="grid grid-cols-4 gap-3 mb-3">
-              <div className="text-center">
-                <div
-                  className="w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-1"
-                  style={{ background: 'rgba(201,161,74,0.18)', fontSize: '18px' }}
-                >
-                  💕
-                </div>
-                <div className="text-xs text-cream/85 leading-tight">Akoma</div>
-              </div>
-              {[1, 2, 3].map(i => (
-                <div key={i} className="text-center" style={{ opacity: 0.35 }}>
-                  <div
-                    className="w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-1"
-                    style={{ background: 'rgba(243,237,224,0.06)', fontSize: '18px' }}
-                  >
-                    {i === 1 && '💼'}
-                    {i === 2 && '🎒'}
-                    {i === 3 && '🌟'}
-                  </div>
-                  <div className="text-xs text-cream/40 leading-tight">
-                    {i === 1 && 'Dwennimmen'}
-                    {i === 2 && 'Nkyinkyim'}
-                    {i === 3 && 'Sankofa'}
-                  </div>
-                </div>
-              ))}
+            <div className="eyebrow eyebrow-cream mb-3">
+              Adinkra badges · {STAGES.filter(stage => (progress.completedStages || []).includes(stage.id)).length} of {STAGES.length}
             </div>
-            <div className="text-xs text-cream/55 leading-relaxed">Akoma earned 18 April · "patience, endurance, tolerance, love." Three more await this stage.</div>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              {STAGES.map(stage => {
+                const isEarned = (progress.completedStages || []).includes(stage.id);
+                return (
+                  <div
+                    key={stage.id}
+                    className="text-center"
+                    style={{ opacity: isEarned ? 1 : 0.35 }}
+                  >
+                    <div
+                      className="w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-1 transition-all"
+                      style={{
+                        background: isEarned ? 'rgba(201,161,74,0.18)' : 'rgba(243,237,224,0.06)',
+                        border: isEarned ? '1px solid rgba(201,161,74,0.35)' : '1px solid transparent',
+                        fontSize: '18px',
+                      }}
+                      title={stage.badge.desc}
+                    >
+                      {stage.badge.emoji}
+                    </div>
+                    <div className="text-xs text-cream/85 leading-tight font-medium">
+                      {stage.id === 6 ? stage.badge.title : stage.badge.title.split(' — ')[0]}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="text-xs text-cream/55 leading-relaxed mt-5">
+              {STAGES.filter(stage => (progress.completedStages || []).includes(stage.id)).length === 0 ? (
+                "Complete any of the six learning stages to earn its corresponding Adinkra badge."
+              ) :""}
+            </div>
           </div>
 
           {/* Journey Photos */}

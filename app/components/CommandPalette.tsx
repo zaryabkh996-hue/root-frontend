@@ -43,14 +43,39 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose }) => {
     custodians: [],
     community: [],
   });
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Flat results representing all sections for keyboard traversal
+  const flatResults = React.useMemo(() => {
+    const list: { type: keyof SearchResults; item: SearchResultItem; uniqueId: string }[] = [];
+    results.modules.forEach((item) => {
+      list.push({ type: 'modules', item, uniqueId: `modules-${item.id}` });
+    });
+    results.library.forEach((item) => {
+      list.push({ type: 'library', item, uniqueId: `library-${item.id}` });
+    });
+    results.custodians.forEach((item) => {
+      list.push({ type: 'custodians', item, uniqueId: `custodians-${item.id}` });
+    });
+    results.community.forEach((item) => {
+      list.push({ type: 'community', item, uniqueId: `community-${item.id}` });
+    });
+    return list;
+  }, [results]);
+
+  // Reset selection index when search results change
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [flatResults]);
 
   // Focus input when palette opens
   useEffect(() => {
     if (isOpen) {
       setQuery('');
       setResults({ modules: [], library: [], custodians: [], community: [] });
+      setSelectedIndex(0);
       setTimeout(() => {
         inputRef.current?.focus();
       }, 50);
@@ -89,19 +114,6 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose }) => {
     return () => clearTimeout(delayDebounceFn);
   }, [query]);
 
-  // Escape key handler
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
   const handleResultClick = (type: keyof SearchResults, item: SearchResultItem) => {
     onClose();
     if (type === 'modules' || type === 'library') {
@@ -113,11 +125,54 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  // Keyboard navigation and activation handler (ArrowUp, ArrowDown, Enter, Escape)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      if (flatResults.length === 0) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev + 1) % flatResults.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev - 1 + flatResults.length) % flatResults.length);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const selected = flatResults[selectedIndex];
+        if (selected) {
+          handleResultClick(selected.type, selected.item);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, flatResults, selectedIndex]);
+
+  // Scroll active item into view when index changes
+  useEffect(() => {
+    if (flatResults.length > 0) {
+      const activeEl = document.querySelector('[data-active="true"]');
+      activeEl?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [selectedIndex, flatResults]);
+
   const hasAnyResults =
     results.modules.length > 0 ||
     results.library.length > 0 ||
     results.custodians.length > 0 ||
     results.community.length > 0;
+
+  let itemIndex = 0;
+
+  if (!isOpen) return null;
 
   return (
     <div
@@ -189,25 +244,32 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose }) => {
                     Modules ({results.modules.length})
                   </div>
                   <div className="space-y-1">
-                    {results.modules.map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => handleResultClick('modules', item)}
-                        className="group flex items-center justify-between p-2.5 rounded hover:bg-brass/10 transition cursor-pointer text-left"
-                      >
-                        <div>
-                          <div className="text-sm font-medium text-cream group-hover:text-brass-light transition">
-                            {item.title}
+                    {results.modules.map((item) => {
+                      const currentIndex = itemIndex++;
+                      const isSelected = currentIndex === selectedIndex;
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => handleResultClick('modules', item)}
+                          data-active={isSelected ? 'true' : 'false'}
+                          className={`group flex items-center justify-between p-2.5 rounded transition cursor-pointer text-left ${
+                            isSelected ? 'bg-brass/20 border-l-2 border-brass pl-1.5' : 'hover:bg-brass/10'
+                          }`}
+                        >
+                          <div>
+                            <div className="text-sm font-medium text-cream group-hover:text-brass-light transition">
+                              {item.title}
+                            </div>
+                            <div className="text-xs text-cream/50 font-mono mt-0.5">
+                              Stage {item.stage} · {item.type}
+                            </div>
                           </div>
-                          <div className="text-xs text-cream/50 font-mono mt-0.5">
-                            Stage {item.stage} · {item.type}
-                          </div>
+                          <span className="text-xs text-brass opacity-0 group-hover:opacity-100 transition">
+                            Go →
+                          </span>
                         </div>
-                        <span className="text-xs text-brass opacity-0 group-hover:opacity-100 transition">
-                          Go →
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -219,25 +281,32 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose }) => {
                     Library Items ({results.library.length})
                   </div>
                   <div className="space-y-1">
-                    {results.library.map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => handleResultClick('library', item)}
-                        className="group flex items-center justify-between p-2.5 rounded hover:bg-brass/10 transition cursor-pointer text-left"
-                      >
-                        <div>
-                          <div className="text-sm font-medium text-cream group-hover:text-brass-light transition">
-                            {item.title}
+                    {results.library.map((item) => {
+                      const currentIndex = itemIndex++;
+                      const isSelected = currentIndex === selectedIndex;
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => handleResultClick('library', item)}
+                          data-active={isSelected ? 'true' : 'false'}
+                          className={`group flex items-center justify-between p-2.5 rounded transition cursor-pointer text-left ${
+                            isSelected ? 'bg-brass/20 border-l-2 border-brass pl-1.5' : 'hover:bg-brass/10'
+                          }`}
+                        >
+                          <div>
+                            <div className="text-sm font-medium text-cream group-hover:text-brass-light transition">
+                              {item.title}
+                            </div>
+                            <div className="text-xs text-cream/50 font-mono mt-0.5">
+                              Stage {item.stage} · {item.type} Guide
+                            </div>
                           </div>
-                          <div className="text-xs text-cream/50 font-mono mt-0.5">
-                            Stage {item.stage} · {item.type} Guide
-                          </div>
+                          <span className="text-xs text-brass opacity-0 group-hover:opacity-100 transition">
+                            Open →
+                          </span>
                         </div>
-                        <span className="text-xs text-brass opacity-0 group-hover:opacity-100 transition">
-                          Open →
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -249,30 +318,37 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose }) => {
                     Cultural Custodians ({results.custodians.length})
                   </div>
                   <div className="space-y-1">
-                    {results.custodians.map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => handleResultClick('custodians', item)}
-                        className="group flex items-center justify-between p-2.5 rounded hover:bg-brass/10 transition cursor-pointer text-left"
-                      >
-                        <div>
-                          <div className="text-sm font-medium text-cream group-hover:text-brass-light transition">
-                            {item.name}
-                          </div>
-                          <div className="text-xs text-cream/50 mt-0.5">
-                            {item.specialty} · {item.location}
-                          </div>
-                          {item.short_bio && (
-                            <div className="text-xs text-cream/40 mt-1 italic line-clamp-1">
-                              &ldquo;{item.short_bio}&rdquo;
+                    {results.custodians.map((item) => {
+                      const currentIndex = itemIndex++;
+                      const isSelected = currentIndex === selectedIndex;
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => handleResultClick('custodians', item)}
+                          data-active={isSelected ? 'true' : 'false'}
+                          className={`group flex items-center justify-between p-2.5 rounded transition cursor-pointer text-left ${
+                            isSelected ? 'bg-brass/20 border-l-2 border-brass pl-1.5' : 'hover:bg-brass/10'
+                          }`}
+                        >
+                          <div>
+                            <div className="text-sm font-medium text-cream group-hover:text-brass-light transition">
+                              {item.name}
                             </div>
-                          )}
+                            <div className="text-xs text-cream/50 mt-0.5">
+                              {item.specialty} · {item.location}
+                            </div>
+                            {item.short_bio && (
+                              <div className="text-xs text-cream/40 mt-1 italic line-clamp-1">
+                                &ldquo;{item.short_bio}&rdquo;
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-xs text-brass opacity-0 group-hover:opacity-100 transition">
+                            View Profile →
+                          </span>
                         </div>
-                        <span className="text-xs text-brass opacity-0 group-hover:opacity-100 transition">
-                          View Profile →
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -284,30 +360,37 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose }) => {
                     Community Threads ({results.community.length})
                   </div>
                   <div className="space-y-1">
-                    {results.community.map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => handleResultClick('community', item)}
-                        className="group flex items-center justify-between p-2.5 rounded hover:bg-brass/10 transition cursor-pointer text-left"
-                      >
-                        <div className="flex-1 mr-4">
-                          <div className="text-sm font-medium text-cream group-hover:text-brass-light transition line-clamp-1">
-                            {item.title}
-                          </div>
-                          {item.excerpt && (
-                            <div className="text-xs text-cream/50 mt-0.5 line-clamp-1">
-                              {item.excerpt}
+                    {results.community.map((item) => {
+                      const currentIndex = itemIndex++;
+                      const isSelected = currentIndex === selectedIndex;
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => handleResultClick('community', item)}
+                          data-active={isSelected ? 'true' : 'false'}
+                          className={`group flex items-center justify-between p-2.5 rounded transition cursor-pointer text-left ${
+                            isSelected ? 'bg-brass/20 border-l-2 border-brass pl-1.5' : 'hover:bg-brass/10'
+                          }`}
+                        >
+                          <div className="flex-1 mr-4">
+                            <div className="text-sm font-medium text-cream group-hover:text-brass-light transition line-clamp-1">
+                              {item.title}
                             </div>
-                          )}
-                          <div className="text-[10px] text-cream/35 mt-1 font-mono">
-                            Posted by {item.author || 'Relative'}
+                            {item.excerpt && (
+                              <div className="text-xs text-cream/50 mt-0.5 line-clamp-1">
+                                {item.excerpt}
+                              </div>
+                            )}
+                            <div className="text-[10px] text-cream/35 mt-1 font-mono">
+                              Posted by {item.author || 'Relative'}
+                            </div>
                           </div>
+                          <span className="text-xs text-brass opacity-0 group-hover:opacity-100 transition flex-shrink-0">
+                            Join Thread →
+                          </span>
                         </div>
-                        <span className="text-xs text-brass opacity-0 group-hover:opacity-100 transition flex-shrink-0">
-                          Join Thread →
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

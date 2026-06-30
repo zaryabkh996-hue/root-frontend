@@ -42,6 +42,15 @@ export default function DashboardPage() {
       .filter(Boolean);
   }, [progress.completedModules]);
 
+  // Dynamic current badge based on the highest completed stage
+  const currentBadge = useMemo(() => {
+    const completed = progress.completedStages || [];
+    if (completed.length === 0) return null;
+    const maxStageId = Math.max(...completed);
+    const stage = STAGES.find(s => s.id === maxStageId);
+    return stage ? stage.badge : null;
+  }, [progress.completedStages]);
+
   return (
     <>
       {/* Welcome strip */}
@@ -64,6 +73,18 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            {currentBadge && (
+              <>
+                <div className="text-right">
+                  <div className="eyebrow eyebrow-cream" style={{ fontSize: '9px' }}>Current Badge</div>
+                  <div className="font-medium text-sm text-cream flex items-center gap-1.5 justify-end">
+                    <span>{currentBadge.emoji}</span>
+                    <span>{currentBadge.title.split(' — ')[0]}</span>
+                  </div>
+                </div>
+                <div className="w-px h-12 bg-brass/15"></div>
+              </>
+            )}
             <div className="text-right">
               <div className="eyebrow eyebrow-cream" style={{ fontSize: '9px' }}>Afrofeast Score</div>
               <div className="display text-3xl font-light text-brass-light">{progress.afroScore}</div>
@@ -229,7 +250,9 @@ export default function DashboardPage() {
         <div className="scard-dark p-6 cursor-pointer hover:border-brass/40 transition" style={{ borderLeft: '3px solid var(--rose)' }}>
           <div className="eyebrow eyebrow-cream mb-3 flex items-center gap-2">
             <span>Community</span>
-            <span className="text-rose" style={{ fontSize: '11px' }}>· Akoma 💕</span>
+            {(progress.completedStages || []).includes(1) && (
+              <span className="text-rose" style={{ fontSize: '11px' }}>· Akoma 💕</span>
+            )}
           </div>
           <h3 className="display text-xl text-cream mb-2">Visit The Love Hub</h3>
           <p className="text-sm text-cream/60 leading-relaxed mb-4">Free for everyone, always. Where heritage seekers process identity and grief together.</p>

@@ -6,6 +6,12 @@ html { scroll-behavior: smooth; }
 html,body{background:var(--cream);color:var(--ink);font-family:var(--font-instrument-sans),ui-sans-serif,system-ui,sans-serif;font-feature-settings:"ss01","cv11";-webkit-font-smoothing:antialiased;overflow-x:hidden;}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:1000;opacity:.045;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");}
 .display{font-family:var(--font-fraunces),Georgia,serif;font-feature-settings:"ss01","ss03";letter-spacing:-0.015em;font-size: clamp(1.75rem, 5vw + 0.5rem, 4.5rem);}
+h1.display {
+  font-size: clamp(1.875rem, 6vw + 0.25rem, 4.5rem);
+}
+h2.display {
+  font-size: clamp(1.5rem, 4vw + 0.25rem, 2.6rem);
+}
 .mono{font-family:var(--font-jetbrains-mono),monospace;letter-spacing:0.04em;}
 .eyebrow{font-family:var(--font-jetbrains-mono),monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--brass-dim);font-weight:500;}
 .eyebrow-cream{color:var(--brass-light);}
@@ -581,12 +587,7 @@ textarea::placeholder {
 /* ── MOBILE FIRST — Complete responsive system ───────────────────────────────────────── */
 @media (max-width: 767px) {
   /* .display, h1.display { font-size: clamp(1.5rem, 6.5vw, 2rem) !important; line-height: 1.18 !important; } */
-  h1.display {
-font-size: clamp(1.875rem, 6vw + 0.25rem, 4.5rem);
-}
-h2.display {
-font-size: clamp(1.5rem, 4vw + 0.25rem, 2.6rem);
-}
+
 
   .text-5xl { font-size: 1.75rem !important; line-height: 1.2 !important; }
   .text-4xl { font-size: 1.5rem !important; }
@@ -666,12 +667,7 @@ font-size: clamp(1.5rem, 4vw + 0.25rem, 2.6rem);
 
 @media (min-width: 1024px) {
   /* .display, h1.display { font-size: 3.75rem !important; line-height: 1 !important; } */
-  h1.display {
-font-size: clamp(1.875rem, 6vw + 0.25rem, 4.5rem);
-}
-h2.display {
-font-size: clamp(1.5rem, 4vw + 0.25rem, 2.6rem);
-}
+
 
   .text-5xl { font-size: 3rem !important; line-height: 1 !important; }
   .text-4xl { font-size: 2.25rem !important; line-height: 2.5rem !important; }
