@@ -58,6 +58,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [imageFailed, setImageFailed] = useState(false);
 
   // Form states for each editable field
   const [formValues, setFormValues] = useState<{ [key: string]: any }>({});
@@ -347,8 +348,31 @@ export default function ProfilePage() {
       console.log('[Profile Picture] - File size:', file.size, 'bytes');
       console.log('[Profile Picture] - File type:', file.type);
 
-      const formData = new FormData();
-      formData.append('picture', file);
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+      const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+      let uploadedUrl = '';
+
+      if (cloudName && uploadPreset) {
+        console.log('[Profile Picture] Uploading to Cloudinary...');
+        const cloudinaryData = new FormData();
+        cloudinaryData.append('file', file);
+        cloudinaryData.append('upload_preset', uploadPreset);
+
+        const cloudinaryRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
+          method: 'POST',
+          body: cloudinaryData,
+        });
+
+        const cloudinaryResult = await cloudinaryRes.json();
+        if (cloudinaryRes.ok && cloudinaryResult.secure_url) {
+          uploadedUrl = cloudinaryResult.secure_url;
+          console.log('[Profile Picture] Cloudinary upload success:', uploadedUrl);
+        } else {
+          console.error('[Profile Picture] Cloudinary upload error:', cloudinaryResult);
+          throw new Error(cloudinaryResult.error?.message || 'Cloudinary upload failed');
+        }
+      }
 
       const token = localStorage.getItem('authToken');
       const headers: any = {
@@ -358,23 +382,38 @@ export default function ProfilePage() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      console.log('[Profile Picture] 2. Headers:', headers);
       const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       console.log('[Profile Picture] 3. API URL:', apiUrl);
 
-      const response = await fetch(`${apiUrl}/user/profile/picture`, {
-        method: 'POST',
-        headers,
-        body: formData,
-      });
+      let response;
+      if (uploadedUrl) {
+        // Send the Cloudinary URL to the backend
+        headers['Content-Type'] = 'application/json';
+        response = await fetch(`${apiUrl}/user/profile/picture`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ picture_url: uploadedUrl }),
+        });
+      } else {
+        // Fallback: direct file upload to backend
+        console.log('[Profile Picture] Fallback: Uploading directly to backend...');
+        const formData = new FormData();
+        formData.append('picture', file);
+        response = await fetch(`${apiUrl}/user/profile/picture`, {
+          method: 'POST',
+          headers,
+          body: formData,
+        });
+      }
 
       console.log('[Profile Picture] 4. Response status:', response.status);
       const result = await response.json();
       console.log('[Profile Picture] 5. Response data:', result);
 
       if (response.ok) {
-        const pictureUrl = result.data?.picture || file.name;
+        const pictureUrl = result.data?.picture || uploadedUrl || file.name;
         console.log('[Profile Picture] 6. Picture URL received:', pictureUrl);
+        setImageFailed(false);
 
         setUserProfile(prev => {
           console.log('[Profile Picture] 7. Setting user profile with picture:', pictureUrl);
@@ -392,7 +431,7 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error('[Profile Picture] Exception:', error);
-      setError('Failed to upload picture');
+      setError(error instanceof Error ? error.message : 'Failed to upload picture');
     } finally {
       setUploadingPicture(false);
       // Reset input
@@ -618,7 +657,7 @@ export default function ProfilePage() {
               style={{ width: '96px', cursor: 'pointer' }}
               title="Click to change your photo"
             >
-              {userProfile.picture ? (
+              {userProfile.picture && !imageFailed ? (
                 <img
                   src={userProfile.picture}
                   alt={userProfile.name}
@@ -634,12 +673,11 @@ export default function ProfilePage() {
                   onError={(e) => {
                     console.error('[Profile Picture Display] Image failed to load:', userProfile.picture);
                     console.error('[Profile Picture Display] Error event:', e);
-                    // Hide broken image and show fallback
-                    (e.target as HTMLImageElement).style.display = 'none';
+                    setImageFailed(true);
                   }}
                 />
               ) : null}
-              {!userProfile.picture || !userProfile.picture.includes('storage') ? (
+              {!userProfile.picture || imageFailed ? (
                 <div
                   className="avatar avatar-xl"
                   id="profile-avatar-initials"
@@ -933,10 +971,31 @@ export default function ProfilePage() {
                     console.log('[Journey Photo Upload] - File size:', file.size);
                     console.log('[Journey Photo Upload] - File type:', file.type);
 
-                    const formData = new FormData();
-                    formData.append('photo', file);
-                    formData.append('hub', 'Love Hub');
-                    formData.append('visibility', photosDefault);
+                    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+                    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+                    let uploadedUrl = '';
+
+                    if (cloudName && uploadPreset) {
+                      console.log('[Journey Photo Upload] Uploading to Cloudinary...');
+                      const cloudinaryData = new FormData();
+                      cloudinaryData.append('file', file);
+                      cloudinaryData.append('upload_preset', uploadPreset);
+
+                      const cloudinaryRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
+                        method: 'POST',
+                        body: cloudinaryData,
+                      });
+
+                      const cloudinaryResult = await cloudinaryRes.json();
+                      if (cloudinaryRes.ok && cloudinaryResult.secure_url) {
+                        uploadedUrl = cloudinaryResult.secure_url;
+                        console.log('[Journey Photo Upload] Cloudinary upload success:', uploadedUrl);
+                      } else {
+                        console.error('[Journey Photo Upload] Cloudinary upload error:', cloudinaryResult);
+                        throw new Error(cloudinaryResult.error?.message || 'Cloudinary upload failed');
+                      }
+                    }
 
                     const token = localStorage.getItem('authToken');
                     const headers: any = {
@@ -949,16 +1008,32 @@ export default function ProfilePage() {
                     const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
                     console.log('[Journey Photo Upload] 2. API URL:', apiUrl);
                     console.log('[Journey Photo Upload] 3. Headers:', headers);
-                    console.log('[Journey Photo Upload] 4. FormData entries:', {
-                      hub: 'Love Hub',
-                      visibility: photosDefault,
-                    });
 
-                    const response = await fetch(`${apiUrl}/user/journey-photos`, {
-                      method: 'POST',
-                      headers,
-                      body: formData,
-                    });
+                    let response;
+                    if (uploadedUrl) {
+                      headers['Content-Type'] = 'application/json';
+                      response = await fetch(`${apiUrl}/user/journey-photos`, {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({
+                          photo_url: uploadedUrl,
+                          hub: 'Love Hub',
+                          visibility: photosDefault,
+                        }),
+                      });
+                    } else {
+                      console.log('[Journey Photo Upload] Fallback: Uploading directly to backend...');
+                      const formData = new FormData();
+                      formData.append('photo', file);
+                      formData.append('hub', 'Love Hub');
+                      formData.append('visibility', photosDefault);
+
+                      response = await fetch(`${apiUrl}/user/journey-photos`, {
+                        method: 'POST',
+                        headers,
+                        body: formData,
+                      });
+                    }
 
                     console.log('[Journey Photo Upload] 5. Response status:', response.status);
                     const result = await response.json();
@@ -977,7 +1052,7 @@ export default function ProfilePage() {
                     }
                   } catch (error) {
                     console.error('[Journey Photo Upload] Exception:', error);
-                    setError('Failed to upload photo');
+                    setError(error instanceof Error ? error.message : 'Failed to upload photo');
                   }
                   e.target.value = '';
                 }}
@@ -991,7 +1066,6 @@ export default function ProfilePage() {
                   <div
                     key={idx}
                     className="journey-photo-slot has-photo relative overflow-hidden"
-                    onClick={() => alert(`View: ${photo.caption}`)}
                   >
                     <img
                       src={photo.url}
@@ -1023,7 +1097,6 @@ export default function ProfilePage() {
                     key={idx}
                     className="journey-photo-slot has-photo"
                     style={{ background: photo.gradient }}
-                    onClick={() => alert(`View: ${photo.caption}`)}
                   >
                     <div className="photo-caption">{photo.caption}</div>
                     <div style={{ position: 'absolute', top: '6px', right: '6px', fontSize: '9px', background: 'rgba(10,24,16,0.7)', color: 'rgba(243,237,224,0.7)', padding: '2px 5px', borderRadius: '2px' }}>
@@ -1180,48 +1253,25 @@ export default function ProfilePage() {
             <div className="scard-dark p-6">
               {userProfile.subscriptionTier && userProfile.subscriptionTier !== 'free' ? (
                 <>
-                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-brass/10">
-                    <div>
-                      <div className="display text-xl text-cream font-serif capitalize">
-                        {userProfile.subscriptionTier} tier
-                      </div>
-                      <div className="text-xs text-cream/50 mt-1">Manage billing, upgrades, or cancellation</div>
+                  <div className="mb-4 pb-4 border-b border-brass/10">
+                    <div className="display text-xl text-cream font-serif capitalize">
+                      {userProfile.subscriptionTier} tier
                     </div>
-                    <button 
-                      className="btn-primary text-xs"
-                      onClick={handleManageBilling}
-                      disabled={managingSubscription}
-                    >
-                      {managingSubscription ? 'Opening...' : 'Manage'}
-                    </button>
+                    <div className="text-xs text-cream/50 mt-1">Active subscription tier</div>
                   </div>
                   <div className="text-xs text-cream/60 leading-relaxed">
-                    You are currently subscribed to the <strong className="text-brass-light capitalize font-serif font-semibold">{userProfile.subscriptionTier}</strong> tier. You can update your payment method or cancel your subscription at any time via the Stripe billing portal.
+                    You are currently subscribed to the <strong className="text-brass-light capitalize font-serif font-semibold">{userProfile.subscriptionTier}</strong> tier.
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-brass/10">
-                    <div>
-                      <div className="display text-xl text-cream font-serif">Free tier</div>
-                      <div className="text-xs text-cream/50 mt-1">Limited modules and features</div>
-                    </div>
-                    <button 
-                      className="btn-primary text-xs"
-                      onClick={() => router.push('/#pricing')}
-                    >
-                      Upgrade
-                    </button>
+                  <div className="mb-4 pb-4 border-b border-brass/10">
+                    <div className="display text-xl text-cream font-serif">Free tier</div>
+                    <div className="text-xs text-cream/50 mt-1">Limited modules and features</div>
                   </div>
-                  <div className="text-xs text-cream/60 leading-relaxed mb-4">
-                    Upgrade to unlock all 6 stages of preparation, gain unlimited Amen AI access on WhatsApp, and book cultural Custodians.
+                  <div className="text-xs text-cream/60 leading-relaxed">
+                    You are currently on the <strong className="text-brass-light capitalize font-serif font-semibold">Free</strong> tier.
                   </div>
-                  <button 
-                    className="btn-ghost-dark w-full justify-center text-xs"
-                    onClick={() => router.push('/#pricing')}
-                  >
-                    View Premium Tiers
-                  </button>
                 </>
               )}
             </div>

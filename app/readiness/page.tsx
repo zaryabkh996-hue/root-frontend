@@ -58,6 +58,7 @@ export default function Readiness() {
   const router = useRouter();
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isUpgrading, setIsUpgrading] = useState(false);
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -119,9 +120,18 @@ export default function Readiness() {
 
   const handleChooseTier = async (tier: string) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
-    if (token) {
-      try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+    if (!token) {
+      router.push('/quiz');
+      return;
+    }
+
+    const tierLower = tier.toLowerCase();
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+
+    try {
+      setIsUpgrading(true);
+
+      if (tierLower === 'free') {
         const res = await fetch(`${backendUrl}/user/profile`, {
           method: 'PUT',
           headers: {
@@ -130,7 +140,7 @@ export default function Readiness() {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            subscriptionTier: tier.toLowerCase()
+            subscriptionTier: tierLower
           })
         });
         if (res.ok) {
@@ -138,16 +148,40 @@ export default function Readiness() {
           if (userRaw) {
             try {
               const user = JSON.parse(userRaw);
-              user.subscription_tier = tier.toLowerCase();
+              user.subscription_tier = tierLower;
               localStorage.setItem('user', JSON.stringify(user));
             } catch (_) { }
           }
         }
-      } catch (err) {
-        console.error('Failed to update subscription tier:', err);
+        router.push('/dashboard');
+      } else {
+        // Paid tiers: Redirect to Stripe Checkout Session
+        const response = await fetch(`${backendUrl}/stripe/checkout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            tier: tierLower
+          })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.ok && data.url) {
+          window.location.href = data.url;
+        } else {
+          alert(data.message || 'Failed to initiate Stripe checkout.');
+        }
       }
+    } catch (err) {
+      console.error('Failed to choose tier:', err);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setIsUpgrading(false);
     }
-    router.push('/dashboard');
   };
 
   const rationale = getRationale(reportData.scores);
@@ -330,8 +364,20 @@ export default function Readiness() {
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <button onClick={() => handleChooseTier(reportData.tier_display || 'community')} className="btn-primary justify-center">Continue</button>
-              <button onClick={() => handleChooseTier('free')} className="btn-secondary justify-center">Stay free · Stage 1 only</button>
+              <button 
+                onClick={() => handleChooseTier(reportData.tier_display || 'community')} 
+                disabled={isUpgrading}
+                className="btn-primary justify-center"
+              >
+                {isUpgrading && (reportData.tier_display || 'community').toLowerCase() !== 'free' ? 'Redirecting...' : 'Continue'}
+              </button>
+              <button 
+                onClick={() => handleChooseTier('free')} 
+                disabled={isUpgrading}
+                className="btn-secondary justify-center"
+              >
+                Stay free · Stage 1 only
+              </button>
             </div>
           </div>
         </div>

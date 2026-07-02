@@ -232,7 +232,7 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
     ? module.body.split(/\n\n+/)
     : fallbackContent.paragraphs;
 
-  const reflectionPrompt = fallbackContent.reflectionPrompt || (module.type === 'Reflection Lab' ? `Reflect on how ${module.title.toLowerCase()} makes you feel as you prepare for your return to Africa.` : undefined);
+  const reflectionPrompt = fallbackContent.reflectionPrompt || (module.type === 'Reflection Lab' ? `Reflect on how ${(module.title || '').toLowerCase()} makes you feel as you prepare for your return to Africa.` : undefined);
 
   const renderMediaPlayer = () => {
     const typeLower = module.type ? module.type.toLowerCase() : '';
@@ -246,6 +246,21 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
     }
     if (typeLower === 'pdf' && url) {
       return <PdfResourceCard url={url} title={module.title} />;
+    }
+    if (typeLower === 'image' && url) {
+      return (
+        <div className="scard-dark p-2 mb-8 border border-brass/10 rounded-xl overflow-hidden hover:border-brass/35 transition-all">
+          <img
+            src={url}
+            alt={module.title}
+            className="w-full h-auto rounded-lg object-contain max-h-[500px]"
+          />
+          <div className="p-3">
+            <div className="text-sm font-semibold text-cream mb-1">{module.title}</div>
+            <div className="text-xs text-cream/50">Image Resource</div>
+          </div>
+        </div>
+      );
     }
 
     return null;

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchAllModules, createModule } from '@/app/lib/sanity/sanityClient';
+import { verifyAdminSession } from '@/lib/adminAuth';
 
 /**
  * GET /api/admin/content
@@ -7,6 +8,11 @@ import { fetchAllModules, createModule } from '@/app/lib/sanity/sanityClient';
  */
 export async function GET() {
   try {
+    const adminCheck = await verifyAdminSession();
+    if (!adminCheck.authorized) {
+      return adminCheck.response;
+    }
+
     const modules = await fetchAllModules();
     return NextResponse.json({ success: true, data: modules });
   } catch (error) {
@@ -21,6 +27,11 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
+    const adminCheck = await verifyAdminSession();
+    if (!adminCheck.authorized) {
+      return adminCheck.response;
+    }
+
     const body = await request.json();
 
     const { title, moduleNumber, subtitle, track, tier, contentType, sensitivity, body: moduleBody, takeaways, resourceUrl } = body;

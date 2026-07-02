@@ -9,7 +9,7 @@ interface LibraryItem {
   id: string;
   moduleId: string;
   stage: number;
-  type: 'audio' | 'video' | 'pdf';
+  type: 'audio' | 'video' | 'pdf' | 'image';
   title: string;
   duration: number;
   durationLabel: string;
@@ -18,6 +18,7 @@ interface LibraryItem {
   locked: boolean;
   photoClass: string;
   tags: string[];
+  resourceUrl?: string;
 }
 
 interface FilterPill {
@@ -57,7 +58,7 @@ export default function LibraryPage() {
     computed.stageStatuses.forEach(stage => {
       stage.moduleStatuses.forEach(mod => {
         const typeLower = (mod.type || '').toLowerCase();
-        if (typeLower === 'audio' || typeLower === 'video' || typeLower === 'pdf') {
+        if (typeLower === 'audio' || typeLower === 'video' || typeLower === 'pdf' || typeLower === 'image') {
           // Parse duration
           let durationVal = 10;
           if (mod.duration) {
@@ -75,6 +76,8 @@ export default function LibraryPage() {
             durationLabel = `${durationLabel} · Video Presentation`;
           } else if (typeLower === 'pdf') {
             durationLabel = `${durationLabel} · PDF Document`;
+          } else if (typeLower === 'image') {
+            durationLabel = `Image Resource`;
           }
 
           const isLocked = mod.status === 'locked';
@@ -91,13 +94,14 @@ export default function LibraryPage() {
             id: mod.id,
             moduleId: mod.id,
             stage: stage.id,
-            type: typeLower as 'audio' | 'video' | 'pdf',
+            type: typeLower as 'audio' | 'video' | 'pdf' | 'image',
             title: mod.title,
             duration: durationVal,
             durationLabel: durationLabel,
             locked: isLocked,
             photoClass: photoClass,
             tags: [`Stage ${stage.id}`, typeLower.toUpperCase(), ...(isLocked ? ['Locked'] : [])],
+            resourceUrl: mod.resourceUrl,
           });
         }
       });
@@ -112,11 +116,13 @@ export default function LibraryPage() {
     const audio = LIBRARY_ITEMS.filter(item => item.type === 'audio').length;
     const video = LIBRARY_ITEMS.filter(item => item.type === 'video').length;
     const pdf = LIBRARY_ITEMS.filter(item => item.type === 'pdf').length;
+    const image = LIBRARY_ITEMS.filter(item => item.type === 'image').length;
     return [
       { type: 'all', label: 'All', count: all },
       { type: 'audio', label: 'Audio', count: audio },
       { type: 'video', label: 'Video', count: video },
       { type: 'pdf', label: 'PDF', count: pdf },
+      { type: 'image', label: 'Images', count: image },
     ];
   }, [LIBRARY_ITEMS]);
 
@@ -303,6 +309,26 @@ export default function LibraryPage() {
                 }}
               >
                 PDF
+              </button>
+              <button
+                className="lib-type-opt"
+                onClick={() => {
+                  setFilterType('image');
+                  setTypeDropOpen(false);
+                }}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  padding: '8px 12px',
+                  textAlign: 'left',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--cream)',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                }}
+              >
+                Image
               </button>
             </div>
           )}
@@ -504,7 +530,53 @@ export default function LibraryPage() {
               className="lib-card scard-dark p-5 cursor-pointer hover:border-brass/40 transition"
               onClick={() => handleItemClick(item)}
             >
-              <div className={`${item.photoClass} aspect-video mb-4 rounded-sm`}></div>
+              <div className="aspect-video mb-4 rounded-sm overflow-hidden relative bg-forest-dark border border-brass/10 flex items-center justify-center w-full">
+                {item.locked ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
+                    <span style={{ fontSize: '24px' }}>🔒</span>
+                  </div>
+                ) : null}
+
+                {/* If it has an actual resource URL and is unlocked */}
+                {!item.locked && item.resourceUrl ? (
+                  item.type === 'video' ? (
+                    <div className="relative w-full h-full group">
+                      <video
+                        src={item.resourceUrl}
+                        className="w-full h-full object-cover"
+                        preload="metadata"
+                        muted
+                        playsInline
+                      />
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/10 transition-all">
+                        <div className="w-10 h-10 rounded-full bg-brass/90 flex items-center justify-center text-forest-deepest text-sm shadow-md">
+                          ▶
+                        </div>
+                      </div>
+                    </div>
+                  ) : item.type === 'pdf' ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-br from-rose-950/40 to-forest-dark text-center">
+                      <span className="text-3xl mb-1">📄</span>
+                      <span className="text-[10px] text-cream/40 uppercase font-mono tracking-wider">PDF Resource</span>
+                    </div>
+                  ) : item.type === 'audio' ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-br from-brass/10 to-forest-dark text-center">
+                      <span className="text-3xl mb-1 animate-pulse">🎵</span>
+                      <span className="text-[10px] text-cream/40 uppercase font-mono tracking-wider">Audio Lecture</span>
+                    </div>
+                  ) : (
+                    // Default image or other media
+                    <img
+                      src={item.resourceUrl}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                    />
+                  )
+                ) : (
+                  /* Fallback gradient background */
+                  <div className={`${item.photoClass} w-full h-full`} />
+                )}
+              </div>
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <span className="tag tag-brass">Stage {item.stage}</span>
                 <span className="tag tag-dark">{item.type.charAt(0).toUpperCase() + item.type.slice(1)}</span>

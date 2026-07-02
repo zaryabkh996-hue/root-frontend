@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchModuleById, updateModule, deleteModule } from '@/app/lib/sanity/sanityClient';
+import { verifyAdminSession } from '@/lib/adminAuth';
 
 interface RouteContext {
   params: Promise<{ documentId: string }>;
@@ -11,6 +12,11 @@ interface RouteContext {
  */
 export async function GET(_request: Request, context: RouteContext) {
   try {
+    const adminCheck = await verifyAdminSession();
+    if (!adminCheck.authorized) {
+      return adminCheck.response;
+    }
+
     const { documentId } = await context.params;
     const doc = await fetchModuleById(documentId);
 
@@ -34,6 +40,11 @@ export async function GET(_request: Request, context: RouteContext) {
  */
 export async function PUT(request: Request, context: RouteContext) {
   try {
+    const adminCheck = await verifyAdminSession();
+    if (!adminCheck.authorized) {
+      return adminCheck.response;
+    }
+
     const { documentId } = await context.params;
     const body = await request.json();
 
@@ -66,6 +77,11 @@ export async function PUT(request: Request, context: RouteContext) {
  */
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
+    const adminCheck = await verifyAdminSession();
+    if (!adminCheck.authorized) {
+      return adminCheck.response;
+    }
+
     const { documentId } = await context.params;
     await deleteModule(documentId);
     return NextResponse.json({ success: true, message: 'Module deleted' });

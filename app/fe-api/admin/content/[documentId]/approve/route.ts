@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { approveModule } from '@/app/lib/sanity/sanityClient';
+import { verifyAdminSession } from '@/lib/adminAuth';
 
 interface RouteContext {
   params: Promise<{ documentId: string }>;
@@ -11,6 +12,11 @@ interface RouteContext {
  */
 export async function POST(_request: Request, context: RouteContext) {
   try {
+    const adminCheck = await verifyAdminSession();
+    if (!adminCheck.authorized) {
+      return adminCheck.response;
+    }
+
     const { documentId } = await context.params;
     await approveModule(documentId);
 

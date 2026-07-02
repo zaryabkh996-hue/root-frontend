@@ -2,15 +2,6 @@ import { Auth0Client } from "@auth0/nextjs-auth0/server";
 import { NextResponse } from "next/server";
 
 export const auth0 = new Auth0Client({
-  /**
-   * Called after the Auth0 callback is fully processed.
-   *
-   * 1. Calls the Laravel backend to register / sign-in the user and get
-   *    a Sanctum token — same as the magic-link verify endpoint does.
-   * 2. Passes that token to the client via two short-lived (60 s),
-   *    non-httpOnly handoff cookies so the client-side /auth/oauth-success
-   *    page can write them to localStorage without an extra API round-trip.
-   */
   async onCallback(error, ctx, session) {
     const baseUrl =
       ctx.appBaseUrl ?? process.env.APP_BASE_URL ?? "http://localhost:3000";

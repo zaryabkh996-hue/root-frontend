@@ -234,6 +234,7 @@ export default function ContentPage() {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [mediaUploading, setMediaUploading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: ToastType } | null>(
     null,
   );
@@ -248,6 +249,46 @@ export default function ContentPage() {
     const timeoutId = window.setTimeout(() => setToast(null), 2500);
     return () => window.clearTimeout(timeoutId);
   }, [toast]);
+
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+    if (!cloudName || !uploadPreset) {
+      showToast('Cloudinary credentials (NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET) are not configured in your environment!', 'error');
+      return;
+    }
+
+    try {
+      setMediaUploading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', uploadPreset);
+
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok && data.secure_url) {
+        setForm(current => ({
+          ...current,
+          resourceUrl: data.secure_url,
+        }));
+        showToast('Media uploaded to Cloudinary successfully!', 'success');
+      } else {
+        showToast(data.error?.message || 'Failed to upload media to Cloudinary.', 'error');
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Media upload failed.', 'error');
+    } finally {
+      setMediaUploading(false);
+    }
+  };
 
   // --- Fetch modules ---
   const fetchModules = useCallback(async () => {
@@ -1206,6 +1247,7 @@ export default function ContentPage() {
                     <option>Audio</option>
                     <option>Video</option>
                     <option>PDF</option>
+                    <option>Image</option>
                   </select>
                 </div>
 
@@ -1230,24 +1272,52 @@ export default function ContentPage() {
                 </div>
               </div>
 
-              {['PDF', 'Audio', 'Video'].includes(form.type) && (
+              {['PDF', 'Audio', 'Video', 'Image'].includes(form.type) && (
                 <div className="a-cc-form-row a-cc-form-row-full">
                   <div className="a-cc-form-group">
                     <label className="a-cc-form-label">
                       Resource URL / File Link ({form.type})
                     </label>
-                    <input
-                      type="text"
-                      className="a-cc-form-input"
-                      placeholder={`e.g. https://example.com/assets/file.${form.type.toLowerCase() === 'pdf' ? 'pdf' : form.type.toLowerCase() === 'audio' ? 'mp3' : 'mp4'}`}
-                      value={form.resourceUrl}
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
-                          resourceUrl: event.target.value,
-                        }))
-                      }
-                    />
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        className="a-cc-form-input"
+                        style={{ flex: 1 }}
+                        placeholder={`e.g. https://res.cloudinary.com/... or paste direct link`}
+                        value={form.resourceUrl}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            resourceUrl: event.target.value,
+                          }))
+                        }
+                      />
+                      <label className="a-cc-btn-primary" style={{ cursor: 'pointer', padding: '10px 14px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '5px', height: '42px' }}>
+                        {mediaUploading ? 'Uploading...' : 'Upload File'}
+                        <input
+                          type="file"
+                          style={{ display: 'none' }}
+                          accept={
+                            form.type === 'Image' ? 'image/*' :
+                            form.type === 'Audio' ? 'audio/*' :
+                            form.type === 'Video' ? 'video/*' :
+                            '.pdf,application/pdf'
+                          }
+                          disabled={mediaUploading}
+                          onChange={handleMediaUpload}
+                        />
+                      </label>
+                    </div>
+                    {mediaUploading && (
+                      <div className="text-xs mt-1 animate-pulse" style={{ color: 'var(--brass)' }}>
+                        Uploading to Cloudinary, please wait...
+                      </div>
+                    )}
+                    {form.resourceUrl && (
+                      <div className="text-xs mt-1 flex items-center gap-1" style={{ color: '#16a34a' }}>
+                        ✓ File linked successfully!
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
