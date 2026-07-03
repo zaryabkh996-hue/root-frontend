@@ -36,6 +36,11 @@ export default function VerifyClient() {
         const data = await response.json();
 
         if (!response.ok) {
+          console.error('Magic link verification failed:', {
+            status: response.status,
+            statusText: response.statusText,
+            data
+          });
           setState('error');
           setError(data.message || 'Failed to verify magic link');
           return;
@@ -69,6 +74,7 @@ export default function VerifyClient() {
         }
 
       } catch (err) {
+        console.error('Magic link verification network error:', err);
         setState('error');
         setError('Network error during verification. Please try again.');
       }

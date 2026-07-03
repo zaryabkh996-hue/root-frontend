@@ -61,10 +61,15 @@ export default function Register() {
         })
       });
 
-      console.log('Magic link response:', response);
+      console.log('Magic link registration response:', response);
       const data = await response.json();
 
       if (!response.ok) {
+        console.error('Magic link registration failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          data
+        });
         setError(data.message || 'Failed to send magic link');
         setIsSubmitting(false);
         return;
@@ -75,7 +80,7 @@ export default function Register() {
       setIsSubmitting(false);
 
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Magic link registration network error:', err);
       setError('Network error. Please try again.');
       setIsSubmitting(false);
     }

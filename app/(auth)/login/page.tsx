@@ -30,12 +30,15 @@ export default function Login() {
         },
         body: JSON.stringify({ email })
       });
-      console.log(response);
-
-
+      console.log('Magic link sign-in response:', response);
       const data = await response.json();
 
       if (!response.ok) {
+        console.error('Magic link sign-in failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          data
+        });
         // Check if it's a user not found error
         if (data.code === 'USER_NOT_FOUND') {
           setErrorCode('USER_NOT_FOUND');
@@ -53,7 +56,7 @@ export default function Login() {
       setIsSubmitting(false);
 
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Magic link sign-in network error:', err);
       setError('Network error. Please try again.');
       setIsSubmitting(false);
     }
