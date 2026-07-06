@@ -63,11 +63,21 @@ function buildStagesFromModules(sanityModules: any[]): Stage[] {
           warning = 'Content warning';
         }
 
+        let mappedType = m.contentType || 'Story Module';
+        if (mappedType === 'Reading') {
+          mappedType = 'Story Module';
+        } else if (mappedType === 'Interactive') {
+          mappedType = 'Reflection Lab';
+        } else if (mappedType === 'Protocol Practice') {
+          mappedType = 'Protocol Lab';
+        }
+
         return {
+          _id: m._id,
           id: `${staticStage.id}.${m.moduleNumber}`,
           title: m.title,
           duration: duration,
-          type: m.contentType || 'Story Module',
+          type: mappedType as any,
           warning,
           meta: m.slug, // Store slug in meta
           slug: m.slug,

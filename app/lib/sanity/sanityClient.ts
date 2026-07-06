@@ -144,6 +144,41 @@ export async function fetchModuleById(id: string): Promise<SanityModule | null> 
   return Array.isArray(results) ? results[0] ?? null : results ?? null;
 }
 
+/** Fetch a single module by id, slug, or numeric id (e.g. 1.1) */
+export async function fetchModuleByIdOrSlug(idOrSlug: string): Promise<SanityModule | null> {
+  // If it's a numeric ID like '1.1', we can construct the track and moduleNumber query
+  const match = idOrSlug.match(/^(\d+)\.(\d+)$/);
+  if (match) {
+    const stageId = parseInt(match[1]);
+    const moduleNumber = parseInt(match[2]);
+    const TRACKS = [
+      'Emotional Preparation',
+      'Cultural Intelligence',
+      'Practical Preparation',
+      'Arrival Orientation',
+      'Heritage Journey Experience',
+      'Post Journey Experience'
+    ];
+    const track = TRACKS[stageId - 1];
+    if (track) {
+      const results = await sanityQuery(
+        `*[_type == "module" && track == $track && moduleNumber == $moduleNumber][0]{ _id, _type, title, slug, moduleNumber, subtitle, track, tier, contentType, sensitivity, body, takeaways, status, revisionNote, createdAt, updatedAt, publishedAt, resourceUrl, approvalStep }`
+          .replace('$track', JSON.stringify(track))
+          .replace('$moduleNumber', String(moduleNumber))
+      );
+      return Array.isArray(results) ? results[0] ?? null : results ?? null;
+    }
+  }
+
+  // Otherwise check _id, slug, or module._id prefix
+  const results = await sanityQuery(
+    `*[_type == "module" && (_id == $idOrSlug || slug == $idOrSlug || _id == $moduleId)][0]{ _id, _type, title, slug, moduleNumber, subtitle, track, tier, contentType, sensitivity, body, takeaways, status, revisionNote, createdAt, updatedAt, publishedAt, resourceUrl, approvalStep }`
+      .replace(/\$idOrSlug/g, JSON.stringify(idOrSlug))
+      .replace('$moduleId', JSON.stringify(`module.${idOrSlug}`))
+  );
+  return Array.isArray(results) ? results[0] ?? null : results ?? null;
+}
+
 /** Create a new module document (status = pending). */
 export async function createModule(fields: {
   title: string;
@@ -227,6 +262,136 @@ export async function requestRevision(id: string, note: string): Promise<void> {
           status: 'pending',
           revisionNote: note,
           approvalStep: 1,
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    },
+  ]);
+}
+
+export interface SanityStory {
+  _id: string;
+  _type: 'story';
+  title: string;
+  slug: string;
+  body: string;
+  author: string;
+  authorId: string;
+  status: 'pending' | 'approved' | 'revision';
+  revisionNote?: string;
+  communityHubSlug?: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string;
+}
+
+/** Fetch all stories by a specific author. */
+export async function fetchStoriesByUser(authorId: string): Promise<SanityStory[]> {
+  const query = `*[_type == "story" && authorId == $authorId] | order(createdAt desc){ _id, _type, title, slug, body, author, authorId, status, revisionNote, communityHubSlug, createdAt, updatedAt, publishedAt }`
+    .replace('$authorId', JSON.stringify(authorId));
+  console.log("[sanityClient] fetchStoriesByUser Query:", query);
+  const result = await sanityQuery(query);
+  console.log("[sanityClient] fetchStoriesByUser Result count:", result?.length ?? 0);
+  return result;
+}
+
+/** Fetch all pending stories. */
+export async function fetchPendingStories(): Promise<SanityStory[]> {
+  const query = `*[_type == "story" && status == "pending"] | order(createdAt desc){ _id, _type, title, slug, body, author, authorId, status, revisionNote, communityHubSlug, createdAt, updatedAt, publishedAt }`;
+  console.log("[sanityClient] fetchPendingStories Query:", query);
+  const result = await sanityQuery(query);
+  console.log("[sanityClient] fetchPendingStories Result count:", result?.length ?? 0);
+  return result;
+}
+
+/** Fetch all approved stories. */
+export async function fetchApprovedStories(): Promise<SanityStory[]> {
+  return sanityQuery(
+    `*[_type == "story" && status == "approved"] | order(createdAt desc){ _id, _type, title, slug, body, author, authorId, status, revisionNote, communityHubSlug, createdAt, updatedAt, publishedAt }`
+  );
+}
+
+/** Fetch a single story by ID. */
+export async function fetchStoryById(id: string): Promise<SanityStory | null> {
+  const results = await sanityQuery(
+    `*[_type == "story" && _id == $id][0]{ _id, _type, title, slug, body, author, authorId, status, revisionNote, communityHubSlug, createdAt, updatedAt, publishedAt }`
+      .replace('$id', JSON.stringify(id))
+  );
+  return Array.isArray(results) ? results[0] ?? null : results ?? null;
+}
+
+/** Create a new story draft (status = pending). */
+export async function createStory(fields: {
+  title: string;
+  body: string;
+  author: string;
+  authorId: string;
+}): Promise<SanityStory> {
+  const slug = slugify(fields.title);
+  const storyId = docId('story', slug);
+  const now = new Date().toISOString();
+
+  const res = await sanityMutate([
+    {
+      createOrReplace: {
+        _id: storyId,
+        _type: 'story',
+        ...fields,
+        slug,
+        status: 'pending',
+        createdAt: now,
+        updatedAt: now,
+      },
+    },
+  ]);
+
+  const created = res.json?.results?.[0]?.document;
+  return created ?? { _id: storyId, _type: 'story', ...fields, slug, status: 'pending', createdAt: now, updatedAt: now };
+}
+
+/** Update an existing story draft. */
+export async function updateStory(
+  id: string,
+  fields: Partial<Omit<SanityStory, '_id' | '_type' | 'authorId' | 'author'>>
+): Promise<void> {
+  const set: Record<string, unknown> = {
+    ...fields,
+    updatedAt: new Date().toISOString(),
+  };
+  if (fields.title) {
+    set.slug = slugify(fields.title);
+  }
+
+  await sanityMutate([{ patch: { id, set } }]);
+}
+
+/** Approve a story. */
+export async function approveStory(id: string, hubSlug: string): Promise<void> {
+  await sanityMutate([
+    {
+      patch: {
+        id,
+        set: {
+          status: 'approved',
+          communityHubSlug: hubSlug,
+          publishedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          revisionNote: '',
+        },
+      },
+    },
+  ]);
+}
+
+/** Reject a story (revision note). */
+export async function rejectStory(id: string, note: string): Promise<void> {
+  await sanityMutate([
+    {
+      patch: {
+        id,
+        set: {
+          status: 'revision',
+          revisionNote: note,
           updatedAt: new Date().toISOString(),
         },
       },

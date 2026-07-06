@@ -6,6 +6,7 @@ import { useProgress } from '../../../../lib/progressContext';
 import { getModuleById, getNextModuleId, getPrevModuleId } from '../../../../lib/progressStore';
 import { getModuleContent } from '../../../../lib/moduleContent';
 import { AuthService } from '@/app/lib/authService';
+import { SanityModule } from '@/app/lib/sanity/sanityClient';
 
 function AudioPlayerCard({ url, duration, title }: { url: string; duration: string; title: string }) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -160,6 +161,10 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
   const [journalSaved, setJournalSaved] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState(progress.feedbackEntries[resolvedId] ?? '');
 
+  const [fetchedModule, setFetchedModule] = useState<SanityModule | null>(null);
+  const [isLoadingContent, setIsLoadingContent] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
   // Sync state when module loads or progress updates
   useEffect(() => {
     if (resolvedId) {
@@ -167,6 +172,45 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
       setSelectedFeedback(progress.feedbackEntries[resolvedId] ?? '');
     }
   }, [resolvedId, progress.journalEntries, progress.feedbackEntries]);
+
+  // Fetch complete module contents dynamically
+  useEffect(() => {
+    if (!resolvedId) return;
+
+    setIsLoadingContent(true);
+    setFetchError(null);
+
+    const token = localStorage.getItem('authToken');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    fetch(`/fe-api/content/${resolvedId}`, { headers })
+      .then(res => {
+        if (!res.ok) {
+          if (res.status === 403) {
+            throw new Error('Access denied: Please upgrade your subscription tier to access this stage.');
+          }
+          throw new Error('Failed to load module content.');
+        }
+        return res.json();
+      })
+      .then(result => {
+        if (result.success && result.data) {
+          setFetchedModule(result.data);
+        } else {
+          throw new Error(result.error || 'Failed to load module content.');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        setFetchError(err.message);
+      })
+      .finally(() => {
+        setIsLoadingContent(false);
+      });
+  }, [resolvedId]);
 
   const stageId = moduleInfo?.stage?.id;
   const stageStatus = computed.stageStatuses.find(s => s.id === stageId);
@@ -181,7 +225,24 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
     return <div className="text-cream/60 p-8">Loading module...</div>;
   }
 
-  const { module, stage } = moduleInfo;
+  if (isLoadingContent) {
+    return <div className="text-cream/60 p-8 text-center mt-20">Loading module content...</div>;
+  }
+
+  if (fetchError) {
+    return (
+      <div className="p-8 text-center max-w-md mx-auto mt-20">
+        <h2 className="text-2xl font-light text-rose-400 mb-4">Content Locked</h2>
+        <p className="text-cream/70 mb-6">{fetchError}</p>
+        <button className="btn-primary inline-flex items-center gap-2" onClick={() => router.push(`/modules?upgrade=1&stageId=${stageId}`)}>
+          Upgrade Subscription
+        </button>
+      </div>
+    );
+  }
+
+  const { module: rawModule, stage } = moduleInfo;
+  const module = fetchedModule ? { ...rawModule, ...fetchedModule } : rawModule;
   const nextId = getNextModuleId(resolvedId);
   const prevId = getPrevModuleId(resolvedId);
   const isCompleted = progress.completedModules.includes(resolvedId);

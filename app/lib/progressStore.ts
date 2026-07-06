@@ -7,7 +7,11 @@ export type ModuleType =
   | 'Protocol Lab'
   | 'Practical Guide'
   | 'Orientation Lab'
-  | 'Integration Lab';
+  | 'Integration Lab'
+  | 'Audio'
+  | 'Video'
+  | 'PDF'
+  | 'Image';
 
 export interface Module {
   id: string;

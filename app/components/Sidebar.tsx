@@ -15,13 +15,16 @@ const Sidebar: React.FC = () => {
   };
 
   const [userTier, setUserTier] = useState<string>('free');
-
+  const [isReturnedTraveller, setIsReturnedTraveller] = useState<boolean>(false);
+ 
   useEffect(() => {
     const user = AuthService.getUser();
-    if (user && user.subscription_tier) {
-      setUserTier(user.subscription_tier);
+    if (user) {
+      setUserTier(user.subscription_tier || 'free');
+      setIsReturnedTraveller(!!user.is_returned_traveller);
     } else {
       setUserTier('free');
+      setIsReturnedTraveller(false);
     }
   }, [pathname]);
 
@@ -41,6 +44,9 @@ const Sidebar: React.FC = () => {
     }
     if (page === 'modules') {
       return pathname.startsWith('/modules');
+    }
+    if (page.startsWith('profile?tab=stories')) {
+      return pathname === '/profile' && typeof window !== 'undefined' && window.location.search.includes('tab=stories');
     }
     return pathname === `/${page}`;
   };
@@ -152,6 +158,15 @@ const Sidebar: React.FC = () => {
               </svg>
               Profile
             </div>
+            {(isReturnedTraveller || userTier === 'preparation' || AuthService.getUser()?.role === 'admin') && (
+              <div className={`nav-item ${isActive('stories') ? 'active' : ''}`} onClick={() => goto('stories')}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                  <path d="M12 20h9"></path>
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+                Stories
+              </div>
+            )}
           
           </nav>
 

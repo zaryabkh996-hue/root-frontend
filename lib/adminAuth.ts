@@ -1,5 +1,6 @@
 import { auth0 } from "@/lib/auth0";
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 
 export interface AdminAuthResult {
   authorized: boolean;
@@ -15,6 +16,46 @@ export interface AdminAuthResult {
  */
 export async function verifyAdminSession(): Promise<AdminAuthResult> {
   try {
+    // 1. Check Authorization header first
+    const reqHeaders = await headers();
+    const authHeader = reqHeaders.get('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
+      if (apiUrl) {
+        let res = await fetch(`${apiUrl}/auth/admin/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+          },
+          cache: 'no-store'
+        });
+        if (!res.ok) {
+          res = await fetch(`${apiUrl}/me`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json',
+            },
+            cache: 'no-store'
+          });
+        }
+        if (res.ok) {
+          const data = await res.json();
+          const user = data.data || data.user;
+          if (data.success && user) {
+            if (user.role === 'admin') {
+              return {
+                authorized: true,
+                backendUser: user,
+                backendToken: token,
+              };
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Check Auth0 Session fallback
     const session = await auth0.getSession();
 
     if (!session) {

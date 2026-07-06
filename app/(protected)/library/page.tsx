@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProgress } from '../../lib/progressContext';
 import { getModuleById } from '../../lib/progressStore';
@@ -49,6 +49,24 @@ export default function LibraryPage() {
 
   const [guidanceModalOpen, setGuidanceModalOpen] = useState(false);
   const [guidanceModalItem, setGuidanceModalItem] = useState<{ title: string; stage: number } | null>(null);
+
+  const [stories, setStories] = useState<any[]>([]);
+  const [readerStory, setReaderStory] = useState<any | null>(null);
+
+  useEffect(() => {
+    const fetchStories = async () => {
+      try {
+        const res = await fetch('/fe-api/stories/approved');
+        const data = await res.json();
+        if (data.success) {
+          setStories(data.data || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch library stories:', err);
+      }
+    };
+    fetchStories();
+  }, []);
 
   // Map Sanity dynamic modules to LibraryItems format
   const LIBRARY_ITEMS = useMemo(() => {
@@ -107,8 +125,26 @@ export default function LibraryPage() {
       });
     });
 
+    // Add approved stories
+    stories.forEach(story => {
+      items.push({
+        id: story._id,
+        moduleId: story._id,
+        stage: 1, // default free stage
+        type: 'pdf', // displays document icon
+        title: story.title,
+        duration: 5,
+        durationLabel: `Story · By ${story.author}`,
+        locked: false,
+        photoClass: 'hero-photo',
+        tags: ['Lived Experience', 'Story', 'Unlocked'],
+        resourceUrl: '', // empty so it doesn't open video/pdf directly
+        narrator: story.body, // put body in narrator/custom field to read in modal
+      });
+    });
+
     return items;
-  }, [computed]);
+  }, [computed, stories]);
 
   // Calculate type pills with counts
   const typePills = useMemo(() => {
@@ -159,6 +195,10 @@ export default function LibraryPage() {
   }, [searchTerm, filterType, filterStage, filterDuration, LIBRARY_ITEMS]);
 
   const handleItemClick = (item: LibraryItem) => {
+    if (item.tags.includes('Lived Experience')) {
+      setReaderStory(item);
+      return;
+    }
     if (item.locked) {
       setGuidanceModalItem({
         title: item.title,
@@ -624,6 +664,39 @@ export default function LibraryPage() {
                 }}
               >
                 Go to Journey Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Story Reader Modal */}
+      {readerStory && (
+        <div className="modal-shroud" onClick={() => setReaderStory(null)}>
+          <div
+            className="modal-card scard-dark p-9"
+            style={{ maxWidth: '700px', background: 'var(--forest-deep)', border: '1px solid var(--brass)', maxHeight: '85vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-brass/10">
+              <div style={{ marginRight: '16px' }}>
+                <span className="tag tag-brass mb-2 inline-block">Lived Experience</span>
+                <h2 className="display text-3xl font-light text-cream">{readerStory.title}</h2>
+                <div className="text-xs text-cream/50 mono mt-1">
+                  {readerStory.durationLabel}
+                </div>
+              </div>
+              <button className="text-cream/60 hover:text-cream text-xl" onClick={() => setReaderStory(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>
+                ✕
+              </button>
+            </div>
+            
+            <div className="text-cream/80 text-sm leading-relaxed whitespace-pre-wrap font-sans">
+              {readerStory.narrator}
+            </div>
+            
+            <div className="flex justify-end mt-8 pt-4 border-t border-brass/10">
+              <button className="btn-primary" onClick={() => setReaderStory(null)}>
+                Close Reader
               </button>
             </div>
           </div>
