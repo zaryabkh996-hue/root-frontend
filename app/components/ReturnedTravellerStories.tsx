@@ -174,7 +174,7 @@ export default function ReturnedTravellerStories() {
             <label className="text-xs text-cream/50 block mb-2 font-mono uppercase tracking-wider">Title</label>
             <input
               type="text"
-              className="field-dark w-full"
+              className="w-full"
               placeholder="e.g. A Culinary Homecoming in Accra"
               value={title}
               onChange={(e) => setTitle(e.target.value)}

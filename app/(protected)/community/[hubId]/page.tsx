@@ -114,6 +114,52 @@ export default function HubDetailPage() {
 
   const [isLockedByTier, setIsLockedByTier] = useState(false);
   const [requiredTier, setRequiredTier] = useState('');
+  const [successNotification, setSuccessNotification] = useState<string | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
+  const [userRevisionThreads, setUserRevisionThreads] = useState<any[]>([]);
+
+  const fetchHubThreads = async () => {
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+      const threadsResponse = await fetch(
+        `${backendUrl}/community/hubs/${hubId}/threads`,
+        {
+          method: 'GET',
+          headers: AuthService.getAuthHeaders(),
+        }
+      );
+
+      if (threadsResponse.ok) {
+        const threadsData = await threadsResponse.json();
+        setThreads(threadsData.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching hub threads:', error);
+    }
+  };
+
+  const fetchUserRevisionThreads = async () => {
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+      const response = await fetch(
+        `${backendUrl}/community/user/threads`,
+        {
+          method: 'GET',
+          headers: AuthService.getAuthHeaders(),
+        }
+      );
+      if (response.ok) {
+        const result = await response.json();
+        const revisionThreads = (result.data || []).filter(
+          (t: any) => String(t.hub_id) === String(hubId) && t.status === 'revision'
+        );
+        setUserRevisionThreads(revisionThreads);
+      }
+    } catch (error) {
+      console.error('Error fetching user revision threads:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchHubData = async () => {
@@ -156,19 +202,11 @@ export default function HubDetailPage() {
 
         setHub(fetchedHub);
 
-        // Fetch threads for this hub
-        const threadsResponse = await fetch(
-          `${backendUrl}/community/hubs/${hubId}/threads`,
-          {
-            method: 'GET',
-            headers: AuthService.getAuthHeaders(),
-          }
-        );
+        // Fetch approved threads
+        await fetchHubThreads();
 
-        if (threadsResponse.ok) {
-          const threadsData = await threadsResponse.json();
-          setThreads(threadsData.data || []);
-        }
+        // Fetch threads needing revision
+        await fetchUserRevisionThreads();
       } catch (error) {
         console.error('Error fetching hub data:', error);
       } finally {
@@ -218,16 +256,26 @@ export default function HubDetailPage() {
       setShowJoinMessage(true);
       return;
     }
+    setModalError(null);
     setShowCreateThreadModal(true);
+  };
+
+  const closeCreateModal = () => {
+    setShowCreateThreadModal(false);
+    setThreadTitle('');
+    setThreadContent('');
+    setEditingThreadId(null);
+    setModalError(null);
   };
 
   const handleCreateThread = async () => {
     if (!threadTitle.trim() || !threadContent.trim()) {
-      alert('Please fill in both title and content');
+      setModalError('Please fill in both title and content');
       return;
     }
 
     setCreatingThread(true);
+    setModalError(null);
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
@@ -249,33 +297,73 @@ export default function HubDetailPage() {
 
       if (response.ok) {
         const newThreadData = await response.json();
-        alert('Thread created successfully!');
+        
+        // Show success notification banner at the top of the page
+        setSuccessNotification('Your thread has been submitted and is waiting for approval from the admin. It will publish in the community once approved.');
 
-        // Reset form
-        setThreadTitle('');
-        setThreadContent('');
-        setShowCreateThreadModal(false);
+        // Reset form and close modal
+        closeCreateModal();
+
+        // Smooth scroll to top to see notification
+        window.scrollTo({ top: 0, behavior: 'smooth' });
 
         // Refresh threads
-        const threadsResponse = await fetch(
-          `${backendUrl}/community/hubs/${hubId}/threads`,
-          {
-            method: 'GET',
-            headers: AuthService.getAuthHeaders(),
-          }
-        );
-
-        if (threadsResponse.ok) {
-          const threadsData = await threadsResponse.json();
-          setThreads(threadsData.data || []);
-        }
+        await fetchHubThreads();
+        await fetchUserRevisionThreads();
       } else {
         const errorData = await response.json();
-        alert('Failed to create thread: ' + (errorData.message || 'Unknown error'));
+        setModalError(errorData.message || 'Failed to create thread. Please try again.');
       }
     } catch (error) {
       console.error('Error creating thread:', error);
-      alert('Error creating thread');
+      setModalError('Error creating thread. Please check your network connection and try again.');
+    } finally {
+      setCreatingThread(false);
+    }
+  };
+
+  const handleUpdateThread = async () => {
+    if (!threadTitle.trim() || !threadContent.trim()) {
+      setModalError('Please fill in both title and content');
+      return;
+    }
+
+    setCreatingThread(true);
+    setModalError(null);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
+
+      const response = await fetch(
+        `${backendUrl}/community/threads/${editingThreadId}`,
+        {
+          method: 'PUT',
+          headers: AuthService.getAuthHeaders(),
+          body: JSON.stringify({
+            title: threadTitle,
+            content: threadContent,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        setSuccessNotification('Your thread has been resubmitted and is waiting for approval from the admin. It will publish in the community once approved.');
+
+        // Close modal and reset
+        closeCreateModal();
+
+        // Smooth scroll to top to see notification
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Refresh threads
+        await fetchHubThreads();
+        await fetchUserRevisionThreads();
+      } else {
+        const errorData = await response.json();
+        setModalError(errorData.message || 'Failed to update thread. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating thread:', error);
+      setModalError('Error updating thread. Please check your network connection and try again.');
     } finally {
       setCreatingThread(false);
     }
@@ -448,6 +536,43 @@ export default function HubDetailPage() {
         All Hubs
       </button>
 
+      {/* Success Notification */}
+      {successNotification && (
+        <div 
+          className="p-5 mb-6 rounded-sm border flex items-start gap-4"
+          style={{
+            background: 'rgba(31, 90, 61, 0.18)',
+            borderColor: 'rgba(31, 90, 61, 0.45)',
+            color: 'var(--cream)',
+          }}
+        >
+          <div 
+            className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold"
+            style={{ 
+              background: 'rgba(31, 90, 61, 0.3)',
+              color: 'var(--brass-light)',
+              border: '1px solid rgba(201, 161, 74, 0.4)' 
+            }}
+          >
+            ✓
+          </div>
+          <div className="flex-1">
+            <h4 className="font-semibold text-sm mb-1" style={{ color: 'var(--brass-light)' }}>
+              Thread Submitted
+            </h4>
+            <p className="text-sm text-cream/80 leading-relaxed">
+              {successNotification}
+            </p>
+          </div>
+          <button 
+            onClick={() => setSuccessNotification(null)}
+            className="text-cream/40 hover:text-cream text-lg font-bold leading-none cursor-pointer"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Hub Header */}
       <div className="mb-8">
         {/* Title and Badge inline */}
@@ -541,6 +666,66 @@ export default function HubDetailPage() {
       >
         + New thread
       </button>
+
+      {/* User's Threads Needing Revision */}
+      {userRevisionThreads.length > 0 && (
+        <div className="mt-8 space-y-4">
+          <div className="eyebrow eyebrow-cream" style={{ color: 'var(--terra)', fontSize: '10px' }}>
+            ⚠ Action Required: Threads Needing Revision ({userRevisionThreads.length})
+          </div>
+          
+          <div className="space-y-3">
+            {userRevisionThreads.map((thread) => (
+              <div 
+                key={thread.id} 
+                className="scard-dark p-5"
+                style={{ 
+                  borderLeft: '3px solid var(--terra)', 
+                  background: 'rgba(212, 116, 73, 0.05)' 
+                }}
+              >
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <h4 className="font-semibold text-cream text-base">{thread.title}</h4>
+                  <button
+                    onClick={() => {
+                      setThreadTitle(thread.title);
+                      setThreadContent(thread.content);
+                      setEditingThreadId(thread.id);
+                      setModalError(null);
+                      setShowCreateThreadModal(true);
+                    }}
+                    className="btn-primary text-xs py-1.5 px-4 flex-shrink-0"
+                    style={{ background: 'var(--terra)', borderColor: 'var(--terra)', color: 'var(--cream)' }}
+                  >
+                    Edit & Resubmit
+                  </button>
+                </div>
+                
+                <p className="text-sm text-cream/70 mb-4 leading-relaxed" style={{ whiteSpace: 'pre-wrap' }}>
+                  {thread.content}
+                </p>
+
+                {/* Revision Note Box */}
+                <div 
+                  className="p-4 rounded-sm text-sm"
+                  style={{
+                    background: 'rgba(212, 116, 73, 0.12)',
+                    border: '1px solid rgba(212, 116, 73, 0.25)',
+                    color: 'var(--cream)'
+                  }}
+                >
+                  <span className="font-semibold block text-xs mb-1 uppercase tracking-wider" style={{ color: 'var(--terra)' }}>
+                    Custodian Revision Note:
+                  </span>
+                  <p className="text-cream/80 italic">
+                    "{thread.revision_note}"
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Guidelines Modal */}
       {showGuidelinesModal && (
@@ -649,7 +834,7 @@ export default function HubDetailPage() {
             justifyContent: 'center',
             zIndex: 50,
           }}
-          onClick={() => setShowCreateThreadModal(false)}
+          onClick={closeCreateModal}
         >
           <div
             className="scard-dark p-8 w-full mx-4"
@@ -662,14 +847,36 @@ export default function HubDetailPage() {
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="display text-2xl">Start a new thread</h2>
+              <h2 className="display text-2xl">
+                {editingThreadId ? 'Edit & Resubmit Thread' : 'Start a new thread'}
+              </h2>
               <button
-                onClick={() => setShowCreateThreadModal(false)}
+                onClick={closeCreateModal}
                 className="text-cream/60 hover:text-cream text-2xl leading-none"
               >
                 ×
               </button>
             </div>
+
+            {/* Error Message inside modal */}
+            {modalError && (
+              <div 
+                className="p-4 mb-6 rounded-sm border text-sm flex items-center justify-between animate-fade-in"
+                style={{
+                  background: 'rgba(160, 72, 72, 0.15)',
+                  borderColor: 'rgba(160, 72, 72, 0.35)',
+                  color: 'var(--cream)',
+                }}
+              >
+                <span className="flex-1">{modalError}</span>
+                <button 
+                  onClick={() => setModalError(null)}
+                  className="text-cream/40 hover:text-cream text-lg font-bold leading-none cursor-pointer ml-3"
+                >
+                  ×
+                </button>
+              </div>
+            )}
 
             {/* Thread Title Input */}
             <div className="mb-6">
@@ -712,21 +919,21 @@ export default function HubDetailPage() {
             {/* Action Buttons */}
             <div className="flex gap-3">
               <button
-                onClick={() => setShowCreateThreadModal(false)}
+                onClick={closeCreateModal}
                 className="btn-ghost-dark text-xs flex-1"
                 disabled={creatingThread}
               >
                 Cancel
               </button>
               <button
-                onClick={handleCreateThread}
+                onClick={editingThreadId ? handleUpdateThread : handleCreateThread}
                 className="btn-primary text-xs flex-1"
                 disabled={creatingThread || !threadTitle.trim() || !threadContent.trim()}
                 style={{
                   opacity: creatingThread || !threadTitle.trim() || !threadContent.trim() ? 0.6 : 1,
                 }}
               >
-                {creatingThread ? 'Creating...' : 'Create thread'}
+                {creatingThread ? (editingThreadId ? 'Saving...' : 'Creating...') : (editingThreadId ? 'Resubmit' : 'Create thread')}
               </button>
             </div>
           </div>
