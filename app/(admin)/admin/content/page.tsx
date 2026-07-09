@@ -295,7 +295,13 @@ export default function ContentPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch('/fe-api/admin/content');
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('authToken') || localStorage.getItem('token')) : null;
+      const res = await fetch('/fe-api/admin/content', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      });
       const data = await res.json();
       if (data.success) {
         setModules(data.data ?? []);
@@ -423,6 +429,7 @@ export default function ContentPage() {
     setSubmitting(true);
 
     try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('authToken') || localStorage.getItem('token')) : null;
       const payload = {
         title: form.title,
         moduleNumber: Number(form.num) || 0,
@@ -440,7 +447,10 @@ export default function ContentPage() {
         // Update existing
         const res = await fetch(`/fe-api/admin/content/${encodeURIComponent(editingId)}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
         });
         const data = await res.json();
@@ -450,7 +460,10 @@ export default function ContentPage() {
         // Create new
         const res = await fetch('/fe-api/admin/content', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
         });
         const data = await res.json();
@@ -474,8 +487,13 @@ export default function ContentPage() {
 
     setActionLoading(mod._id);
     try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('authToken') || localStorage.getItem('token')) : null;
       const res = await fetch(`/fe-api/admin/content/${encodeURIComponent(mod._id)}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
@@ -492,9 +510,16 @@ export default function ContentPage() {
   const approveAndPublish = async (mod: SanityModule) => {
     setActionLoading(mod._id);
     try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('authToken') || localStorage.getItem('token')) : null;
       const res = await fetch(
         `/fe-api/admin/content/${encodeURIComponent(mod._id)}/approve`,
-        { method: 'POST' },
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+          },
+        },
       );
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
@@ -517,9 +542,13 @@ export default function ContentPage() {
 
     setActionLoading(mod._id);
     try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('authToken') || localStorage.getItem('token')) : null;
       const res = await fetch(`/fe-api/admin/content/${encodeURIComponent(mod._id)}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ approvalStep: currentStep + 1 }),
       });
       const data = await res.json();
@@ -540,11 +569,15 @@ export default function ContentPage() {
 
     setActionLoading(mod._id);
     try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('authToken') || localStorage.getItem('token')) : null;
       const res = await fetch(
         `/fe-api/admin/content/${encodeURIComponent(mod._id)}/revision`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
           body: JSON.stringify({ note: noteValue }),
         },
       );
