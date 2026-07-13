@@ -25,17 +25,28 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Module not found' }, { status: 404 });
     }
 
-    const stageId = TRACK_TO_STAGE_ID[module.track] || 1;
-    const userTier = await getUserTier(request);
+    if (module.status !== 'published') {
+      return NextResponse.json({ success: false, error: 'Access denied: Module is not published.' }, { status: 403 });
+    }
 
-    if (!isStageAccessible(userTier, stageId)) {
+    const stageId = TRACK_TO_STAGE_ID[module.track] || 1;
+    const required_tier = stageId === 1 ? 'free' : stageId === 2 ? 'community' : 'preparation';
+    const userTier = await getUserTier(request);
+    const locked = !isStageAccessible(userTier, stageId);
+
+    if (locked) {
       return NextResponse.json(
-        { success: false, error: `Access denied: Upgrade your subscription to access Stage ${stageId}.` },
+        { 
+          success: false, 
+          error: `Access denied: Upgrade your subscription to access Stage ${stageId}.`,
+          locked,
+          required_tier
+        },
         { status: 403 }
       );
     }
 
-    return NextResponse.json({ success: true, data: module });
+    return NextResponse.json({ success: true, data: { ...module, locked, required_tier } });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to fetch module';
     return NextResponse.json({ success: false, error: message }, { status: 500 });

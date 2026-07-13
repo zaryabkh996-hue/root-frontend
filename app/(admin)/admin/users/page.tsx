@@ -13,6 +13,7 @@ interface User {
   phase: string;
   stage: string;
   score: string;
+  is_returned_traveller?: boolean;
 }
 
 interface PaginationData {
@@ -109,6 +110,33 @@ export default function AdminUsers() {
     }
   };
 
+  const handleToggleReturnedTraveller = async (userId: number) => {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      if (!token) return;
+
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const headers = AuthService.getAuthHeaders();
+
+      const response = await fetch(`${backendUrl}/admin/users/${userId}/toggle-returned-traveller`, {
+        method: 'POST',
+        headers,
+      });
+
+      if (response.ok) {
+        setUsers(prevUsers =>
+          prevUsers.map(u =>
+            u.id === userId ? { ...u, is_returned_traveller: !u.is_returned_traveller } : u
+          )
+        );
+      } else {
+        console.error('Failed to toggle returned traveller status');
+      }
+    } catch (error) {
+      console.error('Error toggling returned traveller status:', error);
+    }
+  };
+
   return (
     <div className="admin-main">
       <div className="admin-eyebrow">User Management</div>
@@ -131,13 +159,14 @@ export default function AdminUsers() {
       {/* Table with Loader */}
       <div className="a-table">
         {/* Table Header */}
-        <div className="a-table-head" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 80px 100px' }}>
+        <div className="a-table-head" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 80px 100px 120px' }}>
           <span>Client</span>
           <span>Tier</span>
           <span>Phase</span>
           <span>Stage</span>
           <span>Score</span>
-          {/* <span>Actions</span> */}
+          <span>Traveller</span>
+          <span>Actions</span>
         </div>
 
         {/* Loader or Table Rows */}
@@ -189,7 +218,7 @@ export default function AdminUsers() {
             <div
               key={user.id}
               className="a-table-row"
-              style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 80px 100px' }}
+              style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 80px 100px 120px' }}
             >
               {/* Client Cell */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -216,23 +245,29 @@ export default function AdminUsers() {
               {/* Score Cell */}
               <div className="a-table-cell-score">{user.score}</div>
 
+              {/* Traveller Cell */}
+              <div>
+                <span className={user.is_returned_traveller ? "a-badge-ok" : "a-badge-gray"} style={{ fontSize: '9px' }}>
+                  {user.is_returned_traveller ? '✓ Returned' : 'No'}
+                </span>
+              </div>
+
               {/* Actions Cell */}
-              {/* <div style={{ display: 'flex', gap: '4px' }}>
-                <button className="a-btn-ghost" style={{ padding: '4px 8px', fontSize: '11px' }}>
-                  View
-                </button>
+              <div style={{ display: 'flex', gap: '4px' }}>
                 <button
                   className="a-btn-ghost"
                   style={{
                     padding: '4px 8px',
                     fontSize: '11px',
-                    color: '#d97706',
-                    borderColor: '#fcd34d',
+                    color: user.is_returned_traveller ? '#ef4444' : '#10b981',
+                    borderColor: user.is_returned_traveller ? '#fca5a5' : '#a7f3d0',
+                    cursor: 'pointer',
                   }}
+                  onClick={() => handleToggleReturnedTraveller(user.id)}
                 >
-                  Flag
+                  {user.is_returned_traveller ? 'Revoke' : 'Grant'}
                 </button>
-              </div> */}
+              </div>
             </div>
           ))
         )}

@@ -15,12 +15,15 @@ export async function GET(request: NextRequest) {
 
     const filtered = published.map((m) => {
       const stageId = TRACK_TO_STAGE_ID[m.track] || 1;
-      if (!isStageAccessible(userTier, stageId)) {
+      const required_tier = stageId === 1 ? 'free' : stageId === 2 ? 'community' : 'preparation';
+      const locked = !isStageAccessible(userTier, stageId);
+
+      if (locked) {
         // Strip body, takeaways, and resourceUrl
         const { body, takeaways, resourceUrl, ...rest } = m;
-        return rest;
+        return { ...rest, locked, required_tier };
       }
-      return m;
+      return { ...m, locked, required_tier };
     });
 
     return NextResponse.json({ success: true, data: filtered });

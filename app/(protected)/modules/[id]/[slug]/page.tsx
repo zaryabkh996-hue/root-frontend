@@ -180,11 +180,7 @@ function ModuleContent({ moduleId }: { moduleId: string }) {
     setIsLoadingContent(true);
     setFetchError(null);
 
-    const token = localStorage.getItem('authToken');
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+    const headers = AuthService.getAuthHeaders();
 
     fetch(`/fe-api/content/${resolvedId}`, { headers })
       .then(res => {

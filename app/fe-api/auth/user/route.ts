@@ -18,17 +18,14 @@ export async function GET() {
     if (!backendToken && session.user?.sub && session.user?.email) {
       try {
         const apiUrl =
-          process.env.NEXT_PUBLIC_BACKEND_URL ?? " ";
+          process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || " ";
 
         const res = await fetch(`${apiUrl}/auth/register-oauth`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            email: session.user.email,
-            name: session.user.name ?? "User",
-            auth0_id: session.user.sub,
-            picture: session.user.picture ?? null,
             provider: session.user.sub?.split("|")[0] ?? "auth0",
+            id_token: session.idToken || null,
           }),
         });
 
@@ -42,13 +39,23 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: session.user,
       accessToken: session.accessToken,
-      backendToken,
       backendUser,
     });
+
+    if (backendToken) {
+      response.cookies.set("authToken", backendToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+      });
+    }
+
+    return response;
   } catch (error) {
     console.error("Error fetching user:", error);
     return NextResponse.json({ error: "Failed to fetch user" }, { status: 500 });

@@ -30,6 +30,8 @@ import {
   RemoteProgress,
 } from './progressApi';
 
+import { AuthService } from '@/app/lib/authService';
+
 const TRACK_TO_STAGE_ID: Record<string, number> = {
   'Emotional Preparation': 1,
   'Cultural Intelligence': 2,
@@ -167,7 +169,9 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
     setIsSyncing(true);
 
     // Fetch published modules from API first, build dynamic stages, and update store
-    fetch('/fe-api/content')
+    fetch('/fe-api/content', {
+      headers: AuthService.getAuthHeaders()
+    })
       .then(res => res.json())
       .then(result => {
         if (cancelled) return;

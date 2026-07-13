@@ -19,17 +19,14 @@ export const auth0 = new Auth0Client({
     if (session?.user?.sub && session.user.email) {
       try {
         const apiUrl =
-          process.env.NEXT_PUBLIC_BACKEND_URL ?? " ";
+          process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || " ";
 
         const res = await fetch(`${apiUrl}/auth/register-oauth`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            email: session.user.email,
-            name: session.user.name ?? "User",
-            auth0_id: session.user.sub,
-            picture: session.user.picture ?? null,
             provider: session.user.sub?.split("|")[0] ?? "auth0",
+            id_token: session.idToken || null,
           }),
         });
 
@@ -45,7 +42,7 @@ export const auth0 = new Auth0Client({
 
     const isSecure = baseUrl.startsWith("https");
     const cookieOpts = {
-      httpOnly: false, // must be readable by client JS
+      httpOnly: true,  // Moved to HttpOnly for max security against XSS
       maxAge: 60,      // 60-second handoff window
       path: "/",
       sameSite: "lax" as const,

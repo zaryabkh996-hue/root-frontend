@@ -117,6 +117,9 @@ export class AuthService {
     localStorage.removeItem('oauth_user');
     localStorage.removeItem('userRole');
     localStorage.removeItem('ourroots_progress');
+
+    // Terminate secure HttpOnly session cookie on frontend BFF
+    fetch('/backend-api/logout', { method: 'POST' }).catch(() => {});
   }
 
   static getToken(): string | null {

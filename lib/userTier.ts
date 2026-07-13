@@ -32,70 +32,43 @@ export function isStageAccessible(userTier: string, stageId: number): boolean {
 }
 
 /**
- * Resolves the user's subscription tier server-side from:
- * 1. The Auth0 session cookie (if logged in via Auth0/OAuth)
- * 2. The Authorization header (if logged in via magic link / password flow)
+ * Resolves the user's subscription tier server-side by checking the live user data.
  */
 export async function getUserTier(request: NextRequest): Promise<string> {
   try {
+    let token: string | null = null;
+
     // 1. Check Auth0 Session
     const session = await auth0.getSession();
     if (session) {
-      const backendUser = (session as Record<string, unknown>).backendUser as Record<string, any> | null;
-      if (backendUser) {
-        if (backendUser.role === 'admin' || backendUser.role === 'custodian') {
-          return 'preparation';
-        }
-        if (backendUser.subscription_tier) {
-          return backendUser.subscription_tier;
-        }
-      }
-      
-      const backendToken = (session as Record<string, unknown>).backendToken as string | null;
-      if (backendToken) {
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
-        if (apiUrl) {
-          const res = await fetch(`${apiUrl}/me`, {
-            headers: {
-              'Authorization': `Bearer ${backendToken}`,
-              'Accept': 'application/json',
-            },
-            cache: 'no-store'
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.success && data.data) {
-              if (data.data.role === 'admin' || data.data.role === 'custodian') {
-                return 'preparation';
-              }
-              return data.data.subscription_tier || 'free';
-            }
-          }
-        }
+      token = (session as Record<string, unknown>).backendToken as string | null;
+    }
+
+    // 2. Check Authorization header (for Magic Link users)
+    if (!token) {
+      const authHeader = request.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
       }
     }
 
-    // 2. Check Authorization header
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
-      if (apiUrl) {
-        const res = await fetch(`${apiUrl}/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-          },
-          cache: 'no-store'
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.data) {
-            if (data.data.role === 'admin' || data.data.role === 'custodian') {
-              return 'preparation';
-            }
-            return data.data.subscription_tier || 'free';
+    if (token) {
+      const apiUrl = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "";
+      const res = await fetch(`${apiUrl}/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+        cache: 'no-store'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          const user = data.data;
+          if (user.role === 'admin' || user.role === 'custodian') {
+            return 'preparation';
           }
+          return user.subscription_tier || 'free';
         }
       }
     }
@@ -107,59 +80,42 @@ export async function getUserTier(request: NextRequest): Promise<string> {
 }
 
 /**
- * Checks if the current user is a Returned Traveller or an Admin.
+ * Checks if the current user is a Returned Traveller or an Admin by validating on the backend.
  * Returns authorization status along with user object and auth token.
  */
 export async function checkIsReturnedTraveller(request: NextRequest): Promise<{ authorized: boolean; user?: any; token?: string }> {
   try {
+    let token: string | null = null;
+
     // 1. Check Auth0 Session
     const session = await auth0.getSession();
     if (session) {
-      const backendUser = (session as Record<string, unknown>).backendUser as Record<string, any> | null;
-      if (backendUser && (backendUser.is_returned_traveller || backendUser.role === 'admin')) {
-        return { authorized: true, user: backendUser, token: (session as Record<string, unknown>).backendToken as string };
-      }
-      
-      const backendToken = (session as Record<string, unknown>).backendToken as string | null;
-      if (backendToken) {
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
-        const res = await fetch(`${apiUrl}/me`, {
-          headers: {
-            'Authorization': `Bearer ${backendToken}`,
-            'Accept': 'application/json',
-          },
-          cache: 'no-store'
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.data) {
-            if (data.data.is_returned_traveller || data.data.role === 'admin') {
-              return { authorized: true, user: data.data, token: backendToken };
-            }
-          }
-        }
-      }
+      token = (session as Record<string, unknown>).backendToken as string | null;
     }
 
     // 2. Check Authorization header
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
-      if (apiUrl) {
-        const res = await fetch(`${apiUrl}/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-          },
-          cache: 'no-store'
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.data) {
-            if (data.data.is_returned_traveller || data.data.role === 'admin') {
-              return { authorized: true, user: data.data, token };
-            }
+    if (!token) {
+      const authHeader = request.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+      }
+    }
+
+    if (token) {
+      const apiUrl = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "";
+      const res = await fetch(`${apiUrl}/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+        cache: 'no-store'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          const user = data.data;
+          if (user.is_returned_traveller || user.role === 'admin') {
+            return { authorized: true, user, token };
           }
         }
       }
@@ -177,34 +133,35 @@ export async function checkIsReturnedTraveller(request: NextRequest): Promise<{ 
  */
 export async function checkIsAuthenticated(request: NextRequest): Promise<{ authenticated: boolean; user?: any; token?: string }> {
   try {
+    let token: string | null = null;
+
     // 1. Check Auth0 Session
     const session = await auth0.getSession();
     if (session) {
-      const backendUser = (session as Record<string, unknown>).backendUser as Record<string, any> | null;
-      const backendToken = (session as Record<string, unknown>).backendToken as string | null;
-      if (backendUser && backendToken) {
-        return { authenticated: true, user: backendUser, token: backendToken };
-      }
+      token = (session as Record<string, unknown>).backendToken as string | null;
     }
 
     // 2. Check Authorization header
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
-      if (apiUrl) {
-        const res = await fetch(`${apiUrl}/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json',
-          },
-          cache: 'no-store'
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.data) {
-            return { authenticated: true, user: data.data, token };
-          }
+    if (!token) {
+      const authHeader = request.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+      }
+    }
+
+    if (token) {
+      const apiUrl = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "";
+      const res = await fetch(`${apiUrl}/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+        cache: 'no-store'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          return { authenticated: true, user: data.data, token };
         }
       }
     }

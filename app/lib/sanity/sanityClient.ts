@@ -322,21 +322,24 @@ export async function fetchStoryById(id: string): Promise<SanityStory | null> {
 
 /** Create a new story draft (status = pending). */
 export async function createStory(fields: {
+  id?: string;
   title: string;
   body: string;
   author: string;
   authorId: string;
 }): Promise<SanityStory> {
   const slug = slugify(fields.title);
-  const storyId = docId('story', slug);
+  const storyId = fields.id || docId('story', slug);
   const now = new Date().toISOString();
+
+  const { id, ...mutateFields } = fields;
 
   const res = await sanityMutate([
     {
       createOrReplace: {
         _id: storyId,
         _type: 'story',
-        ...fields,
+        ...mutateFields,
         slug,
         status: 'pending',
         createdAt: now,

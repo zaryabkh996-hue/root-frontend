@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateStory } from '@/app/lib/sanity/sanityClient';
-import { checkIsAuthenticated } from '@/lib/userTier';
+import { checkIsReturnedTraveller } from '@/lib/userTier';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -12,9 +12,9 @@ interface RouteContext {
  */
 export async function GET(request: NextRequest, context: RouteContext) {
   try {
-    const authCheck = await checkIsAuthenticated(request);
-    if (!authCheck.authenticated || !authCheck.user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized.' }, { status: 401 });
+    const authCheck = await checkIsReturnedTraveller(request);
+    if (!authCheck.authorized || !authCheck.user) {
+      return NextResponse.json({ success: false, error: 'Forbidden. Returned Traveller status required.' }, { status: 403 });
     }
 
     const { id } = await context.params;
@@ -49,9 +49,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
  */
 export async function PUT(request: NextRequest, context: RouteContext) {
   try {
-    const authCheck = await checkIsAuthenticated(request);
-    if (!authCheck.authenticated || !authCheck.user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized.' }, { status: 401 });
+    const authCheck = await checkIsReturnedTraveller(request);
+    if (!authCheck.authorized || !authCheck.user) {
+      return NextResponse.json({ success: false, error: 'Forbidden. Returned Traveller status required.' }, { status: 403 });
     }
 
     const { id } = await context.params;

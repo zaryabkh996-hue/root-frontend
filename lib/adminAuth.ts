@@ -16,12 +16,24 @@ export interface AdminAuthResult {
  */
 export async function verifyAdminSession(): Promise<AdminAuthResult> {
   try {
-    // 1. Check Authorization header first
     const reqHeaders = await headers();
     const authHeader = reqHeaders.get('Authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
+    
+    // 1. Check Cookie first, then check Authorization header
+    let token: string | null = null;
+    const cookieStore = reqHeaders.get('Cookie');
+    if (cookieStore) {
+      const match = cookieStore.match(/authToken=([^;]+)/);
+      if (match) {
+        token = match[1];
+      }
+    }
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+
+    if (token) {
+      const apiUrl = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "";
       if (apiUrl) {
         let res = await fetch(`${apiUrl}/auth/admin/me`, {
           headers: {
@@ -70,17 +82,14 @@ export async function verifyAdminSession(): Promise<AdminAuthResult> {
 
     if (!backendToken && session.user?.sub && session.user?.email) {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
+        const apiUrl = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
         const res = await fetch(`${apiUrl}/auth/register-oauth`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            email: session.user.email,
-            name: session.user.name ?? "User",
-            auth0_id: session.user.sub,
-            picture: session.user.picture ?? null,
             provider: session.user.sub?.split("|")[0] ?? "auth0",
+            id_token: session.idToken || null,
           }),
         });
 

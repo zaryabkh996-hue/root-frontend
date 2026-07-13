@@ -29,6 +29,7 @@ export default function ReturnedTravellerStories() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState('');
 
   useEffect(() => {
     fetchStories();
@@ -75,6 +76,10 @@ export default function ReturnedTravellerStories() {
     setEditStoryId(null);
     setTitle('');
     setBody('');
+    const newKey = typeof window !== 'undefined' && window.crypto?.randomUUID 
+      ? window.crypto.randomUUID() 
+      : Math.random().toString(36).substring(2) + Date.now().toString(36);
+    setIdempotencyKey(newKey);
   };
 
   const handleOpenEdit = (story: Story) => {
@@ -113,7 +118,11 @@ export default function ReturnedTravellerStories() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ title, body }),
+        body: JSON.stringify({
+          title,
+          body,
+          ...(!editStoryId && { idempotencyKey })
+        }),
       });
 
       const result = await res.json();

@@ -38,6 +38,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     let sanityId = null;
     if (detailRes.ok) {
       const detail = await detailRes.json();
+      if (detail.data?.status === 'approved') {
+        return NextResponse.json({ success: false, error: 'Story is already approved.' }, { status: 400 });
+      }
       sanityId = detail.data?.sanity_id;
     }
 

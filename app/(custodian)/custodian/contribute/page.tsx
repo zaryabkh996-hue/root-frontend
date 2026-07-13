@@ -83,6 +83,21 @@ export default function CustodianContribute() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // 50MB size limit
+      const maxSize = 50 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert('File size exceeds the 50MB limit.');
+        return;
+      }
+
+      // Allowed formats
+      const allowedExtensions = ['mp4', 'mov', 'avi', 'webm', 'mp3', 'wav', 'ogg', 'm4a', 'jpg', 'jpeg', 'png', 'webp'];
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      if (!extension || !allowedExtensions.includes(extension)) {
+        alert('Invalid file type. Allowed formats: MP4, MOV, AVI, WEBM, MP3, WAV, OGG, M4A, JPG, PNG, WEBP.');
+        return;
+      }
+
       setMediaFile(file);
     }
   };
@@ -447,7 +462,7 @@ export default function CustodianContribute() {
                     <line x1="12" y1="3" x2="12" y2="15" />
                   </svg>
                   <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a1a1a' }}>Drop video, audio, or images here</div>
-                  <div style={{ fontSize: '11px', color: '#8a7f72', marginTop: '4px' }}>MP4, MOV, MP3, WAV, JPG, PNG · Max 500MB</div>
+                  <div style={{ fontSize: '11px', color: '#8a7f72', marginTop: '4px' }}>MP4, MOV, AVI, WEBM, MP3, WAV, OGG, M4A, JPG, PNG, WEBP · Max 50MB</div>
                   <div style={{ fontSize: '11px', color: '#c9a14a', marginTop: '6px' }}>Audio & video auto-transcribed by Whisper AI</div>
                 </>
               )}
