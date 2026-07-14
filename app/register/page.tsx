@@ -14,6 +14,57 @@ export default function Register() {
   const [quizToken, setQuizToken] = useState<string | null>(null);
 
   useEffect(() => {
+    // If already logged in, redirect to appropriate dashboard/onboarding
+    if (typeof window !== 'undefined') {
+      const localToken = localStorage.getItem('authToken');
+      let localRole = localStorage.getItem('userRole');
+      const userRaw = localStorage.getItem('user');
+
+      if (localToken) {
+        if (!localRole) {
+          if (userRaw) {
+            try {
+              const user = JSON.parse(userRaw);
+              const resolvedRole = user?.role || 'customer';
+              localRole = resolvedRole;
+              localStorage.setItem('userRole', resolvedRole);
+            } catch (_) {
+              localRole = 'customer';
+              localStorage.setItem('userRole', 'customer');
+            }
+          } else {
+            localRole = 'customer';
+            localStorage.setItem('userRole', 'customer');
+          }
+        }
+
+        if (localRole === 'admin') {
+          router.push('/admin/dashboard');
+          return;
+        }
+        if (localRole === 'custodian') {
+          router.push('/custodian/dashboard');
+          return;
+        }
+        if (localRole === 'customer') {
+          if (userRaw) {
+            try {
+              const user = JSON.parse(userRaw);
+              if (user && user.onboarded) {
+                router.push('/dashboard');
+                return;
+              } else {
+                router.push('/onboarding');
+                return;
+              }
+            } catch (_) {}
+          }
+          router.push('/dashboard');
+          return;
+        }
+      }
+    }
+
     const fetchReport = async () => {
       if (typeof window !== 'undefined') {
         const searchParams = new URLSearchParams(window.location.search);
@@ -37,7 +88,7 @@ export default function Register() {
       }
     };
     fetchReport();
-  }, []);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

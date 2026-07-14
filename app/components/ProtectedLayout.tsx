@@ -34,7 +34,25 @@ const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children }) => {
     const checkAuthentication = async () => {
       // First check localStorage (magic link users) - instant, no loading
       const token = localStorage.getItem('authToken');
-      const role = localStorage.getItem('userRole');
+      let role = localStorage.getItem('userRole');
+
+      if (token && !role) {
+        const userRaw = localStorage.getItem('user');
+        if (userRaw) {
+          try {
+            const user = JSON.parse(userRaw);
+            const resolvedRole = user?.role || 'customer';
+            role = resolvedRole;
+            localStorage.setItem('userRole', resolvedRole);
+          } catch (_) {
+            role = 'customer';
+            localStorage.setItem('userRole', 'customer');
+          }
+        } else {
+          role = 'customer';
+          localStorage.setItem('userRole', 'customer');
+        }
+      }
 
       // Role-based routing - redirect admin and custodian users
       if (token && role === 'admin') {
@@ -48,6 +66,18 @@ const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children }) => {
       }
 
       if (token && role === 'customer') {
+        const userRaw = localStorage.getItem('user');
+        if (userRaw) {
+          try {
+            const user = JSON.parse(userRaw);
+            if (user && !user.onboarded) {
+              router.push('/onboarding');
+              return;
+            }
+          } catch (e) {
+            console.error('Error parsing user in ProtectedLayout:', e);
+          }
+        }
         setIsAuthenticated(true);
         return;
       }

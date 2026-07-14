@@ -48,6 +48,7 @@ export default function OAuthSuccess() {
         localStorage.setItem('authToken', backendToken);
         localStorage.setItem('user', JSON.stringify(backendUser ?? {}));
         localStorage.setItem('oauth_user', 'true');
+        localStorage.setItem('userRole', (backendUser as any)?.role || 'customer');
         if (quizToken) {
           localStorage.setItem('quizToken', quizToken);
         }

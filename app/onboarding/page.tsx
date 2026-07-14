@@ -28,11 +28,15 @@ export default function Onboarding() {
   }, []);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('authToken');
-      const userRaw = localStorage.getItem('user');
+    const checkAuthStatus = async () => {
+      if (typeof window === 'undefined') return;
 
-      setAuthToken(token);
+      let token = localStorage.getItem('authToken');
+      let userRaw = localStorage.getItem('user');
+
+      if (token) {
+        setAuthToken(token);
+      }
 
       if (token && userRaw) {
         try {
@@ -45,7 +49,35 @@ export default function Onboarding() {
           console.error('Error checking user onboard status:', e);
         }
       }
-    }
+
+      // Sync Auth0 cookie session with localStorage
+      try {
+        const response = await fetch('/fe-api/auth/user');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.user) {
+            const finalUser = data.backendUser ?? data.user;
+            const backendToken = data.backendToken;
+
+            if (backendToken) {
+              setAuthToken(backendToken);
+              localStorage.setItem('authToken', backendToken);
+            }
+            if (finalUser) {
+              localStorage.setItem('user', JSON.stringify(finalUser));
+              localStorage.setItem('userRole', finalUser.role || 'customer');
+              if (finalUser.onboarded) {
+                router.push('/dashboard');
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error syncing Auth0 session on onboarding page:', err);
+      }
+    };
+
+    checkAuthStatus();
   }, [router]);
 
   const handleSelectOnboarding1 = (val: string) => {
