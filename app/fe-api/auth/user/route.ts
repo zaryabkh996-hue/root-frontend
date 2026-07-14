@@ -16,26 +16,53 @@ export async function GET() {
     let backendUser = (session as Record<string, unknown>).backendUser as Record<string, unknown> | null ?? null;
 
     if (!backendToken && session.user?.sub && session.user?.email) {
-      try {
-        const apiUrl =
-          process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || " ";
+      const apiUrl =
+        process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || " ";
+      const provider = session.user.sub?.split("|")[0] ?? "auth0";
 
+      console.log(`[api/auth/user] backendToken absent in Auth0 session. Running fallback sync to URL: ${apiUrl}/auth/register-oauth`, {
+        provider,
+        email: session.user.email,
+        hasIdToken: !!session.idToken,
+      });
+
+      try {
         const res = await fetch(`${apiUrl}/auth/register-oauth`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            provider: session.user.sub?.split("|")[0] ?? "auth0",
+            provider,
             id_token: session.idToken || null,
           }),
         });
 
-        const data = await res.json();
-        if (data.success && data.data?.token) {
-          backendToken = data.data.token;
-          backendUser = data.data.user;
+        console.log(`[api/auth/user] Fallback sync response status: ${res.status} ${res.statusText}`);
+
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error(`[api/auth/user] Fallback sync returned error status. Response body: ${errText}`);
+        } else {
+          const data = await res.json();
+          if (data.success && data.data?.token) {
+            backendToken = data.data.token;
+            backendUser = data.data.user;
+            console.log(`[api/auth/user] Fallback sync successful! Acquired token for user ID: ${backendUser?.id}`);
+          } else {
+            console.error("[api/auth/user] Fallback sync returned success:false or missing token", data);
+          }
         }
-      } catch (e) {
-        console.error("[api/auth/user] backend sync fallback failed:", e);
+      } catch (e: any) {
+        console.error("[api/auth/user] backend sync fallback failed with connection or fetch error:", {
+          message: e?.message,
+          name: e?.name,
+          code: e?.code,
+          cause: e?.cause ? {
+            message: e.cause?.message,
+            name: e.cause?.name,
+            code: e.cause?.code,
+          } : undefined,
+          stack: e?.stack,
+        });
       }
     }
 
