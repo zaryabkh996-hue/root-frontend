@@ -31,10 +31,14 @@ export const auth0 = new Auth0Client({
         });
 
         const data = await res.json();
-        if (data.success && data.data?.token) {
-          backendToken = data.data.token;
-          backendUser = data.data.user ?? null;
+      if (data.success && data.data?.token) {
+        backendToken = data.data.token;
+        backendUser = data.data.user ?? null;
+        if (session) {
+          (session as Record<string, unknown>).backendToken = backendToken;
+          (session as Record<string, unknown>).backendUser = backendUser;
         }
+      }
       } catch (e) {
         console.error("[auth0] onCallback — backend sync failed:", e);
       }

@@ -60,7 +60,7 @@ export default function OAuthSuccess() {
         if (quizToken && backendUser && typeof backendUser === 'object' && 'id' in backendUser) {
           try {
             const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-            await fetch(`${apiUrl}/auth/save-quiz-data`, {
+            const res = await fetch(`${apiUrl}/auth/save-quiz-data`, {
               method: 'POST',
               headers: AuthService.getAuthHeaders(),
               body: JSON.stringify({
@@ -68,6 +68,12 @@ export default function OAuthSuccess() {
                 quiz_token: quizToken
               })
             });
+            if (res.ok) {
+              const resData = await res.json();
+              if (resData.success && resData.data?.user) {
+                localStorage.setItem('user', JSON.stringify(resData.data.user));
+              }
+            }
             // Clear quiz token from sessionStorage after saving
             sessionStorage.removeItem('quizToken');
           } catch (err) {
@@ -105,13 +111,13 @@ export default function OAuthSuccess() {
           localStorage.setItem('authToken', data.backendToken);
           localStorage.setItem('user', JSON.stringify(data.backendUser ?? data.user));
           localStorage.setItem('oauth_user', 'true');
-          localStorage.setItem('userRole', data.user.role);
+          localStorage.setItem('userRole', data.backendUser?.role || 'customer');
 
           // Save quiz data if token exists
           if (quizToken && data.backendUser?.id) {
             try {
               const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
-              await fetch(`${apiUrl}/auth/save-quiz-data`, {
+              const res = await fetch(`${apiUrl}/auth/save-quiz-data`, {
                 method: 'POST',
                 headers: AuthService.getAuthHeaders(),
                 body: JSON.stringify({
@@ -119,6 +125,12 @@ export default function OAuthSuccess() {
                   quiz_token: quizToken
                 })
               });
+              if (res.ok) {
+                const resData = await res.json();
+                if (resData.success && resData.data?.user) {
+                  localStorage.setItem('user', JSON.stringify(resData.data.user));
+                }
+              }
               // Clear quiz token from sessionStorage after saving
               sessionStorage.removeItem('quizToken');
             } catch (err) {
