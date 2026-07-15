@@ -20,10 +20,12 @@ export async function GET() {
         process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || " ";
       const provider = session.user.sub?.split("|")[0] ?? "auth0";
 
+      const idToken = (session as Record<string, unknown>).idToken as string | null ?? session.tokenSet?.idToken ?? null;
+
       console.log(`[api/auth/user] backendToken absent in Auth0 session. Running fallback sync to URL: ${apiUrl}/auth/register-oauth`, {
         provider,
         email: session.user.email,
-        hasIdToken: !!session.idToken,
+        hasIdToken: !!idToken,
       });
 
       try {
@@ -32,7 +34,7 @@ export async function GET() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             provider,
-            id_token: session.idToken || null,
+            id_token: idToken,
           }),
         });
 

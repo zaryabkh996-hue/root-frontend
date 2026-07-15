@@ -2,6 +2,12 @@ import { Auth0Client } from "@auth0/nextjs-auth0/server";
 import { NextResponse } from "next/server";
 
 export const auth0 = new Auth0Client({
+  async beforeSessionSaved(session, idToken) {
+    return {
+      ...session,
+      idToken: idToken || ((session as Record<string, unknown>).idToken as string | null) || null,
+    };
+  },
   async onCallback(error, ctx, session) {
     const baseUrl =
       ctx.appBaseUrl ?? process.env.APP_BASE_URL ?? "http://localhost:3000";
@@ -20,11 +26,12 @@ export const auth0 = new Auth0Client({
       const apiUrl =
         process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || " ";
       const provider = session.user.sub?.split("|")[0] ?? "auth0";
+      const idToken = session.tokenSet?.idToken || (session as Record<string, unknown>).idToken as string | null;
 
       console.log(`[auth0] onCallback — Attempting backend sync to URL: ${apiUrl}/auth/register-oauth`, {
         provider,
         email: session.user.email,
-        hasIdToken: !!session.idToken,
+        hasIdToken: !!idToken,
       });
 
       try {
@@ -33,7 +40,7 @@ export const auth0 = new Auth0Client({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             provider,
-            id_token: session.idToken || null,
+            id_token: idToken || null,
           }),
         });
 

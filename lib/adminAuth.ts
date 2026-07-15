@@ -84,12 +84,14 @@ export async function verifyAdminSession(): Promise<AdminAuthResult> {
       try {
         const apiUrl = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
+        const idToken = (session as Record<string, unknown>).idToken as string | null ?? session.tokenSet?.idToken ?? null;
+
         const res = await fetch(`${apiUrl}/auth/register-oauth`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             provider: session.user.sub?.split("|")[0] ?? "auth0",
-            id_token: session.idToken || null,
+            id_token: idToken,
           }),
         });
 
