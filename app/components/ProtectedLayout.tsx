@@ -245,12 +245,12 @@ const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children }) => {
             🔍 Search
           </button>
 
-          <button 
+          {/* <button 
             onClick={() => router.push('/amenai?trigger_sos=true')}
             className="crisis-btn"
           >
             SOS · Talk to a human
-          </button>
+          </button> */}
           {children}
           
           <button onClick={() => router.push('/amenai')} className="amen-bubble">

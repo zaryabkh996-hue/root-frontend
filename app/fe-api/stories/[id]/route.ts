@@ -88,7 +88,8 @@ export async function PUT(request: NextRequest, context: RouteContext) {
           revisionNote: '',
         });
       } catch (sanityError) {
-        console.error("[fe-api/stories/[id]] Failed to sync story update to Sanity (continuing with DB write):", sanityError);
+        console.error("[fe-api/stories/[id]] Failed to sync story update to Sanity:", sanityError);
+        return NextResponse.json({ success: false, error: 'CMS synchronization failed. Update aborted.' }, { status: 502 });
       }
     }
 

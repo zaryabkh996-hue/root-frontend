@@ -636,12 +636,12 @@ export default function Home() {
                 </div>
                 <div><div className="font-medium mb-0.5">Validation before instruction</div><p className="text-sm text-cream/70">Every response leads with acknowledgement. "Your feelings are valid" comes before "here is what to do."</p></div>
               </div>
-              <div className="flex items-start gap-4">
+              {/* <div className="flex items-start gap-4">
                 <div className="w-9 h-9 rounded-full bg-brass/15 border border-brass/40 flex items-center justify-center text-brass flex-shrink-0 mt-0.5">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                 </div>
                 <div><div className="font-medium mb-0.5">Crisis-aware</div><p className="text-sm text-cream/70">If you tell her you're not okay, a real human is paged within 60 seconds.</p></div>
-              </div>
+              </div> */}
             </div>
           </div>
           <div className="scard-dark p-8 relative">

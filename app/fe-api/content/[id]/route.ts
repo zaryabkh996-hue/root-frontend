@@ -46,9 +46,57 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ success: true, data: { ...module, locked, required_tier } });
+    let resourceUrl = module.resourceUrl;
+    if (resourceUrl && resourceUrl.includes('cloudinary.com') && stageId >= 2) {
+      const parsed = parseCloudinaryUrl(resourceUrl);
+      if (parsed) {
+        try {
+          const authHeader = request.headers.get('Authorization') || '';
+          const apiBase = process.env.INTERNAL_BACKEND_URL ;
+          
+          const deliveryRes = await fetch(`${apiBase}/cloudinary/delivery-url`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': authHeader,
+            },
+            body: JSON.stringify({
+              public_id: parsed.publicId,
+              resource_type: parsed.resourceType,
+            }),
+          });
+          
+          if (deliveryRes.ok) {
+            const deliveryData = await deliveryRes.json();
+            if (deliveryData.success && deliveryData.url) {
+              resourceUrl = deliveryData.url;
+            }
+          }
+        } catch (err) {
+          console.error('[fe-api/content] Failed to get signed delivery URL:', err);
+        }
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...module,
+        locked,
+        required_tier,
+        ...(resourceUrl && { resourceUrl }),
+      }
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to fetch module';
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
+}
+
+function parseCloudinaryUrl(url: string) {
+  const match = url.match(/cloudinary\.com\/[^/]+\/([^/]+)\/(upload|authenticated|private)\/(?:v\d+\/)?([^?#]+)/);
+  if (!match) return null;
+  const [, resourceType, type, publicIdWithExtension] = match;
+  const publicId = publicIdWithExtension.replace(/\.[^/.]+$/, "");
+  return { resourceType, type, publicId };
 }

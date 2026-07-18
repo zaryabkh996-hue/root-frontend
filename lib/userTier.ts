@@ -52,6 +52,11 @@ export async function getUserTier(request: NextRequest): Promise<string> {
       }
     }
 
+    // 3. Check Cookie (BFF Auth HttpOnly Cookie)
+    if (!token) {
+      token = request.cookies.get('authToken')?.value || null;
+    }
+
     if (token) {
       const apiUrl = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "";
       const res = await fetch(`${apiUrl}/me`, {
@@ -101,6 +106,11 @@ export async function checkIsReturnedTraveller(request: NextRequest): Promise<{ 
       }
     }
 
+    // 3. Check Cookie (BFF Auth HttpOnly Cookie)
+    if (!token) {
+      token = request.cookies.get('authToken')?.value || null;
+    }
+
     if (token) {
       const apiUrl = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "";
       const res = await fetch(`${apiUrl}/me`, {
@@ -147,6 +157,11 @@ export async function checkIsAuthenticated(request: NextRequest): Promise<{ auth
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.split(' ')[1];
       }
+    }
+
+    // 3. Check Cookie (BFF Auth HttpOnly Cookie)
+    if (!token) {
+      token = request.cookies.get('authToken')?.value || null;
     }
 
     if (token) {

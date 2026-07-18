@@ -365,7 +365,7 @@ export default function AmenAIPage() {
         {/* Footer Info */}
         <div className="flex items-center justify-between mt-3 text-xs text-cream/40 mono">
           <span>Unlimited messages · Preparation tier</span>
-          <span>Crisis-aware · escalates to a human in 60s</span>
+          {/* <span>Crisis-aware · escalates to a human in 60s</span> */}
         </div>
       </div>
 

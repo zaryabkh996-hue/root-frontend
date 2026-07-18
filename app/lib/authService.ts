@@ -48,9 +48,10 @@ export class AuthService {
         };
       }
 
-      // Store token and user data
-      if (data.data?.token) {
-        localStorage.setItem('authToken', data.data.token);
+      // Store token and user data (fall back to 'session-active' flag if BFF stripped it for HttpOnly cookie)
+      const token = data.data?.token || 'session-active';
+      localStorage.setItem('authToken', token);
+      if (data.data?.user) {
         localStorage.setItem('user', JSON.stringify(data.data.user));
       }
 
@@ -88,9 +89,10 @@ export class AuthService {
         };
       }
 
-      // Store token and user data
-      if (result.data?.token) {
-        localStorage.setItem('authToken', result.data.token);
+      // Store token and user data (fall back to 'session-active' flag if BFF stripped it for HttpOnly cookie)
+      const token = result.data?.token || 'session-active';
+      localStorage.setItem('authToken', token);
+      if (result.data?.user) {
         localStorage.setItem('user', JSON.stringify(result.data.user));
       }
 

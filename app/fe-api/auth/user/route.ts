@@ -77,7 +77,7 @@ export async function GET() {
       user: session.user,
       accessToken: session.accessToken,
       backendUser,
-      backendToken,
+      backendToken: backendToken ? 'session-active' : null,
     });
 
     if (backendToken) {

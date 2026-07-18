@@ -264,9 +264,31 @@ export default function ContentPage() {
 
     try {
       setMediaUploading(true);
+
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('authToken') || localStorage.getItem('token')) : null;
+
+      // Fetch signed upload params from backend
+      const sigRes = await fetch('/backend-api/cloudinary/signature', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ upload_preset: uploadPreset })
+      });
+
+      if (!sigRes.ok) {
+        throw new Error('Failed to obtain Cloudinary signature from backend');
+      }
+
+      const { signature, timestamp, api_key } = await sigRes.json();
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('upload_preset', uploadPreset);
+      formData.append('signature', signature);
+      formData.append('timestamp', String(timestamp));
+      formData.append('api_key', api_key);
 
       const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
         method: 'POST',

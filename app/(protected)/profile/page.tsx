@@ -350,14 +350,33 @@ export default function ProfilePage() {
 
       const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
       const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
       let uploadedUrl = '';
 
       if (cloudName && uploadPreset) {
-        console.log('[Profile Picture] Uploading to Cloudinary...');
+        console.log('[Profile Picture] Fetching signature from backend...');
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+        const sigRes = await fetch(`${apiUrl}/cloudinary/signature`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ upload_preset: uploadPreset })
+        });
+        if (!sigRes.ok) {
+          throw new Error('Failed to obtain Cloudinary signature from backend');
+        }
+        const { signature, timestamp, api_key } = await sigRes.json();
+
+        console.log('[Profile Picture] Uploading to Cloudinary (signed)...');
         const cloudinaryData = new FormData();
         cloudinaryData.append('file', file);
         cloudinaryData.append('upload_preset', uploadPreset);
+        cloudinaryData.append('signature', signature);
+        cloudinaryData.append('timestamp', String(timestamp));
+        cloudinaryData.append('api_key', api_key);
 
         const cloudinaryRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
           method: 'POST',
@@ -382,7 +401,6 @@ export default function ProfilePage() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
       console.log('[Profile Picture] 3. API URL:', apiUrl);
 
       let response;
@@ -973,14 +991,33 @@ export default function ProfilePage() {
 
                     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
                     const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+                    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
 
                     let uploadedUrl = '';
 
                     if (cloudName && uploadPreset) {
-                      console.log('[Journey Photo Upload] Uploading to Cloudinary...');
+                      console.log('[Journey Photo Upload] Fetching signature from backend...');
+                      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+                      const sigRes = await fetch(`${apiUrl}/cloudinary/signature`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({ upload_preset: uploadPreset })
+                      });
+                      if (!sigRes.ok) {
+                        throw new Error('Failed to obtain Cloudinary signature from backend');
+                      }
+                      const { signature, timestamp, api_key } = await sigRes.json();
+
+                      console.log('[Journey Photo Upload] Uploading to Cloudinary (signed)...');
                       const cloudinaryData = new FormData();
                       cloudinaryData.append('file', file);
                       cloudinaryData.append('upload_preset', uploadPreset);
+                      cloudinaryData.append('signature', signature);
+                      cloudinaryData.append('timestamp', String(timestamp));
+                      cloudinaryData.append('api_key', api_key);
 
                       const cloudinaryRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
                         method: 'POST',
@@ -1005,7 +1042,6 @@ export default function ProfilePage() {
                       headers['Authorization'] = `Bearer ${token}`;
                     }
 
-                    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ' ';
                     console.log('[Journey Photo Upload] 2. API URL:', apiUrl);
                     console.log('[Journey Photo Upload] 3. Headers:', headers);
 
