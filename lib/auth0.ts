@@ -28,6 +28,13 @@ export const auth0 = new Auth0Client({
       const provider = session.user.sub?.split("|")[0] ?? "auth0";
       const idToken = session.tokenSet?.idToken || (session as Record<string, unknown>).idToken as string | null;
 
+      if (!idToken) {
+        console.error("[auth0] onCallback — Aborting backend sync: cryptographic idToken is missing.");
+        return NextResponse.redirect(
+          new URL(`/login?error=${encodeURIComponent("cryptographic idToken is missing")}`, baseUrl)
+        );
+      }
+
       console.log(`[auth0] onCallback — Attempting backend sync to URL: ${apiUrl}/auth/register-oauth`, {
         provider,
         email: session.user.email,
@@ -40,7 +47,7 @@ export const auth0 = new Auth0Client({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             provider,
-            id_token: idToken || null,
+            id_token: idToken,
           }),
         });
 

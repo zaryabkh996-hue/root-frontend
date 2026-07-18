@@ -22,21 +22,24 @@ export async function GET() {
 
       const idToken = (session as Record<string, unknown>).idToken as string | null ?? session.tokenSet?.idToken ?? null;
 
-      console.log(`[api/auth/user] backendToken absent in Auth0 session. Running fallback sync to URL: ${apiUrl}/auth/register-oauth`, {
-        provider,
-        email: session.user.email,
-        hasIdToken: !!idToken,
-      });
-
-      try {
-        const res = await fetch(`${apiUrl}/auth/register-oauth`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            provider,
-            id_token: idToken,
-          }),
+      if (!idToken) {
+        console.warn("[api/auth/user] Aborting fallback sync: cryptographic idToken is missing in session.");
+      } else {
+        console.log(`[api/auth/user] backendToken absent in Auth0 session. Running fallback sync to URL: ${apiUrl}/auth/register-oauth`, {
+          provider,
+          email: session.user.email,
+          hasIdToken: !!idToken,
         });
+
+        try {
+          const res = await fetch(`${apiUrl}/auth/register-oauth`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              provider,
+              id_token: idToken,
+            }),
+          });
 
         console.log(`[api/auth/user] Fallback sync response status: ${res.status} ${res.statusText}`);
 
@@ -67,6 +70,7 @@ export async function GET() {
         });
       }
     }
+  }
 
     const response = NextResponse.json({
       success: true,

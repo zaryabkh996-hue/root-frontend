@@ -5,6 +5,7 @@ const cspHeader = `
   script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.auth0.com;
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data: https://images.unsplash.com https://*.cloudinary.com https://*.auth0.com;
+  media-src 'self' https://*.cloudinary.com;
   font-src 'self' data:;
   connect-src 'self' http://localhost:8000 https://*.auth0.com http://localhost:3000 ws://localhost:3000;
   frame-src 'self' https://*.auth0.com;

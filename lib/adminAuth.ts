@@ -86,19 +86,23 @@ export async function verifyAdminSession(): Promise<AdminAuthResult> {
 
         const idToken = (session as Record<string, unknown>).idToken as string | null ?? session.tokenSet?.idToken ?? null;
 
-        const res = await fetch(`${apiUrl}/auth/register-oauth`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            provider: session.user.sub?.split("|")[0] ?? "auth0",
-            id_token: idToken,
-          }),
-        });
+        if (!idToken) {
+          console.warn("[verifyAdminSession] Aborting backend sync: cryptographic idToken is missing.");
+        } else {
+          const res = await fetch(`${apiUrl}/auth/register-oauth`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              provider: session.user.sub?.split("|")[0] ?? "auth0",
+              id_token: idToken,
+            }),
+          });
 
-        const data = await res.json();
-        if (data.success && data.data?.token) {
-          backendToken = data.data.token;
-          backendUser = data.data.user ?? null;
+          const data = await res.json();
+          if (data.success && data.data?.token) {
+            backendToken = data.data.token;
+            backendUser = data.data.user ?? null;
+          }
         }
       } catch (e) {
         console.error("[verifyAdminSession] backend sync fallback failed:", e);
