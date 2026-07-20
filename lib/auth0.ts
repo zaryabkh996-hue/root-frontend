@@ -3,42 +3,21 @@ import { NextResponse } from "next/server";
 
 export const auth0 = new Auth0Client({
   async beforeSessionSaved(session, idToken) {
-    return {
+    const sessionObj = {
       ...session,
       idToken: idToken || ((session as Record<string, unknown>).idToken as string | null) || null,
-    };
-  },
-  async onCallback(error, ctx, session) {
-    const baseUrl =
-      ctx.appBaseUrl ?? process.env.APP_BASE_URL ?? "http://localhost:3000";
+    } as Record<string, any>;
 
-    if (error) {
-      console.error("[auth0] OAuth callback error:", error.message);
-      return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent(error.message)}`, baseUrl)
-      );
-    }
-
-    let backendToken: string | null = null;
-    let backendUser: Record<string, unknown> | null = null;
-
-    if (session?.user?.sub && session.user.email) {
+    const resolvedIdToken = sessionObj.idToken;
+    if (sessionObj.user?.sub && sessionObj.user?.email && resolvedIdToken) {
       const apiUrl =
         process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || " ";
-      const provider = session.user.sub?.split("|")[0] ?? "auth0";
-      const idToken = session.tokenSet?.idToken || (session as Record<string, unknown>).idToken as string | null;
+      const provider = sessionObj.user.sub.split("|")[0] ?? "auth0";
 
-      if (!idToken) {
-        console.error("[auth0] onCallback — Aborting backend sync: cryptographic idToken is missing.");
-        return NextResponse.redirect(
-          new URL(`/login?error=${encodeURIComponent("cryptographic idToken is missing")}`, baseUrl)
-        );
-      }
-
-      console.log(`[auth0] onCallback — Attempting backend sync to URL: ${apiUrl}/auth/register-oauth`, {
+      console.log(`[auth0] beforeSessionSaved — Attempting backend sync to URL: ${apiUrl}/auth/register-oauth`, {
         provider,
-        email: session.user.email,
-        hasIdToken: !!idToken,
+        email: sessionObj.user.email,
+        hasIdToken: !!resolvedIdToken,
       });
 
       try {
@@ -47,31 +26,27 @@ export const auth0 = new Auth0Client({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             provider,
-            id_token: idToken,
+            id_token: resolvedIdToken,
           }),
         });
 
-        console.log(`[auth0] onCallback — Backend response status: ${res.status} ${res.statusText}`);
+        console.log(`[auth0] beforeSessionSaved — Backend response status: ${res.status} ${res.statusText}`);
 
         if (!res.ok) {
           const errText = await res.text();
-          console.error(`[auth0] onCallback — Backend sync returned error status. Body: ${errText}`);
+          console.error(`[auth0] beforeSessionSaved — Backend sync returned error status. Body: ${errText}`);
         } else {
           const data = await res.json();
           if (data.success && data.data?.token) {
-            backendToken = data.data.token;
-            backendUser = data.data.user ?? null;
-            if (session) {
-              (session as Record<string, unknown>).backendToken = backendToken;
-              (session as Record<string, unknown>).backendUser = backendUser;
-            }
-            console.log(`[auth0] onCallback — Backend sync successful! Token acquired for user ID: ${backendUser?.id}`);
+            sessionObj.backendToken = data.data.token;
+            sessionObj.backendUser = data.data.user ?? null;
+            console.log(`[auth0] beforeSessionSaved — Backend sync successful! Token acquired for user ID: ${data.data.user?.id}`);
           } else {
-            console.error("[auth0] onCallback — Backend sync returned success:false or missing token", data);
+            console.error("[auth0] beforeSessionSaved — Backend sync returned success:false or missing token", data);
           }
         }
       } catch (e: any) {
-        console.error("[auth0] onCallback — backend sync failed with connection or fetch error:", {
+        console.error("[auth0] beforeSessionSaved — backend sync failed with connection or fetch error:", {
           message: e?.message,
           name: e?.name,
           code: e?.code,
@@ -84,10 +59,31 @@ export const auth0 = new Auth0Client({
         });
       }
     }
+    return sessionObj as any;
+  },
+
+  async onCallback(error, ctx, session) {
+    const baseUrl =
+      ctx.appBaseUrl ?? process.env.APP_BASE_URL ?? "http://localhost:3000";
+
+    if (error) {
+      console.error("[auth0] OAuth callback error:", error.message);
+      return NextResponse.redirect(
+        new URL(`/login?error=${encodeURIComponent(error.message)}`, baseUrl)
+      );
+    }
+
+    const backendToken = (session as any)?.backendToken ?? null;
+    const backendUser = (session as any)?.backendUser ?? null;
+
+    console.log(`[auth0] onCallback — Retreived from session:`, {
+      hasBackendToken: !!backendToken,
+      userId: backendUser?.id,
+    });
 
     const isSecure = baseUrl.startsWith("https");
     const cookieOpts = {
-      httpOnly: true,  // Moved to HttpOnly for max security against XSS
+      httpOnly: false, // Must be readable by client JS to complete login
       maxAge: 60,      // 60-second handoff window
       path: "/",
       sameSite: "lax" as const,
